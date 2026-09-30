@@ -1,0 +1,35 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-09-30T10:00:00Z" },
+  "title": "Workout App Mockup",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "Home", "is_interactive": true },
+    "Workouts.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "Workouts (discovery)", "is_interactive": true },
+    "Progress.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "Progress", "is_interactive": true },
+    "Preview.dc.html": { "x": 0, "y": 1264, "w": 390, "h": 844, "title": "Workout preview (sheet)", "is_interactive": true },
+    "Active.dc.html": { "x": 470, "y": 1264, "w": 390, "h": 844, "title": "Active workout", "is_interactive": true },
+    "Rest.dc.html": { "x": 940, "y": 1264, "w": 390, "h": 844, "title": "Rest timer", "is_interactive": true },
+    "Complete.dc.html": { "x": 1410, "y": 1264, "w": 390, "h": 844, "title": "Workout saved", "is_interactive": true },
+    "ActiveDark.dc.html": { "x": 0, "y": 2528, "w": 390, "h": 844, "title": "Active workout, dark theme", "is_interactive": true },
+    "TabBar.dc.html": { "x": 470, "y": 2528, "w": 390, "h": 104, "title": "Shared tab bar (one component, every tab)", "is_interactive": true }
+  },
+  "order": [
+    "Main.dc.html",
+    "Workouts.dc.html",
+    "Progress.dc.html",
+    "Preview.dc.html",
+    "Active.dc.html",
+    "Rest.dc.html",
+    "Complete.dc.html",
+    "ActiveDark.dc.html",
+    "TabBar.dc.html"
+  ],
+  "notes": {
+    "rowTabs": { "x": 0, "y": -300, "text": "Main tabs", "kind": "title1", "maxW": 1330 },
+    "rowFlow": { "x": 0, "y": 964, "text": "Workout flow", "kind": "title1", "maxW": 1800 },
+    "rowShared": { "x": 0, "y": 2228, "text": "Dark theme and shared navigation", "kind": "title1", "maxW": 860 }
+  },
+  "designSystems": []
+}

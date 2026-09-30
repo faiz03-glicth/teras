@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#F2F5F1;color:#101713}
+a{color:#9A5205}a:hover{color:#7A4104}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; box-sizing: border-box; background-color: #F2F5F1; background-image: radial-gradient(110% 55% at 0% 0%, #F6E2C6 0%, rgba(246,226,198,0) 60%), radial-gradient(80% 45% at 100% 28%, #D8E8F4 0%, rgba(216,232,244,0) 62%), radial-gradient(100% 55% at 25% 100%, #EEE7D2 0%, rgba(238,231,210,0) 62%); font-family: Inter, system-ui, sans-serif; color: #101713">
+<main style="padding: 58px 16px 0px; display: flex; flex-direction: column; gap: 16px">
+<header>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">Wednesday, 30 September</div>
+<h1 style="margin: 0; font-size: 26px; line-height: 31px; font-weight: 700; letter-spacing: -0.5px">Your training</h1>
+</header>
+
+<section aria-label="Training volume heatmap" style="padding: 16px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), inset 0px 0px 0px 0.5px rgba(255,255,255,0.6), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 4px">
+<div style="flex-grow: 1">
+<h2 style="margin: 0; font-size: 16px; line-height: 21px; font-weight: 600">Training volume</h2>
+<div style="font-size: 13px; line-height: 18px; color: #56625A">Jul – Sep 2026 · {{sessions}} sessions</div>
+</div>
+<button type="button" aria-label="Show older months" style="width: 44px; height: 44px; border-radius: 22px; border: none; padding: 0; background: rgba(60,40,12,0.06); color: #101713; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+</button>
+<button type="button" aria-label="Show newer months" disabled style="width: 44px; height: 44px; border-radius: 22px; border: none; padding: 0; background: rgba(60,40,12,0.06); color: #101713; opacity: 0.35; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button>
+</div>
+<div style="display: flex; gap: 8px">
+<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 3px; padding-top: 20px; font-size: 10px; line-height: 14px; color: #646F67; width: 10px">
+<span style="height: 14px">M</span><span style="height: 14px"></span><span style="height: 14px">W</span><span style="height: 14px"></span><span style="height: 14px">F</span><span style="height: 14px"></span><span style="height: 14px">S</span>
+</div>
+<div style="display: flex; gap: 10px">
+<sc-for list="{{months}}" as="month" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 11px; line-height: 14px; font-weight: 500; color: #646F67">{{month.label}}</div>
+<div style="display: flex; gap: 3px">
+<sc-for list="{{month.columns}}" as="col" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<sc-for list="{{col.cells}}" as="cell" hint-placeholder-count="7">
+<div style="width: 14px; height: 14px; border-radius: 4px; background: {{cell.bg}}; box-shadow: {{cell.ring}}"></div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 5px; font-size: 11px; line-height: 16px; color: #646F67">
+<span>Less</span>
+<span style="width: 12px; height: 12px; border-radius: 3px; background: rgba(60,40,12,0.08)"></span>
+<span style="width: 12px; height: 12px; border-radius: 3px; background: #FBE0B5"></span>
+<span style="width: 12px; height: 12px; border-radius: 3px; background: #F5B862"></span>
+<span style="width: 12px; height: 12px; border-radius: 3px; background: #E08A1E"></span>
+<span style="width: 12px; height: 12px; border-radius: 3px; background: #A85A06"></span>
+<span>More</span>
+<span style="flex-grow: 1; text-align: right">vs. your last 90 days</span>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; flex-direction: column; gap: 6px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C06F0E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.4 14.4 9.6 9.6"></path><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"></path><path d="m21.5 21.5-1.4-1.4"></path><path d="M3.9 3.9 2.5 2.5"></path><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"></path></svg>
+<div style="font-size: 22px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums">12,480</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">kg this week</div>
+</div>
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; flex-direction: column; gap: 6px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E9A52" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg>
+<div style="font-size: 22px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums">3</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">Sessions this week</div>
+</div>
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; flex-direction: column; gap: 6px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C06F0E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+<div style="font-size: 22px; line-height: 26px; font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums">4</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">PRs this month</div>
+</div>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; line-height: 21px; font-weight: 600">Start again</h2>
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; align-items: center; gap: 12px">
+<div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 13px; background: #F6DEBE; color: #9A5205; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.4 14.4 9.6 9.6"></path><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"></path><path d="m21.5 21.5-1.4-1.4"></path><path d="M3.9 3.9 2.5 2.5"></path><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"></path></svg>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-size: 16px; line-height: 21px; font-weight: 600">Push Day</div>
+<div style="font-size: 13px; line-height: 18px; color: #56625A">Last done Mon · 55 min · 6 exercises</div>
+</div>
+<a href="Active.dc.html" aria-label="Start Push Day" style="height: 44px; padding: 0px 16px; border-radius: 22px; background: #E08A1E; color: #1F1204; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+Start
+</a>
+</div>
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; align-items: center; gap: 12px">
+<div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 13px; background: #F6DEBE; color: #9A5205; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.4 14.4 9.6 9.6"></path><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"></path><path d="m21.5 21.5-1.4-1.4"></path><path d="M3.9 3.9 2.5 2.5"></path><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"></path></svg>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-size: 16px; line-height: 21px; font-weight: 600">Pull Day</div>
+<div style="font-size: 13px; line-height: 18px; color: #56625A">Last done Thu · 50 min · 6 exercises</div>
+</div>
+<a href="Active.dc.html" aria-label="Start Pull Day" style="height: 44px; padding: 0px 16px; border-radius: 22px; background: #E08A1E; color: #1F1204; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 6px">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+Start
+</a>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 16px; line-height: 21px; font-weight: 600">Recent</h2>
+<div style="padding: 12px; border-radius: 20px; background: rgba(255,255,255,0.62); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.95), 0px 10px 30px -12px rgba(48,32,12,0.12); display: flex; align-items: center; gap: 12px">
+<div style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 13px; background: #E2F4E8; color: #136B38; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+</div>
+<div style="flex-grow: 1; min-width: 0">
+<div style="font-size: 16px; line-height: 21px; font-weight: 600">Leg Day</div>
+<div style="font-size: 13px; line-height: 18px; color: #56625A">Mon 28 Sep · 62 min · 11,200 kg</div>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">
+<span style="width: 12px; height: 12px; border-radius: 3px; background: #A85A06"></span>Peak
+</div>
+</div>
+</section>
+</main>
+<div style="position: absolute; left: 0px; bottom: 0px; width: 390px; height: 104px">
+<dc-import name="TabBar" active="home" hint-size="390px,104px"></dc-import>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const palette = ['rgba(60,40,12,0.08)', '#FBE0B5', '#F5B862', '#E08A1E', '#A85A06'];
+    const months = [
+      { label: 'Jul', m: 7, offset: 2, days: 31 },
+      { label: 'Aug', m: 8, offset: 5, days: 31 },
+      { label: 'Sep', m: 9, offset: 1, days: 30 },
+    ];
+    let sessions = 0;
+    const built = months.map((mo) => {
+      const cells = [];
+      for (let i = 0; i < mo.offset; i += 1) cells.push({ bg: 'transparent', ring: 'none' });
+      for (let d = 1; d <= mo.days; d += 1) {
+        const weekday = (mo.offset + d - 1) % 7;
+        const today = mo.m === 9 && d === 30;
+        const trainingDay = weekday === 0 || weekday === 1 || weekday === 3 || weekday === 5;
+        const missedWeek = mo.m === 7 && d >= 20 && d <= 26;
+        const skipped = (d + mo.m) % 9 === 0;
+        let level = 0;
+        if (trainingDay && !missedWeek && !skipped && !today) {
+          level = 1 + ((d * 7 + mo.m * 5 + weekday * 3) % 4);
+          sessions += 1;
+        }
+        cells.push({ bg: palette[level], ring: today ? 'inset 0px 0px 0px 2px #9A5205' : 'none' });
+      }
+      const columns = [];
+      for (let i = 0; i < cells.length; i += 7) columns.push({ cells: cells.slice(i, i + 7) });
+      return { label: mo.label, columns: columns };
+    });
+    return { months: built, sessions: sessions };
+  }
+}
+</script>
+</body>
+</html>

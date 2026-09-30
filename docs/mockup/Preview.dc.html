@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Workout preview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#F2F5F1;color:#101713}
+a{color:#9A5205}a:hover{color:#7A4104}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; box-sizing: border-box; background-color: #F2F5F1; background-image: radial-gradient(110% 55% at 0% 0%, #F6E2C6 0%, rgba(246,226,198,0) 60%), radial-gradient(80% 45% at 100% 28%, #D8E8F4 0%, rgba(216,232,244,0) 62%); font-family: Inter, system-ui, sans-serif; color: #101713">
+<div aria-hidden="true" style="padding: 58px 16px 0px">
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">16 curated · 2 of yours</div>
+<div style="font-size: 26px; line-height: 31px; font-weight: 700; letter-spacing: -0.5px">Workouts</div>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 0px; top: 0px; width: 390px; height: 844px; background: rgba(13,16,14,0.38)"></div>
+
+<section role="dialog" aria-label="Push Day" style="position: absolute; left: 0px; top: 50px; width: 390px; height: 794px; box-sizing: border-box; border-radius: 28px 28px 0px 0px; background: #F8F9F6; box-shadow: 0px -10px 40px rgba(0,0,0,0.18); display: flex; flex-direction: column">
+<div aria-hidden="true" style="align-self: center; width: 36px; height: 5px; margin-top: 8px; border-radius: 3px; background: #C9D1C8"></div>
+<div style="flex-grow: 1; padding: 10px 16px 0px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<div style="flex-grow: 1">
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">Your routine · last done Mon 28 Sep</div>
+<h1 style="margin: 0; font-size: 26px; line-height: 31px; font-weight: 700; letter-spacing: -0.5px">Push Day</h1>
+</div>
+<a href="Workouts.dc.html" aria-label="Close" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: rgba(60,40,12,0.07); color: #101713; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+</a>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; line-height: 19px; color: #101713">
+<span style="display: flex; align-items: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#56625A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>55 min
+</span>
+<span style="display: flex; align-items: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#56625A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h.01"></path><path d="M3 18h.01"></path><path d="M3 6h.01"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M8 6h13"></path></svg>6 exercises · 19 sets
+</span>
+<span style="display: flex; align-items: center; gap: 6px">
+<span aria-hidden="true" style="display: flex; align-items: flex-end; gap: 2px; height: 12px"><span style="width: 3px; height: 6px; border-radius: 1px; background: #9A5205"></span><span style="width: 3px; height: 9px; border-radius: 1px; background: #9A5205"></span><span style="width: 3px; height: 12px; border-radius: 1px; background: rgba(60,40,12,0.18)"></span></span>Intermediate
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">Target muscles</div>
+<div style="font-size: 14px; line-height: 19px; font-weight: 500">Chest · Shoulders · Triceps</div>
+</div>
+<div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500; color: #56625A">Equipment</div>
+<div style="font-size: 14px; line-height: 19px; font-weight: 500">Barbell, Dumbbells, Cable</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0; font-size: 16px; line-height: 21px; font-weight: 600">Exercises</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{exercises}}" as="x" hint-placeholder-count="6">
+<li style="padding: 8px 12px; border-radius: 14px; background: #FFFFFF; box-shadow: 0px 1px 2px rgba(40,28,12,0.06); display: flex; align-items: center; gap: 12px">
+<span aria-hidden="true" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 14px; background: #EAEEE9; color: #56625A; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">{{x.n}}</span>
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 15px; line-height: 20px; font-weight: 600">{{x.name}}</span>
+<span style="font-size: 13px; line-height: 18px; color: #56625A">{{x.target}}</span>
+</span>
+<span style="display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; color: #646F67; white-space: nowrap">
+<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>{{x.rest}}
+</span>
+</li>
+</sc-for>
+</ol>
+</div>
+</div>
+
+<div style="padding: 12px 16px 34px; display: flex; flex-direction: column; gap: 8px; background: #F8F9F6; box-shadow: 0px -1px 0px #DCE2DB">
+<a href="Active.dc.html" style="height: 56px; border-radius: 18px; background: #E08A1E; color: #1F1204; font-size: 17px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: inset 0px 1px 0px rgba(255,255,255,0.35), 0px 8px 20px -8px rgba(224,138,30,0.55)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>Start workout
+</a>
+<button type="button" style="height: 44px; border-radius: 14px; border: none; background: transparent; color: #9A5205; font-family: inherit; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit routine
+</button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      exercises: [
+        { n: 1, name: 'Bench Press', target: '4 × 8 · last time 60 kg', rest: '2:00' },
+        { n: 2, name: 'Overhead Press', target: '3 × 8 · last time 40 kg', rest: '2:00' },
+        { n: 3, name: 'Incline Dumbbell Press', target: '3 × 10 · last time 22 kg', rest: '1:30' },
+        { n: 4, name: 'Lateral Raise', target: '3 × 12 · last time 8 kg', rest: '1:00' },
+        { n: 5, name: 'Triceps Pushdown', target: '3 × 12 · last time 25 kg', rest: '1:00' },
+        { n: 6, name: 'Plank', target: '3 × 45 s hold · timed', rest: '1:00' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
