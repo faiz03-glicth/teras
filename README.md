@@ -24,5 +24,5 @@ The same stack as Streak, so the patterns carry over: Expo SDK 57 with Expo Rout
 
 ## Repositories
 
-- GitLab (source of truth): https://gitlab.com/faiz03-glicth/teras
+- GitLab: https://gitlab.com/faiz03-glicth/teras
 - GitHub (mirror): https://github.com/faiz03-glicth/teras
