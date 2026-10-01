@@ -1,0 +1,19 @@
+node_modules
+.expo
+dist
+src/core/db/migrations
+package-lock.json
+coverage
+reports
+.npm
+# Written by scripts/sounds/build-sounds.py
+assets/sounds/sound-timings.json
+.agents
+.claude
+.codex
+supabase
+docs
+*.md
+
+# Written by scripts/build-acknowledgements.js
+public/acknowledgements/index.html

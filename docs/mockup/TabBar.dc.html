@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>body{margin:0}</style>
 </helmet>
-<div style="width: 390px; height: 104px; position: relative; font-family: Inter, system-ui, sans-serif; color: #101713">
-<nav aria-label="Main" style="position: absolute; left: 16px; right: 16px; top: 10px; height: 64px; box-sizing: border-box; padding: 0 6px; border-radius: 32px; background: rgba(247,248,245,0.88); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.85), inset 0px 0px 0px 0.5px rgba(255,255,255,0.6), 0px 12px 30px -10px rgba(40,28,12,0.24); display: flex; align-items: center; justify-content: space-between">
+<div style="width: 390px; height: 104px; position: relative; font-family: Inter, system-ui, sans-serif; color: #2B1D0B">
+<nav aria-label="Main" style="position: absolute; left: 16px; right: 16px; top: 10px; height: 64px; box-sizing: border-box; padding: 0 6px; border-radius: 32px; background: rgba(255,246,214,0.94); box-shadow: inset 0px 1px 0px rgba(255,255,255,0.85), inset 0px 0px 0px 0.5px rgba(255,255,255,0.6), 0px 12px 30px -10px rgba(70,40,12,0.24); display: flex; align-items: center; justify-content: space-between">
 <a href="Main.dc.html" aria-current="{{home.current}}" style="width: 66px; height: 52px; border-radius: 26px; background: {{home.bg}}; color: {{home.fg}}; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
 <span style="font-size: 11px; line-height: 14px; font-weight: {{home.weight}}">Home</span>
@@ -23,9 +23,9 @@
 </a>
 <div style="position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center">
 <sc-if value="{{running}}" hint-placeholder-val="{{false}}">
-<span style="position: absolute; top: -16px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #101713; color: #F6F7F5; font-size: 11px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap">24:13</span>
+<span style="position: absolute; top: -16px; left: 50%; transform: translateX(-50%); padding: 1px 8px; border-radius: 999px; background: #2B1D0B; color: #FFF4CF; font-size: 11px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap">24:13</span>
 </sc-if>
-<a href="Active.dc.html" aria-label="{{fabLabel}}" style="width: 56px; height: 56px; box-sizing: border-box; border-radius: 28px; border: 3px solid rgba(255,255,255,0.9); background: #E08A1E; color: #1F1204; box-shadow: inset 0px -3px 8px rgba(0,0,0,0.14), 0px 8px 18px -6px rgba(224,138,30,0.6); text-decoration: none; display: flex; align-items: center; justify-content: center">
+<a href="Active.dc.html" aria-label="{{fabLabel}}" style="width: 56px; height: 56px; box-sizing: border-box; border-radius: 28px; border: 2px solid #6A522E; background: #FFD179; color: #2B1D0B; box-shadow: 0px 3px 0px #6A522E; text-decoration: none; display: flex; align-items: center; justify-content: center">
 <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
 </sc-if>
@@ -53,8 +53,8 @@ class Component extends DCLogic {
     const tab = (id) => {
       const on = active === id;
       return {
-        bg: on ? '#F6DEBE' : 'transparent',
-        fg: on ? '#7A4104' : '#56625A',
+        bg: on ? '#FFE2A0' : 'transparent',
+        fg: on ? '#5C3A08' : '#614722',
         weight: on ? 600 : 500,
         current: on ? 'page' : 'false',
       };

@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1790777574108,
+      "tag": "0000_classy_infant_terrible",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1790779620663,
+      "tag": "0001_workout_model",
+      "breakpoints": true
+    }
+  ]
+}

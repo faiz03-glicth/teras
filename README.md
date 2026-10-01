@@ -6,13 +6,17 @@ It is the companion app to **Streak**, a habit-logging app. Both apps share one 
 
 ## Status
 
-**Design phase. There is no app code yet.** The Expo app is scaffolded once the design spec and implementation plan are approved.
+**First slice built:** Get Started → Set up → Sign in → Home, with Parchment and Walnut themes, plus the
+`workout_days` contract with Streak. Workout logging, the exercise library and the heatmap come next. See
+[handoff.md](handoff.md) for the full state.
 
 | Doc | What it holds |
 |---|---|
 | [docs/design/decisions.md](docs/design/decisions.md) | The design agreed so far: architecture, data model, open items |
 | [docs/design/ux-requirements.md](docs/design/ux-requirements.md) | Mandatory UX requirements: navigation, workout discovery, exercise tracking |
-| [docs/mockup/](docs/mockup/) | Clickable mockup of 9 screens (source files for the design canvas) |
+| [docs/prototype/](docs/prototype/) | The interactive HTML prototype: the current design reference |
+| [docs/design/workout-days-contract.md](docs/design/workout-days-contract.md) | The Teras ↔ Streak data contract |
+| [docs/mockup/](docs/mockup/) | The first canvas mockup (superseded by the prototype) |
 
 ## Planned stack
 

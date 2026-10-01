@@ -15,5 +15,5 @@ glass cards, radii, and the two-tabs + centre-button tab bar. The accent is ambe
 | `ActiveDark.dc.html` | The active workout in dark theme (it reuses `Active.dc.html`) |
 | `TabBar.dc.html` | The one tab bar component every tab uses. Has a `running` option that switches the centre button to Resume |
 
-These are source files for the Claude design canvas, and `canvas.json` lays them out. They load the canvas runtime
+These are design-canvas source files, laid out by `canvas.json`. They load the canvas runtime
 (`support.js`), so they don't render as standalone pages in a browser.

@@ -22,6 +22,22 @@ a multi-heatmap app.
 | 7 | Level stability | **Frozen at the time.** A day is compared with the ~90 days before it, and the result is stored | Matches Streak: "the heatmap you built is the heatmap you see". |
 | 8 | Data approach | **Local-first + push only the daily summary** | Works offline in the gym. Streak's sync engine is not built yet (its Phase 5), so there is nothing to copy. |
 | 9 | Workout library | **Curated starter workouts + your own routines** | Required by the workout-discovery requirement. |
+| 10 | Primary user | **The owner (a personal tool)** | Decisions can follow the owner's own training habits. |
+| 11 | UX reference | **Hevy** | The owner considers Hevy's logging UX the best. Borrow its interaction patterns, not its branding. |
+| 12 | Platform look | **Native feel per OS** (`adaptive`) | iOS conventions on iPhone, Material on Android. This replaces Section 1's "one identical look like Streak". |
+| 13 | Typeface | **Inter** (kept) | Family resemblance with Streak. The owner pinned it. |
+| 14 | Colour theme | **Kingdom Rush-inspired** (parchment, wood brown, gold, grass green) | The owner's choice. Colours only; no game assets. It replaces the amber-on-Streak-neutrals mockup palette. |
+
+| 15 | App structure (30 Sep 2026) | **Hevy-style: 3 tabs, Home · Workout · Profile** | The owner rejected the first design. Home = heatmap wave on top, then the workout feed. This replaces the 4-tab + centre-button layout. |
+| 16 | Workouts | **No curated programs.** Start an empty workout, or use routines you build yourself | The curated workouts felt too strict. This replaces decision 9. |
+| 17 | Exercise library | **~100 exercises as structured data** (equipment, primary + secondary muscles, compound/isolation, type), search with aliases, muscle + equipment filters, recent, favourites, custom exercises | Any exercise in the gym should be findable and loggable in a few taps. |
+| 18 | Muscle map | **Reusable front/back body map** (SVG paths from the owner's FalseStory repo) with primary/secondary highlights; tapping a muscle filters the library | Same purpose as Hevy's muscle highlight. |
+| 19 | Logging | **Per-exercise set table: Set · Previous · weight · Reps · ✓** with a rest-timer bar; unticked sets are not saved | Replaces the one-set-at-a-time screen and the planned/skipped set states. |
+| 20 | Profile | Weekly chart (duration / volume / reps), dashboard, **Bodyweight · BMI card** with Log weight and FFMI | From the owner's mockup. |
+| 21 | Motion, sound, haptics | **Kept from Streak from the first slice** | The owner asked for them after the coding brief had deferred them. |
+
+The working reference for decisions 15–21 is `docs/prototype/Teras App Prototype.html`. The Section 2 data model needs updating to match
+(exercise metadata and custom exercises; no curated workouts; no skipped/upcoming states).
 
 Defaults that came with these decisions:
 - **Bodyweight exercises** count as reps × (bodyweight + added weight). You set your bodyweight once, and each session stores a snapshot of it.
@@ -88,7 +104,10 @@ Every table carries Streak's `syncColumns`: `id`, `user_id`, timestamps, soft-de
 Then: the written spec, then the implementation plan, then scaffolding the app. Streak's multi-heatmap is a separate,
 later piece of work in the Streak repo.
 
-## Choices the mockup adds (awaiting feedback)
+## Choices the mockup adds (need revisiting after decisions 11–12)
+
+The mockup was drawn before the Hevy reference and the native-feel decision. It uses one custom glass look on both
+platforms and puts an action (+) inside the tab bar, and both conflict with iOS/Material conventions. Revisit before the spec.
 
 - **Accent:** amber, from Streak's amber heat palette. The apps look like siblings, and the Teras wave looks different from Streak's green one.
 - **Tab bar:** Home · Workouts · (+) · Progress · Profile, the same shape as Streak's. The centre button starts an empty

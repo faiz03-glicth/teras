@@ -1,6 +1,76 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
 node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
 .DS_Store
+*.pem
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+
+# local tooling and working notes: present on this computer, never in the repo
+LICENSE
+CLAUDE.md
+AGENTS.md
+PRODUCT.md
+handoff.md
+.agents/
+.claude/
+.codex/
+.impeccable/
+.vscode/
+.idea/
+
+# CI and test reports
+coverage/
+reports/
+eslint-report.json
+gl-code-quality-report.json
+
+# Supabase stays on this computer only (not in the public repos)
+supabase/
+
+
+# local env files (all variants)
+.env.*
+.env.example
 Thumbs.db
 *.log
-.env
-.env.*
+
+# build output
+*.apk
+*.aab
+*.ipa
