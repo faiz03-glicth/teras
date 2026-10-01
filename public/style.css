@@ -1,127 +1,79 @@
 /*
- * The legal site for Teras and Streak. Colours are the apps' own tokens (Teras: src/theme/tokens):
- * Parchment in light, Walnut in dark, brand gold reserved for emphasis.
+ * A plain document, the way a terms or privacy page should read: white paper, black text, system font.
+ * No theming and no web fonts, so the page makes no third-party request — which is what the privacy
+ * policy promises about the apps themselves.
  */
-
-:root {
-  --canvas: #f6e7b6;
-  --surface: #fff6d6;
-  --text: #2b1d0b;
-  --text2: #614722;
-  --border: #d7c27e;
-  --accent: #7a4a12;
-  --orb: #7a4a12;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --canvas: #16110c;
-    --surface: #241c15;
-    --text: #f2e8d5;
-    --text2: #c4b39a;
-    --border: #332920;
-    --accent: #ffd179;
-    --orb: #ffd179;
-  }
-}
 
 * {
   box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  padding: 0 16px 96px;
-  background: var(--canvas);
-  color: var(--text);
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 17px;
-  line-height: 1.65;
+  margin: 0 auto;
+  max-width: 42rem;
+  padding: 32px 20px 80px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   -webkit-text-size-adjust: 100%;
 }
 
-main,
 header {
-  max-width: 44rem;
-  margin: 0 auto;
-}
-
-header {
-  padding: 40px 0 8px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 8px;
 }
 
 .mark {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   text-decoration: none;
-  color: inherit;
-}
-
-.mark svg {
-  width: 34px;
-  height: 34px;
-  flex: none;
-}
-
-.mark span {
+  color: #444;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 0.95rem;
 }
 
 h1 {
-  font-size: 2rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: 1.7rem;
+  line-height: 1.25;
   margin: 28px 0 4px;
 }
 
 h2 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1.3;
-  letter-spacing: -0.01em;
-  margin: 40px 0 8px;
+  margin: 32px 0 6px;
 }
 
 h3 {
-  font-size: 1.02rem;
-  margin: 28px 0 4px;
+  font-size: 1rem;
+  margin: 22px 0 4px;
 }
 
 .updated {
-  color: var(--text2);
+  color: #666;
   font-size: 0.9rem;
   margin: 0 0 8px;
 }
 
 a {
-  color: var(--accent);
-  text-underline-offset: 2px;
+  color: #0645ad;
 }
 
 ul {
-  padding-left: 1.25rem;
+  padding-left: 1.4rem;
 }
 
 li {
-  margin: 6px 0;
+  margin: 5px 0;
 }
 
-/* A fact the reader should not miss: a rule, not decoration. */
+/* A point the reader should not skim past. */
 .note {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 18px;
-  margin: 24px 0;
+  border-left: 3px solid #ccc;
+  padding: 2px 0 2px 16px;
+  margin: 22px 0;
+  color: #333;
 }
 
 .note p:first-child {
@@ -132,42 +84,41 @@ li {
   margin-bottom: 0;
 }
 
-/* Anything the owner still has to fill in before publishing. */
+/* Anything still to be filled in before this is published for real. */
 .todo {
-  background: rgba(152, 69, 39, 0.12);
-  border: 1px dashed #984527;
-  border-radius: 10px;
-  padding: 2px 8px;
-  font-size: 0.92em;
-  font-weight: 500;
+  background: #fff3cd;
+  border: 1px solid #e0cfa0;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 0.95em;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin: 20px 0;
+  margin: 18px 0;
   font-size: 0.95rem;
 }
 
 th,
 td {
   text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e5e5;
   vertical-align: top;
 }
 
 th {
   font-weight: 600;
+  border-bottom: 1px solid #ccc;
 }
 
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.9em;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1px 5px;
+  background: #f5f5f5;
+  border-radius: 3px;
+  padding: 1px 4px;
 }
 
 .index {
@@ -176,26 +127,24 @@ code {
 }
 
 .index li {
-  margin: 10px 0;
+  margin: 14px 0;
 }
 
 .index a {
   font-weight: 600;
-  font-size: 1.05rem;
 }
 
 .index p {
   margin: 2px 0 0;
-  color: var(--text2);
+  color: #555;
   font-size: 0.95rem;
 }
 
 footer {
-  max-width: 44rem;
-  margin: 64px auto 0;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-  color: var(--text2);
+  margin-top: 56px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+  color: #666;
   font-size: 0.9rem;
 }
 

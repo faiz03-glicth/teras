@@ -45,13 +45,6 @@ for (const name of Object.keys(manifest.dependencies ?? {}).sort()) {
   });
 }
 
-const MARK = `<svg viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="var(--orb)">
-          <circle cx="50" cy="50" r="12" fill="var(--orb)" stroke="none" />
-          <circle cx="50" cy="50" r="24" stroke-width="9" />
-          <path d="M50 18a32 32 0 0 1 27 49" stroke-width="10" stroke-linecap="round" />
-          <path d="M50 82a32 32 0 0 1-27-49" stroke-width="10" stroke-linecap="round" />
-        </svg>`;
-
 const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -59,18 +52,11 @@ const html = `<!doctype html>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Acknowledgements — Teras &amp; Streak</title>
     <meta name="description" content="The open-source software the Teras and Streak apps are built on." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <header>
       <a class="mark" href="/">
-        ${MARK}
         <span>Teras &amp; Streak</span>
       </a>
     </header>
