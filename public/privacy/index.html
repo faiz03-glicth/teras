@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy policy — Teras &amp; Streak</title>
+    <meta
+      name="description"
+      content="What Teras and Streak store on your phone, what little leaves it, and who can see it."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="mark" href="/">
+        <svg viewBox="0 0 100 100" aria-hidden="true" fill="none" stroke="var(--orb)">
+          <circle cx="50" cy="50" r="12" fill="var(--orb)" stroke="none" />
+          <circle cx="50" cy="50" r="24" stroke-width="9" />
+          <path d="M50 18a32 32 0 0 1 27 49" stroke-width="10" stroke-linecap="round" />
+          <path d="M50 82a32 32 0 0 1-27-49" stroke-width="10" stroke-linecap="round" />
+        </svg>
+        <span>Teras &amp; Streak</span>
+      </a>
+    </header>
+
+    <main>
+      <h1>Privacy policy</h1>
+      <p class="updated">Last updated <span class="todo">[DATE]</span> · Applies to Teras and Streak</p>
+
+      <p>
+        Teras (workout logging) and Streak (habit tracking) are made by
+        <span class="todo">[FULL NAME OR COMPANY]</span>, in <span class="todo">[COUNTRY]</span>. They share
+        one account, so this policy covers both. You can reach us at
+        <span class="todo">[CONTACT EMAIL]</span>.
+      </p>
+
+      <div class="note">
+        <p>
+          <strong>The short version.</strong> These apps are built to keep your data on your phone. Your
+          workouts, sets, routines, habits and check-ins are stored locally and are never uploaded. One small
+          summary per training day is sent to our server, so that your training can appear next to your
+          habits. There is no advertising, no analytics and no tracking of any kind.
+        </p>
+      </div>
+
+      <h2>What stays on your phone</h2>
+      <p>
+        Both apps keep their records in a database on the device itself. None of the following is uploaded
+        anywhere:
+      </p>
+      <ul>
+        <li>
+          Every workout: its exercises, each set, the weight, reps or time, and whether you completed it
+        </li>
+        <li>Your routines and any exercises you create</li>
+        <li>Your bodyweight and height entries</li>
+        <li>Your habits and daily check-ins in Streak</li>
+        <li>Your settings: units, default rest, theme, sound and haptics</li>
+      </ul>
+      <p>
+        Because this data lives only on the device, uninstalling an app deletes it, and it is not restored on
+        a new phone. It is also not included in our backups, because we never receive it.
+      </p>
+
+      <h2>What leaves your phone</h2>
+
+      <h3>Your account</h3>
+      <p>
+        If you sign in, an account is created for you by Supabase, our hosting and authentication provider.
+        Depending on how you sign in, this stores your email address and an identifier from Apple or Google.
+        We also keep one profile row: your email address, display name, username, avatar URL, which sign-in
+        method you used, and your time zone.
+      </p>
+
+      <h3>Your daily workout summary</h3>
+      <p>
+        When you finish a workout, Teras calculates a single row for that calendar day and sends only that:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>What it is</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>date</code></td>
+            <td>The calendar day you trained, in your own time zone</td>
+          </tr>
+          <tr>
+            <td><code>volume_kg</code></td>
+            <td>Total weight moved that day (reps multiplied by weight, added up)</td>
+          </tr>
+          <tr>
+            <td><code>sets</code></td>
+            <td>How many sets you completed</td>
+          </tr>
+          <tr>
+            <td><code>workouts</code></td>
+            <td>How many sessions you logged</td>
+          </tr>
+          <tr>
+            <td><code>level</code></td>
+            <td>
+              An intensity step from 0 to 4, worked out by comparing that day against your own previous 90
+              days
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        That is the whole of it. Which exercises you did, how much you lifted on any particular set, and your
+        bodyweight are not part of this summary and never leave the device.
+      </p>
+
+      <h3>Using the apps as a guest</h3>
+      <p>
+        You can use either app without an account. In guest mode nothing at all is sent to our server: there
+        is no account, no profile and no daily summary.
+      </p>
+
+      <h2>How Teras and Streak share your data</h2>
+      <p>
+        The two apps use one account and one database. Streak reads the daily summaries that Teras writes, so
+        it can draw your training as a second wave beside your habits. This is your own data moving between
+        your own two apps — it is not shared with anyone else, and it is not a sale or transfer to a third
+        party.
+      </p>
+
+      <h2>Who can see your data</h2>
+      <p>
+        Every row in our database is protected by row-level security, which is enforced by the database itself
+        rather than by the apps. The rules permit each signed-in person to read and change only the rows
+        belonging to their own account. Other users cannot read your rows.
+      </p>
+      <p>
+        <span class="todo">[FULL NAME OR COMPANY]</span> has administrative access to the database, as the
+        operator of the service. We look at individual data only where it is necessary to investigate a fault
+        you have reported, or where the law requires it.
+      </p>
+
+      <h2>Companies that process data for us</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Who</th>
+            <th>What they do</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Supabase</td>
+            <td>
+              Hosts the database and handles sign-in. Your account, profile and daily summaries are stored
+              here.
+            </td>
+          </tr>
+          <tr>
+            <td>Apple</td>
+            <td>Sign in with Apple, if you choose it. Apple lets you hide your email address.</td>
+          </tr>
+          <tr>
+            <td>Google</td>
+            <td>Sign in with Google, if you choose it.</td>
+          </tr>
+          <tr>
+            <td>Expo</td>
+            <td>Builds and distributes the apps. It does not receive your workouts or habits.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="todo">
+        [CHECK: name the region your Supabase project runs in, and add any other provider you start using.]
+      </p>
+
+      <h2>What we do not do</h2>
+      <ul>
+        <li>No advertising, and no advertising identifiers</li>
+        <li>No analytics, usage tracking or behavioural profiling</li>
+        <li>No crash or error reporting service</li>
+        <li>No selling or sharing of personal data with anyone</li>
+        <li>No location, contacts, photos, camera, microphone or health-app access</li>
+      </ul>
+
+      <h2>How long we keep it</h2>
+      <p>
+        Your account, profile and daily summaries are kept until you delete your account. Deleting the account
+        removes them from the database. Anything held only on your phone is removed when you delete the app or
+        clear its data.
+      </p>
+
+      <h2>Your rights</h2>
+      <p>
+        You can ask for a copy of what we hold about you, ask for it to be corrected, or ask for your account
+        and its data to be deleted. Write to <span class="todo">[CONTACT EMAIL]</span> and we will respond
+        within <span class="todo">[NUMBER]</span> days.
+      </p>
+      <p class="todo">
+        [CHECK with a lawyer: if you have users in the EU or UK, this section needs the GDPR lawful bases, the
+        right to object and to data portability, and the right to complain to a supervisory authority. If you
+        have users in California, the CCPA requires its own disclosures.]
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        These apps are not intended for children under <span class="todo">[AGE]</span>, and we do not
+        knowingly collect data from them. If you believe a child has created an account, write to us and we
+        will delete it.
+      </p>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        If this policy changes we will update the date at the top of this page. Where a change materially
+        affects how your data is handled, we will tell you in the app before it takes effect.
+      </p>
+
+      <div class="note">
+        <p>
+          <strong>Before publishing:</strong> this draft describes what the apps actually do, but it has not
+          been reviewed by a lawyer. Fill in every highlighted field and have it checked against the law where
+          you operate, and against Apple's and Google's store requirements.
+        </p>
+      </div>
+    </main>
+
+    <footer>
+      <a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="/help/">Help</a>
+      <a href="/acknowledgements/">Acknowledgements</a>
+    </footer>
+  </body>
+</html>

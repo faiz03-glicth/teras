@@ -1,0 +1,23 @@
+# GitLab Pages: publishes `public/` as the legal site for Teras and Streak (terms, privacy,
+# acknowledgements, help). The app opens these pages, so the URL belongs in EXPO_PUBLIC_LEGAL_BASE_URL.
+#
+# After the first successful run, read the site's address under Deploy → Pages. GitLab gives new projects
+# a unique domain (https://teras-<hash>.gitlab.io) unless that setting is turned off, so copy the address
+# it shows rather than assuming it. Then set the variable locally and in all three EAS environments:
+#
+#   npx eas-cli@latest env:set preview --name EXPO_PUBLIC_LEGAL_BASE_URL --value "<the URL>" \
+#     --visibility plaintext --non-interactive
+#
+# Pages serves `public/privacy/index.html` at `/privacy`, which is the shape `links.ts` builds.
+
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Publishing public/ to GitLab Pages"
+  artifacts:
+    paths:
+      - public
+  rules:
+    # Only the default branch is published; a branch build would otherwise replace the live site.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
