@@ -3,13 +3,13 @@ import { useCallback, useState } from 'react';
 import { useRepositories } from '@/core/DiProvider';
 import { useExerciseList } from '@/features/exercises/hooks/useExerciseQueries';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
-import { openActiveWorkout, openExerciseLibrary } from '@/shared/actions';
+import { openActiveWorkout, openExerciseLibrary, openNewRoutine, openRoutine } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { haptics } from '@/shared/lib/haptics';
 import { showInfo } from '@/shared/ui/toast';
 
 import {
-  useActiveWorkout,
+  useActiveWorkoutSummary,
   useRoutines,
   useSetActiveWorkout,
   useWorkoutOwner,
@@ -26,7 +26,7 @@ export function useWorkoutViewModel() {
   const bodyweightKg = useTrainingPreferencesStore((state) => state.bodyweightKg);
   const restSeconds = useTrainingPreferencesStore((state) => state.restSeconds);
   const routines = useRoutines(owner);
-  const active = useActiveWorkout(owner);
+  const active = useActiveWorkoutSummary(owner);
   const cacheWorkout = useSetActiveWorkout(owner);
   const library = useExerciseList(owner);
   const [starting, setStarting] = useState(false);
@@ -65,7 +65,13 @@ export function useWorkoutViewModel() {
     routines: routines.data ?? [],
     onResume: () => openActiveWorkout(),
     onStartEmpty: () => void start(),
-    onStartRoutine: (routineId: string) => void start(routineId),
+    onStartRoutine: (routineId: string) => {
+      // A routine with nothing in it has nothing to start: it opens to be filled instead.
+      if (routines.data?.find((one) => one.id === routineId)?.exerciseCount === 0) openRoutine(routineId);
+      else void start(routineId);
+    },
+    onNewRoutine: () => openNewRoutine(),
+    onEditRoutine: (routineId: string) => openRoutine(routineId),
     /** "104 exercises · by name, muscle or equipment": the library, a tap away. */
     libraryLine: library.data
       ? `${library.data.length} exercises · by name, muscle or equipment`

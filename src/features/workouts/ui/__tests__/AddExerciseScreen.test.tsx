@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
+import { useRoutineDraftStore } from '@/features/routines/state/routineDraftStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { Workout } from '@/features/workouts/data/WorkoutRepository';
 import * as actions from '@/shared/actions';
@@ -125,6 +126,32 @@ describe('adding one to the workout', () => {
       expect(repositories.workouts.addExercise).toHaveBeenCalledWith('w1', 'squat-barbell', 90),
     );
     await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+  });
+
+  it('adds the exercise picked to the routine being edited instead, when opened from one', async () => {
+    act(() =>
+      useRoutineDraftStore.getState().open(Symbol('editor'), { routineId: null, name: 'Arms', items: [] }),
+    );
+    const repositories = createFakeRepositories();
+    repositories.exercises.list.mockResolvedValue(LIBRARY);
+    const { Wrapper } = createWrapper(repositories);
+    renderInScheme(<AddExerciseScreen target="routine" />, 'light', { wrapper: Wrapper });
+
+    fireEvent.press(await screen.findByTestId('all-plank'));
+
+    expect(useRoutineDraftStore.getState().draft?.items).toEqual([
+      expect.objectContaining({ exerciseId: 'plank', targetSeconds: 60 }),
+    ]);
+    expect(actions.goBack).toHaveBeenCalled();
+    expect(repositories.workouts.addExercise).not.toHaveBeenCalled();
+  });
+
+  it('creates an exercise from its header', async () => {
+    open();
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Create' }));
+
+    expect(actions.openCreateExercise).toHaveBeenCalled();
   });
 
   it("opens an exercise's details from its info button, without adding it", async () => {

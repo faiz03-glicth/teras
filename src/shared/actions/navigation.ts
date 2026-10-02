@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 
+import { NEW_ROUTINE } from './params';
 import { routes } from './routes';
-import type { AuthIntent, ISODate, OnboardingStep, Tab } from './types';
+import type { AddExerciseTarget, AuthIntent, ISODate, OnboardingStep, Tab } from './types';
 
 /** Auth-flow screens either push (forward) or replace (so Back never returns to the screen left behind). */
 interface FlowOptions {
@@ -64,9 +65,19 @@ export function openWorkoutSaved(id: string): void {
   router.replace(routes.workoutSaved(id));
 }
 
-/** The exercise library, for adding one to the workout in progress. */
-export function openAddExercise(): void {
-  router.push(routes.addExercise());
+/** The exercise library, for adding one to the workout in progress, or to the routine being edited. */
+export function openAddExercise(target: AddExerciseTarget = 'workout'): void {
+  router.push(routes.addExercise(target));
+}
+
+/** Edit routine, for a new one. */
+export function openNewRoutine(): void {
+  router.push(routes.routine(NEW_ROUTINE));
+}
+
+/** Edit routine: its name, and its exercises in order. */
+export function openRoutine(id: string): void {
+  router.push(routes.routine(id));
 }
 
 /** Every exercise, to browse and open one (from the Workout tab). */
@@ -77,6 +88,21 @@ export function openExerciseLibrary(): void {
 /** One exercise: what it works, its records and its history. */
 export function openExercise(id: string): void {
   router.push(routes.exercise(id));
+}
+
+/** Form sheet over the exercise browser: narrow it to one muscle. */
+export function openMuscleFilter(): void {
+  router.push(routes.muscleFilter());
+}
+
+/** Form sheet over the exercise browser: narrow it to one kind of equipment. */
+export function openEquipmentFilter(): void {
+  router.push(routes.equipmentFilter());
+}
+
+/** Form sheet over the exercise browser: add an exercise of their own. */
+export function openCreateExercise(): void {
+  router.push(routes.createExercise());
 }
 
 /**

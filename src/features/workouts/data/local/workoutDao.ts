@@ -114,8 +114,8 @@ export interface WorkoutDao {
   /** Starter routines and the owner's own, in the order they are shown. */
   listRoutines(owner: WorkoutOwner): Promise<RoutineRow[]>;
   getRoutine(id: string): Promise<RoutineRow | null>;
-  /** The exercise names of a routine, in order. */
-  routineExerciseNames(routineId: string): Promise<string[]>;
+  /** The exercise names of each routine, in one read: by routine, then in order. */
+  routineExerciseNames(routineIds: readonly string[]): Promise<{ routineId: string; name: string }[]>;
   /** A routine's exercises, in the order they are performed. */
   routineItems(routineId: string): Promise<RoutineExerciseRow[]>;
 
@@ -237,15 +237,15 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
         .all();
     },
 
-    async routineExerciseNames(routineId) {
+    async routineExerciseNames(routineIds) {
+      if (routineIds.length === 0) return [];
       return db
-        .select({ name: exercises.name })
+        .select({ routineId: routineExercises.routineId, name: exercises.name })
         .from(routineExercises)
         .innerJoin(exercises, eq(exercises.id, routineExercises.exerciseId))
-        .where(eq(routineExercises.routineId, routineId))
-        .orderBy(asc(routineExercises.position))
-        .all()
-        .map((row) => row.name);
+        .where(inArray(routineExercises.routineId, [...routineIds]))
+        .orderBy(asc(routineExercises.routineId), asc(routineExercises.position))
+        .all();
     },
 
     async getRoutine(id) {

@@ -8,6 +8,7 @@ import {
   workoutSets,
   type ExerciseRow,
   type NewExerciseFavouriteRow,
+  type NewExerciseRow,
 } from '@/core/db/schema';
 import type { AppDatabase } from '@/core/db/types';
 
@@ -22,6 +23,8 @@ export interface ExerciseDao {
   /** Built-in exercises plus the owner's own, by name. */
   list(owner: ExerciseOwner): Promise<ExerciseRow[]>;
   get(id: string): Promise<ExerciseRow | null>;
+  /** Adds a custom exercise and returns it as stored. */
+  insertExercise(row: NewExerciseRow): Promise<ExerciseRow>;
   /** The owner's favourites, the first added first. */
   favouriteIds(owner: ExerciseOwner): Promise<string[]>;
   insertFavourite(row: NewExerciseFavouriteRow): Promise<void>;
@@ -49,6 +52,10 @@ export function createExerciseDao(db: AppDatabase): ExerciseDao {
 
     async get(id) {
       return db.select().from(exercises).where(eq(exercises.id, id)).get() ?? null;
+    },
+
+    async insertExercise(row) {
+      return db.insert(exercises).values(row).returning().get();
     },
 
     async favouriteIds(owner) {

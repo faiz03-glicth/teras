@@ -8,7 +8,7 @@ module.exports = {
   // CI keeps its npm cache and build output inside the project; Jest must not crawl them.
   modulePathIgnorePatterns: ['<rootDir>/.npm/', '<rootDir>/dist/', '<rootDir>/coverage/'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-google-signin/.*|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|react-native-unistyles|react-native-nitro-modules|sonner-native|lucide-react-native))',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-native-google-signin/.*|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|react-native-unistyles|react-native-nitro-modules|sonner-native|lucide-react-native|standard-navigation))',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

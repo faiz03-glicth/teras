@@ -1,17 +1,29 @@
 import { StyleSheet } from 'react-native-unistyles';
 
 import { ExerciseBrowser } from '@/features/exercises/ui/components/ExerciseBrowser';
-import { NavBar, Screen, Text } from '@/shared/ui';
+import type { AddExerciseTarget } from '@/shared/actions';
+import { Button, NavBar, Screen, Text } from '@/shared/ui';
 
 import { useAddExerciseViewModel } from './useAddExerciseViewModel';
 
-/** The exercise browser, for the workout in progress: tap one and it joins the workout. */
-export function AddExerciseScreen() {
-  const vm = useAddExerciseViewModel();
+/** The exercise browser, for the workout in progress (or the routine being edited): tap one and it joins. */
+export function AddExerciseScreen({ target = 'workout' }: { target?: AddExerciseTarget }) {
+  const vm = useAddExerciseViewModel(target);
 
   return (
     <Screen scroll keyboard testID="add-exercise-screen" contentStyle={styles.content}>
-      <NavBar onBack={vm.onBack} />
+      <NavBar
+        onBack={vm.onBack}
+        right={
+          <Button
+            label="Create"
+            icon="plus"
+            variant="quiet"
+            onPress={vm.browser.onCreate}
+            testID="exercise-create"
+          />
+        }
+      />
 
       <Text variant="title" accessibilityRole="header">
         Add exercise

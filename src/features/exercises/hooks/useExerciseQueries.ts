@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useRepositories } from '@/core/DiProvider';
-import type { ExerciseOwner } from '@/features/exercises/data/ExerciseRepository';
+import type { ExerciseOwner, NewExercise } from '@/features/exercises/data/ExerciseRepository';
 import { workoutKeys } from '@/features/workouts/hooks/useWorkoutQueries';
 
 /** How many recently done exercises lead the browser, as in the prototype. */
@@ -61,6 +61,22 @@ export function useExerciseHistory(owner: ExerciseOwner, id: string | null) {
     queryKey: [...workoutKeys.history, owner, 'exercise', id],
     queryFn: () => (id ? workouts.exerciseHistory(owner, id) : []),
     enabled: id !== null,
+    networkMode: 'always',
+  });
+}
+
+/**
+ * Adds the person's own exercise. A refusal (no name, or one already taken) comes back as the result,
+ * not an error. Resolves once the library has been read again, so the new exercise is in the list the
+ * moment the sheet closes.
+ */
+export function useCreateExercise(owner: ExerciseOwner) {
+  const { exercises } = useRepositories();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: NewExercise) => exercises.create(owner, input),
+    onSuccess: (result) =>
+      result.ok ? queryClient.invalidateQueries({ queryKey: exerciseKeys.library(owner) }) : undefined,
     networkMode: 'always',
   });
 }

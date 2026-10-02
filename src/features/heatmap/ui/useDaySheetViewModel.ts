@@ -6,7 +6,7 @@ import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
 import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countSets } from '@/features/workouts/domain/labels';
 import {
-  useActiveWorkout,
+  useActiveWorkoutSummary,
   useWorkoutOwner,
   useWorkoutsBetween,
 } from '@/features/workouts/hooks/useWorkoutQueries';
@@ -49,7 +49,7 @@ export function useDaySheetViewModel(date: ISODate | null) {
   const record = useTrainingDays(owner, day, day);
   const window = useDayWindow(owner, day);
   const workouts = useWorkoutsBetween(owner, day, day);
-  const active = useActiveWorkout(owner);
+  const active = useActiveWorkoutSummary(owner);
 
   const row = record.data?.[0] ?? null;
   const level = row?.level ?? 0;

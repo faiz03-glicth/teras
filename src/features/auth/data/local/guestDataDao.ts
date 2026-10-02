@@ -3,7 +3,10 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 import {
   appMeta,
   exerciseFavourites,
+  exercises,
   profiles,
+  routineExercises,
+  routines,
   workoutDays,
   workoutExercises,
   workouts,
@@ -37,6 +40,24 @@ export function createGuestDataDao(db: AppDatabase): GuestDataDao {
           .where(isNull(workoutExercises.userId))
           .run();
         tx.update(workoutSets).set({ userId, updatedAt: now }).where(isNull(workoutSets.userId)).run();
+        // Exercises the guest created. Built-in ones have no owner either, so only custom rows move.
+        tx.update(exercises)
+          .set({ userId, updatedAt: now })
+          .where(and(isNull(exercises.userId), eq(exercises.isCustom, true)))
+          .run();
+        // Routines the guest built, and their exercises. The starters have no owner either, and stay so.
+        tx.update(routines)
+          .set({ userId, updatedAt: now })
+          .where(and(isNull(routines.userId), eq(routines.isStarter, false)))
+          .run();
+        const accountRoutines = tx
+          .select({ id: routines.id })
+          .from(routines)
+          .where(eq(routines.userId, userId));
+        tx.update(routineExercises)
+          .set({ userId, updatedAt: now })
+          .where(and(isNull(routineExercises.userId), inArray(routineExercises.routineId, accountRoutines)))
+          .run();
         // Favourites: the account keeps one of each, so a guest favourite it already has is dropped first.
         const accountFavourites = tx
           .select({ exerciseId: exerciseFavourites.exerciseId })

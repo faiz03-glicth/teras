@@ -47,6 +47,44 @@ export function useActiveWorkout(owner: WorkoutOwner) {
   });
 }
 
+/** The workout in progress as the screens around it show it: what it is, not what is in each set. */
+export interface ActiveWorkoutSummary {
+  id: string;
+  name: string;
+  date: ISODate;
+  startedAt: string;
+  exerciseCount: number;
+  setsDone: number;
+}
+
+function summariseActive(workout: Workout | null): ActiveWorkoutSummary | null {
+  if (!workout) return null;
+  const sets = workout.exercises.flatMap((exercise) => exercise.sets);
+  return {
+    id: workout.id,
+    name: workout.name,
+    date: workout.date,
+    startedAt: workout.startedAt,
+    exerciseCount: workout.exercises.length,
+    setsDone: sets.filter((set) => set.status === 'done').length,
+  };
+}
+
+/**
+ * The workout in progress, summarised. Every digit typed into a set replaces the workout in the cache;
+ * Home, the Workout tab and the rest only redraw when this summary changes (a set ticked, an exercise
+ * added), not on every keystroke behind them. Same query as `useActiveWorkout`, read once.
+ */
+export function useActiveWorkoutSummary(owner: WorkoutOwner) {
+  const { workouts } = useRepositories();
+  return useQuery({
+    queryKey: workoutKeys.active(owner),
+    queryFn: () => workouts.active(owner),
+    select: summariseActive,
+    networkMode: 'always',
+  });
+}
+
 /**
  * Puts a workout the repository just returned straight into the cache. Every change returns the whole
  * workout, so the screen never re-reads the database after an edit — the set you ticked is already there.

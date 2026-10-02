@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { processColor } from 'react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
@@ -90,6 +91,20 @@ describe('what the exercise is', () => {
 
     expect(await screen.findByLabelText('Primary, Chest')).toBeTruthy();
     expect(screen.getByLabelText('Secondary, Triceps, Shoulders')).toBeTruthy();
+  });
+
+  it('shows them on the body, the main one strongest', async () => {
+    const { theme } = detail('bench-press-barbell');
+    // The drawing is hidden from screen readers: the rows beside it name the muscles.
+    const fillOf = (name: string) =>
+      screen.getByTestId(`region-${name}`, { includeHiddenElements: true }).props.fill;
+    // How react-native-svg hands a plain colour to the native view.
+    const svgColor = (color: string) => ({ type: 0, payload: processColor(color) });
+
+    expect(await screen.findByLabelText('Primary, Chest')).toBeTruthy();
+    expect(fillOf('pectorals')).toEqual(svgColor(theme.heat[4]));
+    expect(fillOf('triceps')).toEqual(svgColor(theme.heat[2]));
+    expect(fillOf('quadriceps')).toEqual(svgColor(theme.colors.border));
   });
 
   it('suggests more for the same muscle, and opens one', async () => {

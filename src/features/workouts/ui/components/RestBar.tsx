@@ -1,33 +1,47 @@
+import { useCallback, useEffect } from 'react';
 import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import { formatRest } from '@/features/training/domain/preferences';
+import { restClock, restLeft } from '@/features/workouts/domain/rest';
 import { Button, Icon, Text } from '@/shared/ui';
 
+import { useClockValue } from '../useClockValue';
+
 export interface RestBarProps {
-  /** "1:24". */
-  clock: string;
-  /** "Rest, 1 min 24 s left": what a screen reader hears instead of a ticking clock. */
-  accessibilityLabel: string;
+  /** When the rest is over (ISO). */
+  endsAt: string;
   onLess: () => void;
   onMore: () => void;
   onSkip: () => void;
+  /** The countdown reached zero (or had already, when the workout was opened). */
+  onOver: () => void;
 }
 
 /**
  * The rest between sets, docked under the workout (the prototype's rest bar): the countdown stays in view
- * while sets are still being filled in, and nothing has to be closed to carry on.
+ * while sets are still being filled in, and nothing has to be closed to carry on. It counts itself down,
+ * so the seconds redraw this bar and nothing else.
  */
-export function RestBar({ clock, accessibilityLabel, onLess, onMore, onSkip }: RestBarProps) {
+export function RestBar({ endsAt, onLess, onMore, onSkip, onOver }: RestBarProps) {
   const { theme } = useUnistyles();
+  const left = useClockValue(useCallback((now: number) => restLeft(endsAt, now), [endsAt]));
+
+  useEffect(() => {
+    if (left <= 0) onOver();
+  }, [left, onOver]);
+
+  if (left <= 0) return null;
   return (
     <View style={styles.bar} testID="rest-bar">
-      <View style={styles.time} accessible accessibilityLabel={accessibilityLabel}>
+      {/* What a screen reader hears instead of a ticking clock. */}
+      <View style={styles.time} accessible accessibilityLabel={`Rest, ${formatRest(left)} left`}>
         <Icon name="clock" size={18} color={theme.colors.accentText} />
         <Text variant="sub" tone="secondary">
           Rest
         </Text>
         <Text variant="title3" style={styles.clock}>
-          {clock}
+          {restClock(left)}
         </Text>
       </View>
       <View style={styles.actions}>

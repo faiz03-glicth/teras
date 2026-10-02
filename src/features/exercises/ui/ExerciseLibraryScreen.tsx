@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native-unistyles';
 
-import { NavBar, Screen, Text } from '@/shared/ui';
+import { Button, NavBar, Screen, Text } from '@/shared/ui';
 
 import { ExerciseBrowser } from './components/ExerciseBrowser';
 import { useExerciseLibraryViewModel } from './useExerciseLibraryViewModel';
@@ -11,7 +11,18 @@ export function ExerciseLibraryScreen() {
 
   return (
     <Screen scroll keyboard testID="exercise-library-screen" contentStyle={styles.content}>
-      <NavBar onBack={vm.onBack} />
+      <NavBar
+        onBack={vm.onBack}
+        right={
+          <Button
+            label="Create"
+            icon="plus"
+            variant="quiet"
+            onPress={vm.browser.onCreate}
+            testID="exercise-create"
+          />
+        }
+      />
 
       <Text variant="title" accessibilityRole="header">
         Exercises

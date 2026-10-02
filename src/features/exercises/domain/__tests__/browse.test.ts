@@ -66,3 +66,42 @@ describe('muscleBadge', () => {
     expect(muscleBadge('upper_back')).toBe('UP');
   });
 });
+
+describe('browserSections, filtered by muscle and equipment', () => {
+  const library = [
+    row('bench', 'Bench Press (Barbell)', { secondaryMuscles: ['triceps'] }),
+    row('dips', 'Bench Dip', {
+      equipment: 'bodyweight',
+      primaryMuscle: 'triceps',
+      secondaryMuscles: ['chest'],
+    }),
+    row('fly', 'Chest Fly (Dumbbell)', { equipment: 'dumbbell' }),
+    row('curl', 'Bicep Curl (Dumbbell)', { equipment: 'dumbbell', primaryMuscle: 'biceps' }),
+  ];
+  const none = { query: '', favouriteIds: ['curl'], recentIds: ['bench'] };
+
+  it('finds every exercise that works a muscle, those it works most first', () => {
+    const sections = browserSections(library, { ...none, muscle: 'chest' });
+
+    expect(sections.filtered).toBe(true);
+    expect(sections.favourites).toEqual([]);
+    expect(sections.matches.map((one) => one.id)).toEqual(['bench', 'fly', 'dips']);
+  });
+
+  it('narrows to one kind of equipment', () => {
+    expect(browserSections(library, { ...none, equipment: 'dumbbell' }).matches.map((one) => one.id)).toEqual(
+      ['fly', 'curl'],
+    );
+  });
+
+  it('combines a muscle, equipment and a search', () => {
+    expect(
+      browserSections(library, { ...none, muscle: 'chest', equipment: 'dumbbell' }).matches.map(
+        (one) => one.id,
+      ),
+    ).toEqual(['fly']);
+    expect(
+      browserSections(library, { ...none, query: 'bench', muscle: 'chest' }).matches.map((one) => one.id),
+    ).toEqual(['bench', 'dips']);
+  });
+});

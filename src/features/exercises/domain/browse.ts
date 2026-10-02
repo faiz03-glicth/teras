@@ -1,4 +1,4 @@
-import type { ExerciseRow, Muscle } from '@/core/db/schema';
+import type { Equipment, ExerciseRow, Muscle } from '@/core/db/schema';
 
 import { MUSCLE_LABELS } from './labels';
 import { searchExercises } from './search';
@@ -16,21 +16,36 @@ export interface BrowserSections {
   filtered: boolean;
 }
 
+export interface BrowserFilters {
+  query: string;
+  favouriteIds: readonly string[];
+  recentIds: readonly string[];
+  /** Only exercises working this muscle, mainly or as a secondary one. */
+  muscle?: Muscle | null;
+  equipment?: Equipment | null;
+}
+
+/** PURE: the exercises working a muscle, those it works most (its primary) before the rest. */
+function working(rows: readonly ExerciseRow[], muscle: Muscle): ExerciseRow[] {
+  return [
+    ...rows.filter((row) => row.primaryMuscle === muscle),
+    ...rows.filter((row) => row.primaryMuscle !== muscle && row.secondaryMuscles.includes(muscle)),
+  ];
+}
+
 /**
  * PURE: the exercise browser's sections, as the prototype lays them out: Favourites, Recent, then all
- * exercises, or only the matches while searching. A favourite or recent exercise no longer in the
- * library (a deleted custom one) is passed over.
+ * exercises, or only the matches while searching or filtering by muscle or equipment. A favourite or
+ * recent exercise no longer in the library (a deleted custom one) is passed over.
  */
 export function browserSections(
   rows: readonly ExerciseRow[],
-  {
-    query,
-    favouriteIds,
-    recentIds,
-  }: { query: string; favouriteIds: readonly string[]; recentIds: readonly string[] },
+  { query, favouriteIds, recentIds, muscle = null, equipment = null }: BrowserFilters,
 ): BrowserSections {
-  const filtered = query.trim() !== '';
+  const filtered = query.trim() !== '' || muscle !== null || equipment !== null;
   const byId = new Map(rows.map((row) => [row.id, row]));
+  const ofEquipment = equipment === null ? rows : rows.filter((row) => row.equipment === equipment);
+  const candidates = muscle === null ? ofEquipment : working(ofEquipment, muscle);
   const pick = (ids: readonly string[]) =>
     filtered
       ? []
@@ -41,7 +56,7 @@ export function browserSections(
   return {
     favourites: pick(favouriteIds),
     recent: pick(recentIds),
-    matches: searchExercises(rows, query),
+    matches: searchExercises(candidates, query),
     filtered,
   };
 }

@@ -221,3 +221,55 @@ describe('recent exercises', () => {
     expect(await repo.recent(USER, 5)).toHaveLength(5);
   });
 });
+
+describe('creating an exercise', () => {
+  it("adds the person's own exercise to their library, measured by its equipment", async () => {
+    const { repo } = await setup();
+
+    const created = await repo.create(USER, {
+      name: 'Landmine Press',
+      equipment: 'barbell',
+      primaryMuscle: 'shoulders',
+    });
+    const pushUp = await repo.create(USER, {
+      name: 'Deficit Push Up',
+      equipment: 'bodyweight',
+      primaryMuscle: 'chest',
+    });
+
+    expect(created).toMatchObject({
+      ok: true,
+      exercise: {
+        name: 'Landmine Press',
+        userId: USER,
+        isCustom: true,
+        type: 'weighted',
+        secondaryMuscles: [],
+      },
+    });
+    expect(pushUp).toMatchObject({ ok: true, exercise: { type: 'bodyweight' } });
+    expect((await repo.list(USER)).some((row) => row.name === 'Landmine Press')).toBe(true);
+    expect((await repo.list('user-2')).some((row) => row.name === 'Landmine Press')).toBe(false);
+  });
+
+  it('refuses a name already in the library, and adds nothing', async () => {
+    const { repo } = await setup();
+
+    const result = await repo.create(USER, { name: 'plank', equipment: 'bodyweight', primaryMuscle: 'abs' });
+
+    expect(result).toEqual({ ok: false, reason: 'Plank is already in your exercises' });
+    expect(await repo.list(USER)).toHaveLength(104);
+  });
+
+  it("lets a guest create one, which becomes the account's on signing in", async () => {
+    const { db, repo } = await setup();
+    await repo.create(null, { name: 'Landmine Press', equipment: 'barbell', primaryMuscle: 'shoulders' });
+
+    await createGuestDataDao(db).reassignGuestData('guest-1', USER, '2026-10-01T10:00:00.000Z');
+
+    expect((await repo.list(USER)).find((row) => row.name === 'Landmine Press')).toMatchObject({
+      userId: USER,
+    });
+    expect(await repo.list(null)).toHaveLength(104);
+  });
+});

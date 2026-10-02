@@ -5,6 +5,7 @@ import { Button, Card, EmptyState, ErrorState, LoadingState, SectionLabel, TextF
 
 import type { ExerciseBrowserModel } from '../useExerciseBrowser';
 import { ExerciseRow } from './ExerciseRow';
+import { FilterButton } from './FilterButton';
 
 export interface ExerciseBrowserProps {
   browser: ExerciseBrowserModel;
@@ -13,8 +14,9 @@ export interface ExerciseBrowserProps {
 }
 
 /**
- * Search, then the lists: Favourites and Recent first, then every exercise (or the matches), forty at a
- * time. Shared by Add exercise and the Exercise library; each says what picking one does.
+ * Search and the equipment and muscle filters, then the lists: Favourites and Recent first, then every
+ * exercise (or the matches), forty at a time. Shared by Add exercise and the Exercise library; each says
+ * what picking one does.
  */
 export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProps) {
   return (
@@ -30,6 +32,23 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
         returnKeyType="search"
         testID="exercise-search"
       />
+
+      <View style={styles.filters}>
+        <FilterButton
+          label={browser.equipmentFilter.label}
+          active={browser.equipmentFilter.active}
+          onPress={browser.onOpenEquipment}
+          accessibilityLabel={browser.equipmentFilter.accessibilityLabel}
+          testID="exercise-filter-equipment"
+        />
+        <FilterButton
+          label={browser.muscleFilter.label}
+          active={browser.muscleFilter.active}
+          onPress={browser.onOpenMuscle}
+          accessibilityLabel={browser.muscleFilter.accessibilityLabel}
+          testID="exercise-filter-muscle"
+        />
+      </View>
 
       {browser.status === 'loading' && <LoadingState label="Loading exercises" />}
       {browser.status === 'error' && (
@@ -69,8 +88,9 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
           <EmptyState
             icon="search"
             title="No exercise matches"
-            body="Check the spelling, or clear the search."
-            action={{ label: 'Clear', onPress: browser.onClear }}
+            body="Check the spelling, clear a filter, or create it yourself."
+            secondaryAction={{ label: 'Clear', onPress: browser.onClear }}
+            action={{ label: 'Create exercise', onPress: browser.onCreate }}
           />
         </Card>
       )}
@@ -79,5 +99,7 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
 }
 
 const styles = StyleSheet.create((theme) => ({
+  // Close under the search, as one control: what to look for, then where.
+  filters: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: -theme.spacing.sm },
   group: { gap: theme.spacing.sm },
 }));

@@ -19,6 +19,7 @@ import {
   Text,
 } from '@/shared/ui';
 
+import { BodyMap } from './components/BodyMap';
 import { useExerciseDetailViewModel, type ExerciseDetailViewModel } from './useExerciseDetailViewModel';
 
 /**
@@ -78,8 +79,11 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
       </View>
 
       <Card style={styles.muscles}>
-        <Muscle label="Primary" value={vm.primary} />
-        <Muscle label="Secondary" value={vm.secondary} />
+        <BodyMap highlight={vm.highlight} width={118} />
+        <View style={styles.muscleList}>
+          <Muscle label="Primary" value={vm.primary} shade="primary" />
+          <Muscle label="Secondary" value={vm.secondary} shade="secondary" />
+        </View>
       </Card>
 
       {vm.canAdd && (
@@ -156,9 +160,14 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
   );
 }
 
-function Muscle({ label, value }: { label: string; value: string }) {
+/** A muscle row, keyed to the body map by the colour its muscles are shaded in. */
+function Muscle({ label, value, shade }: { label: string; value: string; shade: 'primary' | 'secondary' }) {
+  const { theme } = useUnistyles();
   return (
     <View style={styles.muscle} accessible accessibilityLabel={`${label}, ${value}`}>
+      <View
+        style={[styles.swatch, { backgroundColor: shade === 'primary' ? theme.heat[4] : theme.heat[2] }]}
+      />
       <Text variant="footnote" tone="secondary" style={styles.muscleLabel}>
         {label}
       </Text>
@@ -204,9 +213,11 @@ const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
   head: { gap: theme.spacing.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs },
-  muscles: { gap: theme.spacing.sm },
-  muscle: { flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.md },
-  muscleLabel: { width: 84 },
+  muscles: { gap: theme.spacing.md },
+  muscleList: { gap: theme.spacing.sm },
+  muscle: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  swatch: { width: 10, height: 10, borderRadius: 3 },
+  muscleLabel: { width: 78 },
   muscleValue: { flex: 1 },
   stats: { flexDirection: 'row', gap: theme.spacing.md },
   stat: { flex: 1 },

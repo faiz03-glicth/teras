@@ -7,6 +7,7 @@ import Check from 'lucide-react-native/icons/check';
 import ChevronDown from 'lucide-react-native/icons/chevron-down';
 import ChevronLeft from 'lucide-react-native/icons/chevron-left';
 import ChevronRight from 'lucide-react-native/icons/chevron-right';
+import ChevronUp from 'lucide-react-native/icons/chevron-up';
 import CircleAlert from 'lucide-react-native/icons/circle-alert';
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
 import Clock from 'lucide-react-native/icons/clock';
@@ -58,6 +59,7 @@ export const ICONS = {
   'chevron-down': ChevronDown,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
+  'chevron-up': ChevronUp,
   clock: Clock,
   close: X,
   code: Code,

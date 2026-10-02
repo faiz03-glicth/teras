@@ -1,6 +1,6 @@
 import type { Href } from 'expo-router';
 
-import type { AuthIntent, ISODate, OnboardingStep, Tab } from './types';
+import type { AddExerciseTarget, AuthIntent, ISODate, OnboardingStep, Tab } from './types';
 
 /** The ONLY place route paths are written. Every action builds its destination here. */
 export const routes = {
@@ -12,8 +12,15 @@ export const routes = {
   onboarding: (step: OnboardingStep): Href => ({ pathname: '/onboarding', params: { step: String(step) } }),
   login: (intent: AuthIntent): Href => ({ pathname: '/login', params: { intent } }),
   activeWorkout: (): Href => '/workout/active',
-  addExercise: (): Href => '/workout/add-exercise',
+  addExercise: (target: AddExerciseTarget = 'workout'): Href =>
+    target === 'workout'
+      ? '/workout/add-exercise'
+      : { pathname: '/workout/add-exercise', params: { target } },
+  routine: (id: string): Href => ({ pathname: '/routine/[id]', params: { id } }),
   exerciseLibrary: (): Href => '/exercises',
   exercise: (id: string): Href => ({ pathname: '/exercise/[id]', params: { id } }),
+  muscleFilter: (): Href => '/muscle-filter',
+  equipmentFilter: (): Href => '/equipment-filter',
+  createExercise: (): Href => '/create-exercise',
   workoutSaved: (id: string): Href => ({ pathname: '/workout/saved/[id]', params: { id } }),
 };

@@ -11,9 +11,11 @@ export interface EmptyStateProps {
   title: string;
   body?: string;
   action?: { label: string; onPress: () => void };
+  /** A second, lesser way out ("Clear"), beside the action. */
+  secondaryAction?: { label: string; onPress: () => void };
 }
 
-export function EmptyState({ icon, title, body, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, body, action, secondaryAction }: EmptyStateProps) {
   const { theme } = useUnistyles();
   return (
     <View style={styles.root}>
@@ -29,8 +31,15 @@ export function EmptyState({ icon, title, body, action }: EmptyStateProps) {
         </Text>
       ) : null}
       {action && (
-        <View style={styles.action}>
-          <Button label={action.label} onPress={action.onPress} />
+        <View style={styles.actions}>
+          {secondaryAction && (
+            <View style={styles.half}>
+              <Button label={secondaryAction.label} variant="secondary" onPress={secondaryAction.onPress} />
+            </View>
+          )}
+          <View style={styles.half}>
+            <Button label={action.label} onPress={action.onPress} />
+          </View>
         </View>
       )}
     </View>
@@ -49,5 +58,6 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.xs,
   },
   body: { maxWidth: 300, lineHeight: 21 },
-  action: { alignSelf: 'stretch', marginTop: theme.spacing.sm },
+  actions: { alignSelf: 'stretch', flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.sm },
+  half: { flex: 1 },
 }));

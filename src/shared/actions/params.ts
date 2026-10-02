@@ -1,6 +1,6 @@
 import type { TabId } from '../config/tabs';
 import { isISODate } from '../lib/date/isoDate';
-import type { AuthIntent, ISODate, OnboardingStep } from './types';
+import type { AddExerciseTarget, AuthIntent, ISODate, OnboardingStep } from './types';
 
 /** Route params arrive as string | string[] | undefined; take the first value. */
 type RawParam = string | string[] | undefined;
@@ -35,6 +35,14 @@ const RECORD_ID = /^[A-Za-z0-9_-]{1,64}$/;
 export function parseRecordId(raw: RawParam): string | null {
   const value = first(raw)?.trim();
   return value && RECORD_ID.test(value) ? value : null;
+}
+
+/** The routine id that opens a new routine instead of a saved one: "/routine/new". */
+export const NEW_ROUTINE = 'new';
+
+/** The library adds to the routine being edited only when that is asked for; otherwise to the workout. */
+export function parseAddExerciseTarget(raw: RawParam): AddExerciseTarget {
+  return first(raw) === 'routine' ? 'routine' : 'workout';
 }
 
 /** Tab navigator route names → tab ids ("index" is Home). */

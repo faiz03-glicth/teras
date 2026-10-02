@@ -32,9 +32,13 @@ export default function AppLayout() {
       <Stack.Screen name="workout/saved/[id]" />
       <Stack.Screen name="exercises" />
       <Stack.Screen name="exercise/[id]" />
+      <Stack.Screen name="routine/[id]" />
       <Stack.Screen name="calendar" />
       <Stack.Screen name="session/[id]" />
       <Stack.Screen name="day/[date]" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      <Stack.Screen name="muscle-filter" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      <Stack.Screen name="equipment-filter" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      <Stack.Screen name="create-exercise" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
     </Stack>
   );
 }

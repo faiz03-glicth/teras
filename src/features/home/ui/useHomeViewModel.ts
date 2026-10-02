@@ -13,13 +13,14 @@ import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
 import { formatVolume, type WeightUnit } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
-import type { Workout, WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
+import type { WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
 import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countSets, countWorkouts, exercisePreview } from '@/features/workouts/domain/labels';
 import {
-  useActiveWorkout,
+  useActiveWorkoutSummary,
   useRecentWorkouts,
   useWorkoutOwner,
+  type ActiveWorkoutSummary,
 } from '@/features/workouts/hooks/useWorkoutQueries';
 import { goTab, openActiveWorkout, openCalendar, openDay, openSession } from '@/shared/actions';
 import { firstOfMonth, monthOf, weekdayLetters } from '@/shared/lib/date/calendar';
@@ -83,10 +84,9 @@ function feedEntry(summary: WorkoutSummary, today: ISODate, unit: WeightUnit): F
   };
 }
 
-function activeEntry(workout: Workout): ActiveEntry {
-  const done = workout.exercises.flatMap((exercise) => exercise.sets).filter((set) => set.status === 'done');
+function activeEntry(workout: ActiveWorkoutSummary): ActiveEntry {
   const started = `Started ${clockTime(workout.startedAt)}`;
-  const meta = done.length > 0 ? `${started} · ${countSets(done.length)} done` : started;
+  const meta = workout.setsDone > 0 ? `${started} · ${countSets(workout.setsDone)} done` : started;
   return { name: workout.name, meta, accessibilityLabel: `In progress: ${workout.name}. ${meta}.` };
 }
 
@@ -106,7 +106,7 @@ export function useHomeViewModel() {
   const from = firstOfMonth(months[0] ?? monthOf(today));
   const days = useTrainingDays(owner, from, today);
   const feed = useRecentWorkouts(owner, FEED_LIMIT);
-  const active = useActiveWorkout(owner);
+  const active = useActiveWorkoutSummary(owner);
 
   const levels = useMemo(() => new Map((days.data ?? []).map((day) => [day.date, day.level])), [days.data]);
   const wave = useMemo<HeatmapMonth[]>(

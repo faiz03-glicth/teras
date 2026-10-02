@@ -2,13 +2,14 @@ import { useCallback, useMemo, useRef } from 'react';
 
 import type { ExerciseRow, ExerciseType } from '@/core/db/schema';
 import { useRepositories } from '@/core/DiProvider';
+import type { Highlight } from '@/features/exercises/domain/bodyMap';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS } from '@/features/exercises/domain/labels';
 import { formatRest, formatWeight, LB_PER_KG, type WeightUnit } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { exerciseSummary, weeklyBests } from '@/features/workouts/domain/progress';
 import { setLabel } from '@/features/workouts/domain/session';
 import {
-  useActiveWorkout,
+  useActiveWorkoutSummary,
   useSetActiveWorkout,
   useWorkoutOwner,
 } from '@/features/workouts/hooks/useWorkoutQueries';
@@ -29,6 +30,7 @@ import {
 /** How many sessions the history lists, and how many exercises "More for" suggests. */
 const HISTORY_ROWS = 6;
 const SIMILAR = 4;
+const NO_HIGHLIGHT: Highlight = { primary: [], secondary: [] };
 /** The chart keeps room for twelve weeks, so a new exercise's few bars stay bar-shaped. */
 const CHART_SLOTS = 12;
 
@@ -80,7 +82,7 @@ export function useExerciseDetailViewModel(id: string | null) {
   const library = useExerciseList(owner);
   const favourites = useFavouriteIds(owner);
   const setFavourite = useSetFavourite(owner);
-  const { data: workout } = useActiveWorkout(owner);
+  const { data: workout } = useActiveWorkoutSummary(owner);
   const cacheWorkout = useSetActiveWorkout(owner);
   const adding = useRef(false);
 
@@ -215,6 +217,7 @@ export function useExerciseDetailViewModel(id: string | null) {
     secondary: row?.secondaryMuscles.length
       ? row.secondaryMuscles.map((one) => MUSCLE_LABELS[one]).join(', ')
       : 'None',
+    highlight: row ? { primary: [row.primaryMuscle], secondary: row.secondaryMuscles } : NO_HIGHLIGHT,
     favourite,
     canAdd: workout != null,
     stats: progress?.stats ?? [],

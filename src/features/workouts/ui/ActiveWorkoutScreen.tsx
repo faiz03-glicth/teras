@@ -3,9 +3,9 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { Button, Card, EmptyState, IconButton, NavBar, Screen, Text } from '@/shared/ui';
 
+import { LiveStats } from './components/LiveStats';
 import { RestBar } from './components/RestBar';
 import { SetRow, SetTableHeader } from './components/SetRow';
-import { StatsRow } from './components/StatsRow';
 import { useActiveWorkoutViewModel } from './useActiveWorkoutViewModel';
 
 /**
@@ -24,13 +24,13 @@ export function ActiveWorkoutScreen() {
       testID="active-workout-screen"
       contentStyle={styles.content}
       footer={
-        vm.rest && (
+        vm.restEndsAt && (
           <RestBar
-            clock={vm.rest.clock}
-            accessibilityLabel={vm.rest.accessibilityLabel}
+            endsAt={vm.restEndsAt}
             onLess={vm.onRestLess}
             onMore={vm.onRestMore}
             onSkip={vm.onSkipRest}
+            onOver={vm.onRestOver}
           />
         )
       }
@@ -41,7 +41,9 @@ export function ActiveWorkoutScreen() {
         <Text variant="title" accessibilityRole="header">
           {workout?.name ?? 'Workout'}
         </Text>
-        <StatsRow stats={vm.stats} testID="active-workout-stats" />
+        {workout && (
+          <LiveStats startedAt={workout.startedAt} stats={vm.stats} testID="active-workout-stats" />
+        )}
       </View>
 
       {empty && (

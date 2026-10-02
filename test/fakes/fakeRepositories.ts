@@ -4,6 +4,7 @@ import type { AuthUser } from '@/features/auth/domain/types';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { ExerciseRepository } from '@/features/exercises/data/ExerciseRepository';
+import type { RoutineRepository } from '@/features/routines/data/RoutineRepository';
 import type { WorkoutDayRepository } from '@/features/workoutDays/data/WorkoutDayRepository';
 import type { Workout, WorkoutRepository } from '@/features/workouts/data/WorkoutRepository';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
@@ -93,6 +94,7 @@ export function createFakeExerciseRepository(): FakeExerciseRepository {
     favourites: mockFn<Exercises['favourites']>(async () => []),
     setFavourite: mockFn<Exercises['setFavourite']>(async () => undefined),
     recent: mockFn<Exercises['recent']>(async () => []),
+    create: mockFn<Exercises['create']>(async () => ({ ok: false, reason: 'Not set up in this test' })),
   };
 }
 
@@ -139,12 +141,25 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
   };
 }
 
+type Routines = RoutineRepository;
+export type FakeRoutineRepository = { [K in keyof Routines]: jest.Mock };
+
+/** No routine to open; saving succeeds as a new routine. */
+export function createFakeRoutineRepository(): FakeRoutineRepository {
+  return {
+    get: mockFn<Routines['get']>(async () => null),
+    save: mockFn<Routines['save']>(async () => ({ ok: true, id: 'routine-1' })),
+    remove: mockFn<Routines['remove']>(async () => undefined),
+  };
+}
+
 export function createFakeRepositories(): Repositories & {
   auth: FakeAuthRepository;
   profile: FakeProfileRepository;
   workoutDays: FakeWorkoutDayRepository;
   exercises: FakeExerciseRepository;
   workouts: FakeWorkoutRepository;
+  routines: FakeRoutineRepository;
 } {
   return {
     auth: createFakeAuthRepository(),
@@ -152,5 +167,6 @@ export function createFakeRepositories(): Repositories & {
     workoutDays: createFakeWorkoutDayRepository(),
     exercises: createFakeExerciseRepository(),
     workouts: createFakeWorkoutRepository(),
+    routines: createFakeRoutineRepository(),
   };
 }

@@ -1,5 +1,6 @@
-import type { ExerciseRow } from '@/core/db/schema';
+import type { Equipment, ExerciseRow, Muscle } from '@/core/db/schema';
 
+import { checkNewExercise, typeForEquipment } from '../domain/custom';
 import { searchExercises } from '../domain/search';
 import type { ExerciseDao, ExerciseOwner } from './local/exerciseDao';
 
@@ -22,7 +23,20 @@ export interface ExerciseRepository {
   setFavourite(owner: ExerciseOwner, exerciseId: string, favourite: boolean): Promise<void>;
   /** The exercises most recently completed in a finished workout, the latest first. */
   recent(owner: ExerciseOwner, limit: number): Promise<string[]>;
+  /**
+   * Adds the owner's own exercise. Refused, with the reason to show, when it has no name or the name is
+   * already in their library.
+   */
+  create(owner: ExerciseOwner, input: NewExercise): Promise<CreatedExercise>;
 }
+
+export interface NewExercise {
+  name: string;
+  equipment: Equipment;
+  primaryMuscle: Muscle;
+}
+
+export type CreatedExercise = { ok: true; exercise: ExerciseRow } | { ok: false; reason: string };
 
 export interface LocalExerciseDeps {
   dao: ExerciseDao;
@@ -71,5 +85,27 @@ export class LocalExerciseRepository implements ExerciseRepository {
 
   async recent(owner: ExerciseOwner, limit: number): Promise<string[]> {
     return this.deps.dao.recentIds(owner, limit);
+  }
+
+  async create(owner: ExerciseOwner, input: NewExercise): Promise<CreatedExercise> {
+    const { dao, uuid, now } = this.deps;
+    const check = checkNewExercise(await dao.list(owner), input.name);
+    if (!check.ok) return check;
+    const timestamp = now();
+    const exercise = await dao.insertExercise({
+      id: uuid(),
+      userId: owner,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      name: check.name,
+      equipment: input.equipment,
+      primaryMuscle: input.primaryMuscle,
+      // Only what was asked for: the form has no secondary muscles or compound switch, so none are guessed.
+      secondaryMuscles: [],
+      type: typeForEquipment(input.equipment),
+      isCompound: false,
+      isCustom: true,
+    });
+    return { ok: true, exercise };
   }
 }

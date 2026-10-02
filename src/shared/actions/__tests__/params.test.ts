@@ -1,5 +1,6 @@
 import {
   onboardingStepOf,
+  parseAddExerciseTarget,
   parseAuthIntent,
   parseISODate,
   parseOnboardingStep,
@@ -41,6 +42,14 @@ describe('route param parsers', () => {
     expect(parseRecordId(['w1'])).toBe('w1');
     for (const raw of [undefined, '', '   ', '../etc', 'a b', 'x'.repeat(65)]) {
       expect(parseRecordId(raw)).toBeNull();
+    }
+  });
+
+  it('adds to a routine only when asked to, and otherwise to the workout', () => {
+    expect(parseAddExerciseTarget('routine')).toBe('routine');
+    expect(parseAddExerciseTarget(['routine'])).toBe('routine');
+    for (const raw of [undefined, '', 'workout', 'Routine', 'x']) {
+      expect(parseAddExerciseTarget(raw)).toBe('workout');
     }
   });
 

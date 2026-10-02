@@ -3,15 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useRepositories } from '@/core/DiProvider';
-import { formatRest, formatVolume, REST_SECONDS } from '@/features/training/domain/preferences';
+import { formatVolume, REST_SECONDS } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { goBack, openAddExercise, openWorkoutSaved } from '@/shared/actions';
-import { formatDuration } from '@/shared/lib/format/formatDuration';
 import { haptics } from '@/shared/lib/haptics';
 import { showInfo } from '@/shared/ui/toast';
 
 import type { SetPatch, Workout } from '../data/WorkoutRepository';
-import { restClock, restLeft } from '../domain/rest';
 import { previousText } from '../domain/setUnits';
 import { workoutTotals } from '../domain/totals';
 import {
@@ -23,23 +21,8 @@ import {
 } from '../hooks/useWorkoutQueries';
 import { useRestTimerStore } from '../state/restTimerStore';
 
-/** How often the clocks redraw: often enough that a countdown never visibly skips a second. */
-const TICK_MS = 250;
 /** A rest that ended this long before it was seen (the app was closed) is cleared without a word. */
 const STALE_REST_MS = 5000;
-
-/**
- * The time now, redrawn every `TICK_MS` while the screen is up. `refresh` reads the clock at once, for
- * a change (a rest started) that should not wait for the next tick to show.
- */
-function useNow(): [number, () => void] {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => clearInterval(timer);
-  }, []);
-  return [now, useCallback(() => setNow(Date.now()), [])];
-}
 
 /** The sets of a workout, counted: what is done and what is still unticked. */
 function setCounts(workout: Workout | null | undefined) {
@@ -53,44 +36,34 @@ const plural = (count: number, word: string) => `${count} ${word}${count === 1 ?
 /**
  * The rest between sets. It is kept outside the screen (`restTimerStore`), so leaving the workout and
  * coming back finds it still counting; it belongs to one workout, so a stale rest never shows on the next.
+ * Only its end time is held here: the rest bar counts itself down, so the seconds never redraw the screen.
  */
-function useRest(workoutId: string | undefined, now: number, refresh: () => void) {
+function useRest(workoutId: string | undefined) {
   const endsAt = useRestTimerStore((state) =>
     workoutId !== undefined && state.workoutId === workoutId ? state.endsAt : null,
   );
   const start = useRestTimerStore((state) => state.start);
   const adjust = useRestTimerStore((state) => state.adjust);
   const stop = useRestTimerStore((state) => state.stop);
-  const left = restLeft(endsAt, now);
-
-  // Over: say so once, if it ended while the workout was in view.
-  useEffect(() => {
-    if (endsAt === null || left > 0) return;
-    stop();
-    if (now - new Date(endsAt).getTime() > STALE_REST_MS) return;
-    haptics.success();
-    showInfo({ title: 'Rest over', sub: 'Next set' });
-  }, [endsAt, left, now, stop]);
 
   return {
-    resting: endsAt !== null && left > 0,
-    left,
+    endsAt,
     start: useCallback(
       (seconds: number) => {
-        if (!workoutId) return;
-        start(workoutId, seconds, Date.now());
-        refresh();
+        if (workoutId) start(workoutId, seconds, Date.now());
       },
-      [refresh, start, workoutId],
+      [start, workoutId],
     ),
-    adjust: useCallback(
-      (direction: 1 | -1) => {
-        adjust(direction, Date.now());
-        refresh();
-      },
-      [adjust, refresh],
-    ),
+    adjust: useCallback((direction: 1 | -1) => adjust(direction, Date.now()), [adjust]),
     stop,
+    /** Over: say so once, if it ended while the workout was in view. */
+    over: useCallback(() => {
+      if (endsAt === null) return;
+      stop();
+      if (Date.now() - new Date(endsAt).getTime() > STALE_REST_MS) return;
+      haptics.success();
+      showInfo({ title: 'Rest over', sub: 'Next set' });
+    }, [endsAt, stop]),
   };
 }
 
@@ -112,8 +85,7 @@ export function useActiveWorkoutViewModel() {
   const { data: previous } = usePreviousSets(owner, exerciseIds);
   const cacheWorkout = useSetActiveWorkout(owner);
   const queryClient = useQueryClient();
-  const [now, refresh] = useNow();
-  const rest = useRest(workout?.id, now, refresh);
+  const rest = useRest(workout?.id);
   const { start: startRest, stop: stopRest } = rest;
   const [finishing, setFinishing] = useState(false);
   // A workout that ends while this screen is open should leave, but only once.
@@ -267,7 +239,6 @@ export function useActiveWorkoutViewModel() {
     goBack();
   }, [isPending, workout]);
 
-  const elapsed = workout ? (now - new Date(workout.startedAt).getTime()) / 1000 : 0;
   const totals = workout ? workoutTotals(workout) : null;
 
   return {
@@ -276,14 +247,14 @@ export function useActiveWorkoutViewModel() {
     exercises,
     unit,
     finishing,
+    /** Volume and Sets; Time counts up beside them on its own clock. */
     stats: [
-      { label: 'Time', value: formatDuration(elapsed) },
       { label: 'Volume', value: formatVolume(totals?.volumeKg ?? 0, unit) },
       { label: 'Sets', value: String(done) },
     ],
-    rest: rest.resting
-      ? { clock: restClock(rest.left), accessibilityLabel: `Rest, ${formatRest(rest.left)} left` }
-      : null,
+    /** When the rest under way ends, or null with none. */
+    restEndsAt: rest.endsAt,
+    onRestOver: rest.over,
     onRestLess: () => rest.adjust(-1),
     onRestMore: () => rest.adjust(1),
     onSkipRest: stopRest,

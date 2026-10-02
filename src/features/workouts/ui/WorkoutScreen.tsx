@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Button, Card, EmptyState, ListRow, Screen, SectionLabel, Text } from '@/shared/ui';
+import { Button, Card, EmptyState, IconButton, ListRow, Screen, SectionLabel, Text } from '@/shared/ui';
 
 import { useWorkoutViewModel } from './useWorkoutViewModel';
 
@@ -22,7 +22,7 @@ export function WorkoutScreen() {
             <View style={styles.resume}>
               <Text variant="headline">{vm.inProgress.name}</Text>
               <Text variant="footnote" tone="secondary">
-                {summarise(vm.inProgress.exercises.length)}
+                {summarise(vm.inProgress.exerciseCount)}
               </Text>
               <Button label="Resume" onPress={vm.onResume} testID="workout-resume" />
             </View>
@@ -42,7 +42,17 @@ export function WorkoutScreen() {
       )}
 
       <View style={styles.group}>
-        <SectionLabel>Routines</SectionLabel>
+        <View style={styles.sectionHead}>
+          <SectionLabel>Routines</SectionLabel>
+          <Button
+            label="New routine"
+            icon="plus"
+            variant="quiet"
+            size="sm"
+            onPress={vm.onNewRoutine}
+            testID="routine-new"
+          />
+        </View>
         {vm.routines.length === 0 ? (
           <Card>
             <EmptyState icon="dumbbell" title="No routines yet" />
@@ -50,15 +60,26 @@ export function WorkoutScreen() {
         ) : (
           <Card tight divided>
             {vm.routines.map((routine) => (
-              <ListRow
-                key={routine.id}
-                title={routine.name}
-                description={routineLine(routine.exerciseCount, routine.exercises)}
-                descriptionLines={1}
-                trailing="chevron"
-                onPress={() => vm.onStartRoutine(routine.id)}
-                testID={`routine-${routine.id}`}
-              />
+              <View key={routine.id} style={styles.routine}>
+                <View style={styles.routineMain}>
+                  <ListRow
+                    title={routine.name}
+                    description={routineLine(routine.exerciseCount, routine.exercises)}
+                    descriptionLines={1}
+                    trailing="none"
+                    onPress={() => vm.onStartRoutine(routine.id)}
+                    accessibilityHint={routine.exerciseCount === 0 ? 'Opens it to fill' : 'Starts a workout'}
+                    testID={`routine-${routine.id}`}
+                  />
+                </View>
+                <IconButton
+                  icon="pencil"
+                  plain
+                  onPress={() => vm.onEditRoutine(routine.id)}
+                  accessibilityLabel={`Edit ${routine.name}`}
+                  testID={`routine-edit-${routine.id}`}
+                />
+              </View>
             ))}
           </Card>
         )}
@@ -80,7 +101,7 @@ export function WorkoutScreen() {
 
 /** "5 exercises · Bench Press, Overhead Press, …": the count is labelled, and the names cut to one line. */
 const routineLine = (count: number, names: readonly string[]) =>
-  `${count} exercise${count === 1 ? '' : 's'} · ${names.join(', ')}`;
+  count === 0 ? 'No exercises yet' : `${count} exercise${count === 1 ? '' : 's'} · ${names.join(', ')}`;
 
 const summarise = (count: number) =>
   count === 0 ? 'Nothing logged yet' : `${count} exercise${count === 1 ? '' : 's'}`;
@@ -88,5 +109,8 @@ const summarise = (count: number) =>
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
   group: { gap: theme.spacing.sm },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  routine: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  routineMain: { flex: 1 },
   resume: { gap: theme.spacing.md },
 }));

@@ -11,6 +11,8 @@ import {
   type ExerciseRepository,
 } from '@/features/exercises/data/ExerciseRepository';
 import { createProfileDao } from '@/features/profile/data/local/profileDao';
+import { createRoutineDao } from '@/features/routines/data/local/routineDao';
+import { LocalRoutineRepository, type RoutineRepository } from '@/features/routines/data/RoutineRepository';
 import { LocalFirstProfileRepository } from '@/features/profile/data/LocalFirstProfileRepository';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
 import { createProfileApi } from '@/features/profile/data/remote/profileApi';
@@ -39,6 +41,7 @@ export interface Repositories {
   workoutDays: WorkoutDayRepository;
   exercises: ExerciseRepository;
   workouts: WorkoutRepository;
+  routines: RoutineRepository;
 }
 
 /** Composition root: the only place concrete data sources and services are wired together. */
@@ -90,5 +93,11 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
-  return { auth, profile, workoutDays, exercises, workouts };
+  const routines = new LocalRoutineRepository({
+    dao: createRoutineDao(db),
+    uuid: expoCryptoService.uuid,
+    now: nowIso,
+  });
+
+  return { auth, profile, workoutDays, exercises, workouts, routines };
 }

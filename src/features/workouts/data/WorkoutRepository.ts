@@ -240,12 +240,15 @@ export class LocalWorkoutRepository implements WorkoutRepository {
   async routines(owner: WorkoutOwner): Promise<RoutineSummary[]> {
     const { dao } = this.deps;
     const rows = await dao.listRoutines(owner);
-    return Promise.all(
-      rows.map(async (row) => {
-        const names = await dao.routineExerciseNames(row.id);
-        return { id: row.id, name: row.name, exerciseCount: names.length, exercises: names };
-      }),
-    );
+    // Every routine's names in one read, not one read per routine.
+    const names = new Map<string, string[]>();
+    for (const { routineId, name } of await dao.routineExerciseNames(rows.map((row) => row.id))) {
+      names.set(routineId, [...(names.get(routineId) ?? []), name]);
+    }
+    return rows.map((row) => {
+      const exercises = names.get(row.id) ?? [];
+      return { id: row.id, name: row.name, exerciseCount: exercises.length, exercises };
+    });
   }
 
   async active(owner: WorkoutOwner): Promise<Workout | null> {

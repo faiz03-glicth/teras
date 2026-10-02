@@ -33,3 +33,36 @@ describe('the Workout tab', () => {
     expect(actions.openExerciseLibrary).toHaveBeenCalled();
   });
 });
+
+describe('routines on the Workout tab', () => {
+  function tab() {
+    const repositories = createFakeRepositories();
+    repositories.workouts.routines.mockResolvedValue([
+      { id: 'push', name: 'Push Day', exerciseCount: 1, exercises: ['Bench Press (Barbell)'] },
+      { id: 'arms', name: 'Arms', exerciseCount: 0, exercises: [] },
+    ]);
+    const { Wrapper } = createWrapper(repositories);
+    renderInScheme(<WorkoutScreen />, 'light', { wrapper: Wrapper });
+    return repositories;
+  }
+
+  it('makes a new routine, or opens one to edit', async () => {
+    tab();
+
+    fireEvent.press(await screen.findByRole('button', { name: 'New routine' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Push Day' }));
+
+    expect(actions.openNewRoutine).toHaveBeenCalled();
+    expect(actions.openRoutine).toHaveBeenCalledWith('push');
+  });
+
+  it('opens a routine with nothing in it to fill, rather than starting it', async () => {
+    const repositories = tab();
+
+    expect(await screen.findByText('No exercises yet')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('routine-arms'));
+
+    expect(actions.openRoutine).toHaveBeenCalledWith('arms');
+    expect(repositories.workouts.start).not.toHaveBeenCalled();
+  });
+});
