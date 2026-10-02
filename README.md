@@ -7,8 +7,7 @@ It is the companion app to **Streak**, a habit-logging app. Both apps share one 
 ## Status
 
 **First slice built:** Get Started → Set up → Sign in → Home, with Parchment and Walnut themes, plus the
-`workout_days` contract with Streak. Workout logging, the exercise library and the heatmap come next. See
-[handoff.md](handoff.md) for the full state.
+`workout_days` contract with Streak. Workout logging, the exercise library and the heatmap come next.
 
 | Doc | What it holds |
 |---|---|
@@ -24,5 +23,5 @@ The same stack as Streak, so the patterns carry over: Expo SDK 57 with Expo Rout
 
 ## Repositories
 
-- GitLab (source of truth): https://gitlab.com/faiz03-glicth/teras
+- GitLab: https://gitlab.com/faiz03-glicth/teras
 - GitHub (mirror): https://github.com/faiz03-glicth/teras
