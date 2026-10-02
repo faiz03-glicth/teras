@@ -2,8 +2,8 @@ import { memo } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { UNIT_SYSTEMS, type StepDirection, type WeightUnit } from '@/features/training/domain/preferences';
-import { Card, SectionLabel, SegmentedControl, Text, type SegmentOption } from '@/shared/ui';
+import type { StepDirection, ValueField, WeightUnit } from '@/features/training/domain/preferences';
+import { Card, SectionLabel, SegmentedControl, type SegmentOption } from '@/shared/ui';
 
 import { StepHeading } from './StepHeading';
 import { StepperRow } from './StepperRow';
@@ -14,14 +14,24 @@ export interface SetupStepProps {
   bodyweightLabel: string;
   heightLabel: string;
   restLabel: string;
+  /** What each value opens into when it is held, to be typed. */
+  bodyweightInput: readonly ValueField[];
+  heightInput: readonly ValueField[];
+  restInput: readonly ValueField[];
   onUnitChange: (unit: WeightUnit) => void;
   onBodyweightStep: (direction: StepDirection) => void;
   onHeightStep: (direction: StepDirection) => void;
   onRestStep: (direction: StepDirection) => void;
+  onBodyweightType: (parts: readonly string[]) => boolean;
+  onHeightType: (parts: readonly string[]) => boolean;
+  onRestType: (parts: readonly string[]) => boolean;
 }
 
 /**
- * Set up: units, bodyweight, height and default rest, asked once so they are never asked mid-workout.
+ * Set up: units, bodyweight, height and rest, asked once so they are never asked mid-workout. Each is a
+ * label, its value and its control — nothing to read first. A short hold on a value opens it for typing,
+ * for a number far from where it starts. One page, not four: every extra screen is a
+ * tap between opening Teras and logging a set.
  * A pager page: memoised, so it re-renders only when one of its own values changes.
  */
 export const SetupStep = memo(function SetupStep({
@@ -30,14 +40,20 @@ export const SetupStep = memo(function SetupStep({
   bodyweightLabel,
   heightLabel,
   restLabel,
+  bodyweightInput,
+  heightInput,
+  restInput,
   onUnitChange,
   onBodyweightStep,
   onHeightStep,
   onRestStep,
+  onBodyweightType,
+  onHeightType,
+  onRestType,
 }: SetupStepProps) {
   return (
     <View style={styles.step}>
-      <StepHeading title="Set up your training" body="You can change all of this later in Profile." />
+      <StepHeading title="Set up" />
 
       <View style={styles.group}>
         <SectionLabel>Units</SectionLabel>
@@ -50,44 +66,40 @@ export const SetupStep = memo(function SetupStep({
         />
       </View>
 
-      <View style={styles.group}>
-        <SectionLabel>Body</SectionLabel>
-        <Card tight divided>
-          <StepperRow
-            label={`Bodyweight (${UNIT_SYSTEMS[unit].weight})`}
-            value={bodyweightLabel}
-            onStep={onBodyweightStep}
-            decreaseLabel="Decrease bodyweight"
-            increaseLabel="Increase bodyweight"
-            testID="setup-bodyweight"
-          />
-          <StepperRow
-            label={`Height (${UNIT_SYSTEMS[unit].height})`}
-            value={heightLabel}
-            onStep={onHeightStep}
-            decreaseLabel="Decrease height"
-            increaseLabel="Increase height"
-            testID="setup-height"
-          />
-        </Card>
-        <Text variant="footnote" tone="secondary">
-          Bodyweight counts in pull-ups and dips. Hold − or + to run through the numbers.
-        </Text>
-      </View>
-
-      <View style={styles.group}>
-        <SectionLabel>Rest between sets</SectionLabel>
-        <Card tight>
-          <StepperRow
-            label="Default rest"
-            value={restLabel}
-            onStep={onRestStep}
-            decreaseLabel="Shorter rest"
-            increaseLabel="Longer rest"
-            testID="setup-rest"
-          />
-        </Card>
-      </View>
+      {/* One surface for the three numbers: each row is its own label, value and control. */}
+      <Card tight divided>
+        <StepperRow
+          label="Bodyweight"
+          value={bodyweightLabel}
+          onStep={onBodyweightStep}
+          input={bodyweightInput}
+          decimal
+          onType={onBodyweightType}
+          decreaseLabel="Decrease bodyweight"
+          increaseLabel="Increase bodyweight"
+          testID="setup-bodyweight"
+        />
+        <StepperRow
+          label="Height"
+          value={heightLabel}
+          onStep={onHeightStep}
+          input={heightInput}
+          onType={onHeightType}
+          decreaseLabel="Decrease height"
+          increaseLabel="Increase height"
+          testID="setup-height"
+        />
+        <StepperRow
+          label="Rest"
+          value={restLabel}
+          onStep={onRestStep}
+          input={restInput}
+          onType={onRestType}
+          decreaseLabel="Shorter rest"
+          increaseLabel="Longer rest"
+          testID="setup-rest"
+        />
+      </Card>
     </View>
   );
 });

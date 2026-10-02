@@ -1,12 +1,9 @@
 import { buildTheme } from '../buildTheme';
 import { HEAT_PALETTE_IDS } from '../tokens/heatPalettes';
-import type { ColorScheme, Theme, VisualStyle } from '../types';
+import type { ColorScheme, Theme } from '../types';
 
 const SCHEMES: ColorScheme[] = ['light', 'dark'];
-const STYLES: VisualStyle[] = ['classic', 'glass'];
-const COMBOS = SCHEMES.flatMap((scheme) =>
-  HEAT_PALETTE_IDS.flatMap((palette) => STYLES.map((style) => [scheme, palette, style] as const)),
-);
+const COMBOS = SCHEMES.flatMap((scheme) => HEAT_PALETTE_IDS.map((palette) => [scheme, palette] as const));
 
 const COLOR = /^(#[0-9A-F]{6}|rgba\(\d+,\d+,\d+,(0|1|0?\.\d+)\))$/i;
 
@@ -19,16 +16,16 @@ function collectStrings(value: unknown, path = ''): [string, string][] {
 }
 
 describe('buildTheme', () => {
-  it('covers all 16 scheme × palette × style combinations', () => {
-    expect(COMBOS).toHaveLength(16);
+  it('covers all 8 scheme × palette combinations', () => {
+    expect(COMBOS).toHaveLength(8);
   });
 
-  it.each(COMBOS)('%s / %s / %s produces a complete theme', (scheme, palette, style) => {
-    const theme: Theme = buildTheme(scheme, palette, style);
+  it.each(COMBOS)('%s / %s produces a complete theme', (scheme, palette) => {
+    const theme: Theme = buildTheme(scheme, palette);
 
     expect(theme.scheme).toBe(scheme);
     expect(theme.paletteId).toBe(palette);
-    expect(theme.style).toBe(style);
+    expect(theme.material.ground).toBe(theme.colors.canvas);
     expect(theme.heat).toHaveLength(5);
     expect(Object.keys(theme.activity).sort()).toEqual(['blue', 'green', 'orange', 'pink', 'purple', 'teal']);
 
@@ -41,19 +38,11 @@ describe('buildTheme', () => {
     for (const [path, color] of colors) {
       expect({ path, valid: COLOR.test(color) }).toEqual({ path, valid: true });
     }
-
-    if (style === 'glass') {
-      expect(theme.glass).not.toBeNull();
-      expect(theme.heat[0]).toBe(theme.glass?.heatEmpty);
-      expect(theme.colors.subtle).toBe(theme.glass?.tint);
-    } else {
-      expect(theme.glass).toBeNull();
-    }
   });
 
   it('matches the approved design tokens', () => {
-    const light = buildTheme('light', 'amber', 'classic');
-    const dark = buildTheme('dark', 'amber', 'classic');
+    const light = buildTheme('light', 'amber');
+    const dark = buildTheme('dark', 'amber');
 
     // Parchment and Walnut.
     expect(light.colors.canvas).toBe('#F6E7B6');
@@ -67,6 +56,6 @@ describe('buildTheme', () => {
   });
 
   it('is pure: identical inputs give equal themes', () => {
-    expect(buildTheme('dark', 'ocean', 'glass')).toEqual(buildTheme('dark', 'ocean', 'glass'));
+    expect(buildTheme('dark', 'ocean')).toEqual(buildTheme('dark', 'ocean'));
   });
 });

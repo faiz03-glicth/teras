@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -15,6 +16,10 @@ export type ListRowIconColor = ActivityColorKey | 'accent' | 'danger';
 export interface ListRowProps {
   title: string;
   description?: string;
+  /** Cut the description to this many lines with an ellipsis; unset lets it wrap. */
+  descriptionLines?: number;
+  /** Drawn before the text, in place of an icon (a day's heat swatch). */
+  leading?: ReactNode;
   icon?: IconName;
   iconColor?: ListRowIconColor;
   value?: string;
@@ -41,6 +46,8 @@ const resolveIconColor = (theme: Theme, color: ListRowIconColor): string =>
 export function ListRow({
   title,
   description,
+  descriptionLines,
+  leading,
   icon,
   iconColor = 'accent',
   value,
@@ -57,6 +64,7 @@ export function ListRow({
   const { theme } = useUnistyles();
   const body = (
     <>
+      {leading}
       {icon && <IconBadge icon={icon} color={resolveIconColor(theme, iconColor)} size={34} />}
       <View style={styles.text(centered)}>
         <Text
@@ -68,7 +76,7 @@ export function ListRow({
           {title}
         </Text>
         {description ? (
-          <Text variant="footnote" tone="secondary">
+          <Text variant="footnote" tone="secondary" numberOfLines={descriptionLines}>
             {description}
           </Text>
         ) : null}

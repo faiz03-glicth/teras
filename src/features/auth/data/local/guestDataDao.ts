@@ -1,6 +1,14 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 
-import { appMeta, profiles, workoutDays } from '@/core/db/schema';
+import {
+  appMeta,
+  exerciseFavourites,
+  profiles,
+  workoutDays,
+  workoutExercises,
+  workouts,
+  workoutSets,
+} from '@/core/db/schema';
 import type { AppDatabase } from '@/core/db/types';
 
 export interface GuestDataDao {
@@ -20,6 +28,28 @@ export function createGuestDataDao(db: AppDatabase): GuestDataDao {
         tx.update(workoutDays)
           .set({ userId, dirty: true, updatedAt: now })
           .where(isNull(workoutDays.userId))
+          .run();
+        // The workout in progress and everything logged in it, so signing in mid-session loses nothing.
+        // These stay on the device, so they are claimed but never marked to be sent.
+        tx.update(workouts).set({ userId, updatedAt: now }).where(isNull(workouts.userId)).run();
+        tx.update(workoutExercises)
+          .set({ userId, updatedAt: now })
+          .where(isNull(workoutExercises.userId))
+          .run();
+        tx.update(workoutSets).set({ userId, updatedAt: now }).where(isNull(workoutSets.userId)).run();
+        // Favourites: the account keeps one of each, so a guest favourite it already has is dropped first.
+        const accountFavourites = tx
+          .select({ exerciseId: exerciseFavourites.exerciseId })
+          .from(exerciseFavourites)
+          .where(eq(exerciseFavourites.userId, userId));
+        tx.delete(exerciseFavourites)
+          .where(
+            and(isNull(exerciseFavourites.userId), inArray(exerciseFavourites.exerciseId, accountFavourites)),
+          )
+          .run();
+        tx.update(exerciseFavourites)
+          .set({ userId, updatedAt: now })
+          .where(isNull(exerciseFavourites.userId))
           .run();
         tx.update(profiles)
           .set({ userId, deletedAt: now, updatedAt: now })

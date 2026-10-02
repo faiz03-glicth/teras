@@ -6,7 +6,6 @@ import { goBack, openLegal, openOnboarding } from '@/shared/actions';
 import { formatDuration } from '@/shared/lib/format/formatDuration';
 import { useCountdown } from '@/shared/lib/useCountdown';
 
-import { LOGIN_BENEFITS } from '../../config/benefits';
 import { LOGIN_STEPS, loginHeading, RESEND_COOLDOWN_SECONDS, type LoginStep } from '../../config/loginCopy';
 import { isValidEmail, normalizeEmail } from '../../domain/email';
 import type { AuthIntent } from '../../domain/types';
@@ -54,7 +53,6 @@ export function useLoginViewModel(intent: AuthIntent) {
     /** The step's place in the flow; the page transition's direction follows from it. */
     stepIndex: LOGIN_STEPS.indexOf(step),
     heading: loginHeading(step, intent, address),
-    benefits: LOGIN_BENEFITS,
     showSkip: intent === 'new',
     showApple: appleAvailable.data === true,
     busy,

@@ -72,6 +72,7 @@ export function Button({
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
       style={[styles.base(variant, size), { opacity: disabled && !loading ? 0.45 : 1 }, fade]}
+      pressedStyle={styles.pressed(variant)}
     >
       <ContentSwap id={loading ? `busy:${shownLabel}` : label} style={styles.content}>
         {loading ? (
@@ -98,18 +99,36 @@ const styles = StyleSheet.create((theme) => ({
     minHeight: size === 'sm' ? 36 : 40,
     paddingHorizontal: size === 'sm' ? theme.spacing.md + 2 : theme.spacing.lg,
     alignSelf: size === 'sm' ? ('flex-start' as const) : ('stretch' as const),
-    borderRadius: theme.radii.pill,
+    // A key on a console, not a pill: controlled corners read as a physical object.
+    borderRadius: theme.radii.control,
     justifyContent: 'center' as const,
     backgroundColor: {
-      primary: theme.colors.accent,
-      secondary: theme.glass ? theme.glass.strong : theme.colors.subtle,
+      primary: theme.material.accent.background,
+      secondary: theme.material.raised.background,
       ghost: 'transparent',
       quiet: 'transparent',
       danger: theme.colors.dangerSoft,
     }[variant],
-    // The gold fill always carries its dark outline (see tokens/brand.ts).
-    borderWidth: variant === 'primary' ? 1.5 : 0,
-    borderColor: theme.colors.accentEdge,
+    // Raised out of the material; text-only buttons stay flat, so they never compete with the action.
+    boxShadow: {
+      primary: theme.material.accent.shadow,
+      secondary: theme.material.raised.shadow,
+      ghost: undefined,
+      quiet: undefined,
+      danger: theme.material.raisedSm.shadow,
+    }[variant],
+    // The gold keeps its dark edge only where the material says gold alone would not separate.
+    borderWidth: variant === 'primary' && theme.material.accent.edge ? 1 : 0,
+    borderColor: theme.material.accent.edge ?? 'transparent',
+  }),
+  /** Under a finger: the lift gives way to a shallow press. Text-only buttons have no lift to lose. */
+  pressed: (variant: ButtonVariant) => ({
+    boxShadow:
+      variant === 'primary'
+        ? theme.material.accent.pressedShadow
+        : variant === 'ghost' || variant === 'quiet'
+          ? undefined
+          : theme.material.pressed.shadow,
   }),
   content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
 }));

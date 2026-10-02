@@ -26,6 +26,10 @@ interface TrainingPreferencesState extends TrainingPreferences {
   stepBodyweight: (direction: StepDirection) => void;
   stepHeight: (direction: StepDirection) => void;
   stepRest: (direction: StepDirection) => void;
+  /** A typed value, already read and kept in range by the domain (`parseBodyweightKg` and the rest). */
+  setBodyweightKg: (kg: number) => void;
+  setHeightCm: (cm: number) => void;
+  setRestSeconds: (seconds: number) => void;
 }
 
 export const DEFAULT_TRAINING_PREFERENCES: TrainingPreferences = {
@@ -51,6 +55,9 @@ export const useTrainingPreferencesStore = create<TrainingPreferencesState>()(
         set(({ heightCm, unit }) => ({ heightCm: stepHeightCm(heightCm, direction, unit) })),
       stepRest: (direction) =>
         set(({ restSeconds }) => ({ restSeconds: stepRestSeconds(restSeconds, direction) })),
+      setBodyweightKg: (bodyweightKg) => set({ bodyweightKg }),
+      setHeightCm: (heightCm) => set({ heightCm }),
+      setRestSeconds: (restSeconds) => set({ restSeconds }),
     }),
     {
       name: 'teras.training-preferences',

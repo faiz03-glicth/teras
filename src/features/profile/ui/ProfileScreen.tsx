@@ -32,9 +32,6 @@ export function ProfileScreen() {
           accessibilityLabel="Theme"
           testID="profile-theme"
         />
-        <Text variant="footnote" tone="secondary">
-          Parchment for bright gyms, Walnut for dim ones. System follows your phone.
-        </Text>
       </View>
 
       <View style={styles.group}>
@@ -53,7 +50,6 @@ export function ProfileScreen() {
         <Card tight divided>
           <ListRow
             title="Sound effects"
-            description="The phone's silent mode still applies"
             icon="volume"
             trailing="toggle"
             toggleValue={vm.soundEffects}
@@ -62,7 +58,6 @@ export function ProfileScreen() {
           />
           <ListRow
             title="Haptics"
-            description="Ticks and taps you can feel"
             icon="sparkles"
             trailing="toggle"
             toggleValue={vm.haptics}

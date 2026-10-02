@@ -4,6 +4,7 @@ import { childrenOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
 
 import { Avatar } from '../Avatar';
 import { Banner } from '../Banner';
+import { BarChart } from '../BarChart';
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { EmptyState } from '../EmptyState';
@@ -66,7 +67,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(screen.getByText('Skip')).toBeTruthy();
   });
 
-  it('Card uses the surface colour and draws dividers between rows', () => {
+  it('Card is the material raised, and draws dividers between rows', () => {
     const { theme, toJSON } = renderInScheme(
       <Card divided>
         <Text>One</Text>
@@ -76,7 +77,8 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       scheme,
     );
     const root = toJSON();
-    expect(styleOf(root).backgroundColor).toBe(theme.colors.surface);
+    expect(styleOf(root).backgroundColor).toBe(theme.material.raised.background);
+    expect(styleOf(root).boxShadow).toBe(theme.material.raised.shadow);
     expect(childrenOf(root).length).toBe(5);
   });
 
@@ -126,5 +128,22 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(screen.getByRole('header', { name: 'Nothing yet' })).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Add' }));
     expect(onPress).toHaveBeenCalled();
+  });
+});
+
+describe('BarChart', () => {
+  it('keeps room for a set number of bars, so a short history draws narrow bars, not wide ones', () => {
+    renderInScheme(
+      <BarChart values={[60, 62.5]} slots={12} accessibilityLabel="Best set each week" />,
+      'light',
+    );
+
+    expect(screen.getAllByTestId('bar-space')).toHaveLength(10);
+  });
+
+  it('needs no room kept once the bars fill it', () => {
+    renderInScheme(<BarChart values={[1, 2, 3]} slots={2} accessibilityLabel="Chart" />, 'light');
+
+    expect(screen.queryAllByTestId('bar-space')).toHaveLength(0);
   });
 });

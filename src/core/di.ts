@@ -5,6 +5,11 @@ import { expoCryptoService } from '@/features/auth/data/services/CryptoService';
 import { googleSignInService } from '@/features/auth/data/services/GoogleAuthService';
 import { SupabaseAuthRepository } from '@/features/auth/data/SupabaseAuthRepository';
 import type { AuthRepository } from '@/features/auth/data/AuthRepository';
+import { createExerciseDao } from '@/features/exercises/data/local/exerciseDao';
+import {
+  LocalExerciseRepository,
+  type ExerciseRepository,
+} from '@/features/exercises/data/ExerciseRepository';
 import { createProfileDao } from '@/features/profile/data/local/profileDao';
 import { LocalFirstProfileRepository } from '@/features/profile/data/LocalFirstProfileRepository';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
@@ -15,6 +20,8 @@ import {
   LocalFirstWorkoutDayRepository,
   type WorkoutDayRepository,
 } from '@/features/workoutDays/data/WorkoutDayRepository';
+import { createWorkoutDao } from '@/features/workouts/data/local/workoutDao';
+import { LocalWorkoutRepository, type WorkoutRepository } from '@/features/workouts/data/WorkoutRepository';
 import { deviceTimeZone, nowIso } from '@/shared/lib/date/deviceTimeZone';
 
 import { requireEnv } from './config/env';
@@ -30,6 +37,8 @@ export interface Repositories {
   auth: AuthRepository;
   profile: ProfileRepository;
   workoutDays: WorkoutDayRepository;
+  exercises: ExerciseRepository;
+  workouts: WorkoutRepository;
 }
 
 /** Composition root: the only place concrete data sources and services are wired together. */
@@ -68,5 +77,18 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
-  return { auth, profile, workoutDays };
+  const exercises = new LocalExerciseRepository({
+    dao: createExerciseDao(db),
+    uuid: expoCryptoService.uuid,
+    now: nowIso,
+  });
+
+  const workouts = new LocalWorkoutRepository({
+    dao: createWorkoutDao(db),
+    workoutDays,
+    uuid: expoCryptoService.uuid,
+    now: nowIso,
+  });
+
+  return { auth, profile, workoutDays, exercises, workouts };
 }

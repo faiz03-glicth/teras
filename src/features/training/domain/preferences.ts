@@ -64,6 +64,15 @@ export function formatWeight(kg: number, unit: WeightUnit): string {
   return `${Math.round(shown * WEIGHT_TICKS_PER_UNIT) / WEIGHT_TICKS_PER_UNIT} ${unit}`;
 }
 
+/**
+ * PURE: training volume as "4,820 kg" or "10,626 lb": whole units, thousands grouped. Grouped by hand
+ * rather than by the locale, so the number reads the same on every phone.
+ */
+export function formatVolume(kg: number, unit: WeightUnit): string {
+  const shown = Math.round(unit === 'kg' ? kg : kg * LB_PER_KG);
+  return `${String(shown).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ${unit}`;
+}
+
 /** PURE: "170 cm" or "5 ft 7 in". Rounds only for display. */
 export function formatHeight(cm: number, unit: WeightUnit): string {
   if (unit === 'kg') return `${Math.round(cm)} cm`;
@@ -77,4 +86,81 @@ export function formatRest(seconds: number): string {
   const rest = seconds % 60;
   if (minutes === 0) return `${rest} s`;
   return rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
+}
+
+/**
+ * One number of a value being typed, laid out the way the value reads: "5 ft 7 in" is two fields, "5"
+ * then "7", each followed by its unit. `maxLength` is the most digits that number ever needs.
+ */
+export interface ValueField {
+  text: string;
+  suffix: string;
+  maxLength: number;
+}
+
+/** PURE: bodyweight as one field in the unit shown: "70" kg, or "154.3" lb. */
+export function bodyweightFields(kg: number, unit: WeightUnit): ValueField[] {
+  const shown = unit === 'kg' ? kg : kg * LB_PER_KG;
+  const text = String(Math.round(shown * WEIGHT_TICKS_PER_UNIT) / WEIGHT_TICKS_PER_UNIT);
+  return [{ text, suffix: unit, maxLength: 5 }];
+}
+
+/** PURE: height as "170" cm, or as two fields, "5" ft and "7" in. */
+export function heightFields(cm: number, unit: WeightUnit): ValueField[] {
+  if (unit === 'kg') return [{ text: String(Math.round(cm)), suffix: 'cm', maxLength: 3 }];
+  const total = Math.round(cm / CM_PER_INCH);
+  return [
+    { text: String(Math.floor(total / 12)), suffix: 'ft', maxLength: 1 },
+    { text: String(total % 12), suffix: 'in', maxLength: 2 },
+  ];
+}
+
+/** PURE: rest as two fields, "1" min and "30" s; seconds take three digits, so "90" s can be typed whole. */
+export function restFields(seconds: number): ValueField[] {
+  return [
+    { text: String(Math.floor(seconds / 60)), suffix: 'min', maxLength: 1 },
+    { text: String(seconds % 60), suffix: 's', maxLength: 3 },
+  ];
+}
+
+/** A typed number: blank is `undefined`, anything that is not a plain decimal is `null`. A comma is a point. */
+function readNumber(text: string): number | null | undefined {
+  const trimmed = text.trim().replace(',', '.');
+  if (trimmed === '') return undefined;
+  if (!/^\d*\.?\d*$/.test(trimmed) || trimmed === '.') return null;
+  return Number(trimmed);
+}
+
+/**
+ * Several typed numbers as one: each times its weight, a blank part counting as zero. Nothing when every
+ * part is blank or any part is not a number, so a slip leaves the value as it was.
+ */
+function readParts(parts: readonly string[], weights: readonly number[]): number | null {
+  const numbers = parts.map(readNumber);
+  if (numbers.includes(null) || numbers.every((n) => n === undefined)) return null;
+  return numbers.reduce<number>((sum, n, i) => sum + (n ?? 0) * (weights[i] ?? 0), 0);
+}
+
+/** PURE: typed bodyweight, in the unit shown, to kilograms: kept to a tenth of that unit and in range. */
+export function parseBodyweightKg(text: string, unit: WeightUnit): number | null {
+  const shown = readParts([text], [1]);
+  if (shown === null) return null;
+  const tenths = Math.round(shown * WEIGHT_TICKS_PER_UNIT) / WEIGHT_TICKS_PER_UNIT;
+  return clamp(unit === 'kg' ? tenths : tenths / LB_PER_KG, BODYWEIGHT_KG.min, BODYWEIGHT_KG.max);
+}
+
+/** PURE: typed height, ["182"] cm or ["5", "11"] ft and in, to centimetres in range. */
+export function parseHeightCm(parts: readonly string[], unit: WeightUnit): number | null {
+  if (unit === 'kg') {
+    const cm = readParts(parts.slice(0, 1), [1]);
+    return cm === null ? null : clamp(Math.round(cm), HEIGHT_CM.min, HEIGHT_CM.max);
+  }
+  const inches = readParts(parts.slice(0, 2), [12, 1]);
+  return inches === null ? null : clamp(Math.round(inches) * CM_PER_INCH, HEIGHT_CM.min, HEIGHT_CM.max);
+}
+
+/** PURE: typed rest, ["1", "30"] min and s, to whole seconds in range. */
+export function parseRestSeconds(parts: readonly string[]): number | null {
+  const seconds = readParts(parts.slice(0, 2), [60, 1]);
+  return seconds === null ? null : clamp(Math.round(seconds), REST_SECONDS.min, REST_SECONDS.max);
 }

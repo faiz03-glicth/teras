@@ -40,3 +40,30 @@ export function heatLevel(
   if (totals.volumeKg < quantile(ascending, 0.75)) return 3;
   return 4;
 }
+
+/**
+ * How a day stood against the 90 days before it: the facts behind its level, for the Day detail. It
+ * follows heatLevel's rules in the same order, against the window as it reads now (a later edit to an
+ * earlier day can move the median after the level was frozen):
+ * - rest: no completed sets;
+ * - unweighted: sets that moved no weight (planks only);
+ * - early: fewer than five earlier training days, so the day was not compared with anything;
+ * - compared: shown against the median of those earlier days.
+ */
+export type DayStanding =
+  | { kind: 'rest' }
+  | { kind: 'unweighted'; sets: number }
+  | { kind: 'early'; volumeKg: number }
+  | { kind: 'compared'; volumeKg: number; medianKg: number };
+
+/** PURE: see DayStanding. `day` is null for a day with no row at all (never trained). */
+export function dayStanding(
+  day: Pick<DayTotals, 'volumeKg' | 'sets'> | null,
+  windowVolumes: readonly number[],
+): DayStanding {
+  if (!day || !(day.sets > 0)) return { kind: 'rest' };
+  if (!(day.volumeKg > 0)) return { kind: 'unweighted', sets: day.sets };
+  if (windowVolumes.length < MIN_TRAINING_DAYS) return { kind: 'early', volumeKg: day.volumeKg };
+  const ascending = [...windowVolumes].sort((a, b) => a - b);
+  return { kind: 'compared', volumeKg: day.volumeKg, medianKg: quantile(ascending, 0.5) };
+}

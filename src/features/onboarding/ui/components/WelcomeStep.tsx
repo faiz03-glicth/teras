@@ -30,11 +30,7 @@ export const WelcomeStep = memo(function WelcomeStep({ grid }: { grid: HeatGrid 
           <HoldableHeatmap grid={grid} cellSize={cell} gap={GAP} radius={6} animateIn />
         </View>
       </Card>
-      <StepHeading
-        title="Teras"
-        body="Log every set in one tap. Watch each training day become part of your wave, judged against your own last 90 days."
-        style={styles.heading}
-      />
+      <StepHeading title="Teras" body="Log every set. See every training day." style={styles.heading} />
     </>
   );
 });

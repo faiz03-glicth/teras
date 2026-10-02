@@ -49,7 +49,7 @@ export function SelectableTile({
         // Colours are set inline so selection can ease between them.
         {
           borderColor: selected ? accentColor : theme.colors.subtle,
-          backgroundColor: selected ? (theme.glass?.strong ?? theme.colors.surface) : theme.colors.subtle,
+          backgroundColor: selected ? theme.material.raised.background : theme.material.inset.background,
         },
         surface,
       ]}

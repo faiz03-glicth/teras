@@ -13,12 +13,10 @@ export interface LoginHeading {
 export function loginHeading(step: LoginStep, intent: AuthIntent, email: string): LoginHeading {
   if (step === 'email') return { title: 'Continue with email', subtitle: "We'll send you a 6-digit code." };
   if (step === 'code') return { title: 'Check your inbox', subtitle: `Enter the code sent to ${email}` };
+  // One line, and it is true on both counts: an account is optional, and it backs nothing up.
   return intent === 'new'
-    ? {
-        title: 'Keep your wave safe',
-        subtitle: 'Use the same account as Streak and your training days appear there as a second wave.',
-      }
-    : { title: 'Welcome back', subtitle: 'Sign in with the account you use for Streak.' };
+    ? { title: 'Sign in', subtitle: 'Optional. Workouts stay on this phone.' }
+    : { title: 'Welcome back', subtitle: 'Sign in to carry on.' };
 }
 
 export const RESEND_COOLDOWN_SECONDS = 60;

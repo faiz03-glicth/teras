@@ -75,6 +75,8 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: state === 'future' || state === 'blank' ? 'transparent' : theme.heat[level],
     borderWidth: state === 'future' ? 1 : 0,
     borderColor: theme.colors.border,
+    // A day still to come is a faint outline: set apart from an outlined empty day that has happened.
+    opacity: state === 'future' ? 0.5 : 1,
     outlineWidth: state === 'today' ? 1.5 : state === 'selected' ? 2 : 0,
     outlineOffset: 1.5,
     outlineColor: state === 'selected' ? theme.colors.accentText : theme.colors.text,

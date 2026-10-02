@@ -24,7 +24,9 @@ export function OnboardingScreen({ step }: { step: OnboardingStep }) {
   // Where the pager is, in pages: the pager writes it on the UI thread, the dots read it.
   const progress = useSharedValue<number>(vm.step);
   const { hero, unit, unitOptions, bodyweightLabel, heightLabel, restLabel } = vm;
+  const { bodyweightInput, heightInput, restInput } = vm;
   const { onUnitChange, onBodyweightStep, onHeightStep, onRestStep } = vm;
+  const { onBodyweightType, onHeightType, onRestType } = vm;
   const renderPage = useCallback(
     (page: number) =>
       page === 0 ? (
@@ -36,10 +38,16 @@ export function OnboardingScreen({ step }: { step: OnboardingStep }) {
           bodyweightLabel={bodyweightLabel}
           heightLabel={heightLabel}
           restLabel={restLabel}
+          bodyweightInput={bodyweightInput}
+          heightInput={heightInput}
+          restInput={restInput}
           onUnitChange={onUnitChange}
           onBodyweightStep={onBodyweightStep}
           onHeightStep={onHeightStep}
           onRestStep={onRestStep}
+          onBodyweightType={onBodyweightType}
+          onHeightType={onHeightType}
+          onRestType={onRestType}
         />
       ),
     [
@@ -49,10 +57,16 @@ export function OnboardingScreen({ step }: { step: OnboardingStep }) {
       bodyweightLabel,
       heightLabel,
       restLabel,
+      bodyweightInput,
+      heightInput,
+      restInput,
       onUnitChange,
       onBodyweightStep,
       onHeightStep,
       onRestStep,
+      onBodyweightType,
+      onHeightType,
+      onRestType,
     ],
   );
 

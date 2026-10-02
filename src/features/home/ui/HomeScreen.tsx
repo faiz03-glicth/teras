@@ -1,50 +1,59 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Card, EmptyState, ListRow, Screen, SectionLabel, Text } from '@/shared/ui';
+import { TrainingWave } from '@/features/heatmap/ui/components/TrainingWave';
+import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, SectionLabel, Text } from '@/shared/ui';
+
+import { ActiveWorkoutCard } from './components/ActiveWorkoutCard';
+import { FeedCard } from './components/FeedCard';
 
 import { useHomeViewModel } from './useHomeViewModel';
 
-/** Home: the training wave and workout feed go here once workouts can be logged. */
+/** Home: the training wave on top, then the workouts behind it. */
 export function HomeScreen() {
   const vm = useHomeViewModel();
+
   return (
     <Screen scroll withTabBar testID="home-screen" contentStyle={styles.content}>
-      <View>
-        <Text variant="title" accessibilityRole="header" testID="home-title">
-          {vm.title}
+      <View style={styles.head}>
+        <Text variant="title" accessibilityRole="header">
+          Home
         </Text>
-        <Text variant="sub" tone="secondary" testID="home-account">
-          {vm.accountLine}
+        <Text variant="footnote" tone="secondary">
+          {vm.dateLine}
         </Text>
       </View>
 
-      <Card>
-        <EmptyState
-          icon="dumbbell"
-          title="No workouts yet"
-          body="Your training wave appears here after your first workout."
-          action={{ label: 'Go to Workout', onPress: vm.onOpenWorkout }}
-        />
-      </Card>
+      <TrainingWave
+        testID="training-wave"
+        rows={vm.waveRows}
+        dayLabels={vm.dayLabels}
+        onDayPress={vm.onDayPress}
+        selected={vm.selected}
+        legendCaption={vm.legendCaption}
+        header={vm.waveHeader}
+      />
 
       <View style={styles.group}>
-        <SectionLabel>Your setup</SectionLabel>
-        <Card tight divided>
-          {vm.setup.map((row) => (
-            <ListRow key={row.label} compact title={row.label} value={row.value} trailing="none" />
-          ))}
-        </Card>
-      </View>
-
-      <View style={styles.group}>
-        <SectionLabel>Streak</SectionLabel>
-        <Card>
-          <Text variant="headline">{vm.streakTitle}</Text>
-          <Text variant="footnote" tone="secondary">
-            {vm.streakLine}
-          </Text>
-        </Card>
+        <SectionLabel>Workouts</SectionLabel>
+        {vm.active && <ActiveWorkoutCard entry={vm.active} onPress={vm.onResume} />}
+        {vm.status === 'loading' && <LoadingState label="Loading workouts" testID="home-loading" />}
+        {vm.status === 'error' && (
+          <Card>
+            <ErrorState title="Couldn't load workouts" onRetry={vm.onRetry} testID="home-error" />
+          </Card>
+        )}
+        {vm.empty && (
+          <Card>
+            <View style={styles.empty}>
+              <EmptyState icon="dumbbell" title="No workouts yet" />
+              <Button label="Start workout" onPress={vm.onStartWorkout} testID="home-start-workout" />
+            </View>
+          </Card>
+        )}
+        {vm.entries.map((entry) => (
+          <FeedCard key={entry.id} entry={entry} onPress={vm.onOpenWorkout} />
+        ))}
       </View>
     </Screen>
   );
@@ -52,5 +61,7 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
-  group: { gap: theme.spacing.sm },
+  head: { gap: 2 },
+  group: { gap: theme.spacing.md },
+  empty: { gap: theme.spacing.lg },
 }));

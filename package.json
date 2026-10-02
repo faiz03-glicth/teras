@@ -73,9 +73,9 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start --dev-client",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "start": "node scripts/expo-local.js start --dev-client",
+    "android": "node scripts/expo-local.js run:android",
+    "ios": "node scripts/expo-local.js run:ios",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "node scripts/generate-route-types.js && tsc --noEmit",
     "test": "jest",

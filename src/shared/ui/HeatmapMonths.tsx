@@ -1,13 +1,12 @@
 import { memo } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import type { HeatGrid } from '@/features/heatmap/domain/grid';
-import type { YearMonth } from '@/shared/lib/date/calendar';
-import { motion } from '@/theme';
+import type { HeatCellState, HeatGrid } from '@/features/heatmap/domain/grid';
+import type { HeatLevel } from '@/theme';
 
 import { HeatCell } from './HeatCell';
-import { PressableScale } from './PressableScale';
+import { usePressDelay } from './pressDelay';
 import { Text } from './Text';
 
 export interface HeatmapMonth {
@@ -15,29 +14,24 @@ export interface HeatmapMonth {
   /** "Sep"; shown over the month's first week. */
   label: string;
   grid: HeatGrid;
-  /** Which month this is (passed back when it's chosen). */
-  value: YearMonth;
-  /** Read by screen readers for the month: "September 2026, 12 check-ins". */
-  accessibilityLabel?: string;
 }
 
 export interface HeatmapMonthsProps {
   months: readonly HeatmapMonth[];
   /** Seven row letters, in the person's week order. */
   dayLabels: readonly string[];
-  /**
-   * Choosing a month: the whole month (its name and every week of it) is one comfortable target, so no one
-   * has to aim at a single day. Months that haven't started yet don't answer.
-   */
-  onMonthPress?: (month: HeatmapMonth) => void;
+  /** A day was tapped (its ISO date). Days still to come never answer: there is nothing to open. */
+  onDayPress?: (day: string) => void;
+  /** The day whose detail is open (ISO date), ringed. */
+  selected?: string | null;
   /** Horizontal space around the heatmap on screen (gutters + card padding), to size the cells. */
   inset?: number;
+  /** Size the cells as if there were this many week columns, so stacked rows share one cell size. */
+  columns?: number;
   gap?: number;
   monthGap?: number;
   /** The largest a cell may grow on a wide screen. */
   maxCell?: number;
-  /** The day that was just checked in (its cell pulses once). */
-  pulseDay?: string | null;
 }
 
 const LABEL_WIDTH = 10;
@@ -46,35 +40,33 @@ const MONTH_LABEL = 14;
 const MONTH_LABEL_GAP = 6;
 
 /**
- * Months side by side, weeks as columns (the prototype's monthsHM): Home's last three months and each
- * quarter of the year view. Cells are sized to fill the width they're given, so a quarter always fits
- * without scrolling sideways.
+ * Months side by side, weeks as columns (the prototype's monthsHM): Home's training wave and each row
+ * of the Calendar. Cells are sized to fill the width they are given, so a row always fits without
+ * scrolling sideways.
  *
- * The heatmap is an overview and a way into a month, not a grid of tiny buttons: each month is one
- * target (a gentle press on the whole month), and the exact day is then chosen on the date wheel. Cells
- * are plain, memoised views, so a new check-in re-renders only the day it changed.
+ * Every day that has happened opens on a tap. Cells stay flat and still — no shadow, no animation per
+ * cell — and are memoised on their own values, so ringing a day re-renders only its month. Each tap
+ * target is widened across half the gap on every side, so a tap never falls between two days.
  */
 export const HeatmapMonths = memo(function HeatmapMonths({
   months,
   dayLabels,
-  onMonthPress,
+  onDayPress,
+  selected = null,
   inset = 64,
+  columns,
   gap = 3,
-  monthGap = 8,
+  monthGap = 10,
   maxCell = 16,
-  pulseDay,
 }: HeatmapMonthsProps) {
   const { width } = useWindowDimensions();
-  const columns = months.reduce((sum, month) => sum + month.grid.columns.length, 0);
+  const own = months.reduce((sum, month) => sum + month.grid.columns.length, 0);
+  const count = Math.max(own, columns ?? 0);
   const free =
-    width -
-    inset -
-    LABEL_WIDTH -
-    LABEL_GAP -
-    monthGap * (months.length - 1) -
-    gap * (columns - months.length);
-  const cell = Math.max(8, Math.min(maxCell, Math.floor(free / Math.max(1, columns))));
+    width - inset - LABEL_WIDTH - LABEL_GAP - monthGap * (months.length - 1) - gap * (count - months.length);
+  const cell = Math.max(8, Math.min(maxCell, Math.floor(free / Math.max(1, count))));
   const radius = Math.max(2, Math.round(cell / 3.5));
+  const pressDelay = usePressDelay();
 
   return (
     <View style={styles.row(monthGap)}>
@@ -92,24 +84,27 @@ export const HeatmapMonths = memo(function HeatmapMonths({
           cell={cell}
           gap={gap}
           radius={radius}
-          onMonthPress={onMonthPress}
-          pulseDay={pulseDay}
+          // Only the month holding the ringed day hears of it, so a ring re-renders one month, not all.
+          selected={selected && monthHolds(month, selected) ? selected : null}
+          pressDelay={pressDelay}
+          onDayPress={onDayPress}
         />
       ))}
     </View>
   );
 });
 
-/** A month with at least one day that has happened can be opened. */
-const hasStarted = (month: HeatmapMonth) => month.grid.columns.some((week) => week.some((day) => day.label));
+const monthHolds = (month: HeatmapMonth, day: string) =>
+  month.grid.columns.some((column) => column.some((cell) => cell.key === day));
 
 interface MonthGridProps {
   month: HeatmapMonth;
   cell: number;
   gap: number;
   radius: number;
-  onMonthPress?: (month: HeatmapMonth) => void;
-  pulseDay?: string | null;
+  selected: string | null;
+  pressDelay: number;
+  onDayPress?: (day: string) => void;
 }
 
 const MonthGrid = memo(function MonthGrid({
@@ -117,54 +112,95 @@ const MonthGrid = memo(function MonthGrid({
   cell,
   gap,
   radius,
-  onMonthPress,
-  pulseDay,
+  selected,
+  pressDelay,
+  onDayPress,
 }: MonthGridProps) {
-  const grid = (
-    <>
-      <Text variant="mini" tone="tertiary" style={styles.monthLabel}>
+  return (
+    <View style={styles.month}>
+      {/* Every day's own label already names its month, so the heading is for the eye only. */}
+      <Text
+        variant="mini"
+        tone="tertiary"
+        weight="semibold"
+        style={styles.monthLabel}
+        importantForAccessibility="no"
+      >
         {month.label}
       </Text>
       <View style={styles.row(gap)}>
         {month.grid.columns.map((column, columnIndex) => (
           <View key={columnIndex} style={styles.column(gap)}>
             {column.map((day) => (
-              <HeatCell
-                key={day.key === pulseDay ? `${day.key}-pulse` : day.key}
+              <DayCell
+                key={day.key}
+                day={day.key}
                 level={day.level}
-                state={day.state}
+                state={day.key === selected ? 'selected' : day.state}
+                label={day.label}
                 size={cell}
                 radius={radius}
-                pulse={day.key === pulseDay}
+                gap={gap}
+                pressDelay={pressDelay}
+                onDayPress={onDayPress}
               />
             ))}
           </View>
         ))}
       </View>
-    </>
+    </View>
   );
+});
 
-  if (!onMonthPress || !hasStarted(month)) {
-    return (
-      <View style={styles.month} accessible={false} importantForAccessibility="no-hide-descendants">
-        {grid}
-      </View>
-    );
-  }
+interface DayCellProps {
+  day: string;
+  level: HeatLevel;
+  state: HeatCellState;
+  label?: string;
+  size: number;
+  radius: number;
+  gap: number;
+  pressDelay: number;
+  onDayPress?: (day: string) => void;
+}
+
+const DayCell = memo(function DayCell({
+  day,
+  level,
+  state,
+  label,
+  size,
+  radius,
+  gap,
+  pressDelay,
+  onDayPress,
+}: DayCellProps) {
+  // An empty day that has happened keeps a hairline edge: its pale swatch alone barely parts from the
+  // card, and the wave's shape must read even before anything is logged.
+  const square = (
+    <HeatCell
+      level={level}
+      state={state}
+      size={size}
+      radius={radius}
+      outlined={level === 0 && state !== 'future' && state !== 'blank'}
+    />
+  );
+  if (!onDayPress || !label) return square;
   return (
-    <PressableScale
-      onPress={() => onMonthPress(month)}
-      scaleTo={motion.press.subtleScale}
-      // A little room around the month, so a press just outside its first or last week still counts.
-      hitSlop={{ top: 8, bottom: 8, left: gap, right: gap }}
+    <Pressable
+      onPress={() => onDayPress(day)}
+      hitSlop={gap / 2}
+      // On a scrolling screen, a touch that becomes a scroll neither dims the day nor opens it.
+      unstable_pressDelay={pressDelay || undefined}
       accessibilityRole="button"
-      accessibilityLabel={month.accessibilityLabel ?? month.label}
-      accessibilityHint="Opens the month's days"
-      style={styles.month}
-      testID={`month-${month.key}`}
+      accessibilityLabel={label}
+      accessibilityState={{ selected: state === 'selected' }}
+      style={({ pressed }) => (pressed ? styles.pressed : undefined)}
+      testID={`day-${day}`}
     >
-      {grid}
-    </PressableScale>
+      {square}
+    </Pressable>
   );
 });
 
@@ -179,4 +215,6 @@ const styles = StyleSheet.create({
     paddingTop: MONTH_LABEL + MONTH_LABEL_GAP,
   }),
   dayLabel: (size: number) => ({ height: size, lineHeight: size, fontSize: Math.min(10, size - 1) }),
+  // A day under the finger dims at once: feedback with no animation to run on every cell.
+  pressed: { opacity: 0.55 },
 });

@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import type { GestureResponderEvent, PressableProps } from 'react-native';
 import { Pressable } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -16,6 +16,11 @@ export interface PressableScaleProps extends Omit<PressableProps, 'style'> {
   scaleTo?: number;
   /** The motion system's press preset: 'scale' (default) or 'liquid' (the + button). */
   feedback?: PressFeedback;
+  /**
+   * Applied while a finger is on the control: the material's pressed state (the lift swapped for a shallow
+   * press, from materials/soft.ts). Controls name the state; none writes a shadow of its own.
+   */
+  pressedStyle?: ComponentProps<typeof AnimatedPressable>['style'];
 }
 
 /**
@@ -26,24 +31,29 @@ export function PressableScale({
   scaleTo = motion.press.scale,
   feedback = 'scale',
   style,
+  pressedStyle,
   onPressIn,
   onPressOut,
   ...rest
 }: PressableScaleProps) {
   const press = usePressMotion(feedback, scaleTo);
   const pressDelay = usePressDelay();
+  // Only tracked when there is a pressed look to show, so plain pressables never re-render on touch.
+  const [held, setHeld] = useState(false);
 
   return (
     <AnimatedPressable
       unstable_pressDelay={pressDelay || undefined}
       {...rest}
-      style={[style, press.style]}
+      style={[style, held && pressedStyle, press.style]}
       onPressIn={(event: GestureResponderEvent) => {
         press.pressIn();
+        if (pressedStyle) setHeld(true);
         onPressIn?.(event);
       }}
       onPressOut={(event: GestureResponderEvent) => {
         press.pressOut();
+        if (pressedStyle) setHeld(false);
         onPressOut?.(event);
       }}
     />

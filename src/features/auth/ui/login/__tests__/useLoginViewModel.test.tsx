@@ -32,7 +32,7 @@ describe('useLoginViewModel', () => {
   it('shows Skip only for new people and the matching heading', async () => {
     expect((await setup('new')).result.current).toMatchObject({
       showSkip: true,
-      heading: { title: 'Keep your wave safe' },
+      heading: { title: 'Sign in' },
     });
     expect((await setup('existing')).result.current).toMatchObject({
       showSkip: false,

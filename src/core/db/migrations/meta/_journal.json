@@ -15,6 +15,13 @@
       "when": 1790779620663,
       "tag": "0001_workout_model",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790938568825,
+      "tag": "0002_favourites_per_owner",
+      "breakpoints": true
     }
   ]
 }

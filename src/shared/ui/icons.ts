@@ -18,6 +18,7 @@ import Dumbbell from 'lucide-react-native/icons/dumbbell';
 import Flame from 'lucide-react-native/icons/flame';
 import Flower2 from 'lucide-react-native/icons/flower-2';
 import Footprints from 'lucide-react-native/icons/footprints';
+import Heart from 'lucide-react-native/icons/heart';
 import House from 'lucide-react-native/icons/house';
 import Info from 'lucide-react-native/icons/info';
 import ListChecks from 'lucide-react-native/icons/list-checks';
@@ -37,6 +38,7 @@ import Target from 'lucide-react-native/icons/target';
 import Trash from 'lucide-react-native/icons/trash';
 import TrendingDown from 'lucide-react-native/icons/trending-down';
 import TrendingUp from 'lucide-react-native/icons/trending-up';
+import Trophy from 'lucide-react-native/icons/trophy';
 import Upload from 'lucide-react-native/icons/upload';
 import User from 'lucide-react-native/icons/user';
 import Volume2 from 'lucide-react-native/icons/volume-2';
@@ -66,6 +68,7 @@ export const ICONS = {
   flame: Flame,
   flower: Flower2,
   footprints: Footprints,
+  heart: Heart,
   help: CircleQuestionMark,
   house: House,
   info: Info,
@@ -86,6 +89,7 @@ export const ICONS = {
   trash: Trash,
   'trending-down': TrendingDown,
   'trending-up': TrendingUp,
+  trophy: Trophy,
   upload: Upload,
   user: User,
   volume: Volume2,

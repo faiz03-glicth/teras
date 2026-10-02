@@ -17,18 +17,16 @@ import { useReduceMotion } from '../hooks/useReduceMotion';
 import { useResolvedScheme } from '../hooks/useResolvedScheme';
 import { useThemePreferencesStore } from '../state/themePreferencesStore';
 import { motion } from '../tokens/motion';
-import type { ColorScheme, HeatPaletteId, VisualStyle } from '../types';
+import type { ColorScheme, HeatPaletteId } from '../types';
 
 /** Everything that decides how the app looks. */
 interface Look {
   scheme: ColorScheme;
   paletteId: HeatPaletteId;
-  style: VisualStyle;
 }
 
-const sameLook = (a: Look, b: Look) =>
-  a.scheme === b.scheme && a.paletteId === b.paletteId && a.style === b.style;
-const canvasOf = (look: Look) => buildTheme(look.scheme, look.paletteId, look.style).colors.canvas;
+const sameLook = (a: Look, b: Look) => a.scheme === b.scheme && a.paletteId === b.paletteId;
+const canvasOf = (look: Look) => buildTheme(look.scheme, look.paletteId).colors.canvas;
 
 const { themeTransition, ease } = motion;
 // Opacity only, driven by the bridge itself (with Reduce Motion the veil is skipped, not shortened).
@@ -49,7 +47,7 @@ const veilOut = {
  * while nothing is visible, then the veil lifts and the new look emerges, the background brightening or
  * deepening gradually. Dark → Light therefore never washes to white in one step, and Light → Dark never
  * drops to black. There is never a half-themed frame, and the brand green (identical in both schemes)
- * simply stays put. The same transition in both directions, light, dark and glass alike.
+ * simply stays put. The same transition in both directions.
  *
  * The veil is one opacity animation on the UI thread, so nothing re-renders per frame. It never plays at
  * launch (the first frame is already right), with Reduce Motion (the swap is instant), or while the app is
@@ -59,13 +57,13 @@ const veilOut = {
  * Rendered after the app so the veil sits above everything.
  */
 export function ThemeRuntimeBridge() {
-  const { preference, paletteId, style } = useThemePreferencesStore(
-    useShallow((s) => ({ preference: s.preference, paletteId: s.paletteId, style: s.style })),
+  const { preference, paletteId } = useThemePreferencesStore(
+    useShallow((s) => ({ preference: s.preference, paletteId: s.paletteId })),
   );
   const scheme = useResolvedScheme(preference);
   const reduced = useReduceMotion();
 
-  const target = useMemo<Look>(() => ({ scheme, paletteId, style }), [scheme, paletteId, style]);
+  const target = useMemo<Look>(() => ({ scheme, paletteId }), [scheme, paletteId]);
   // What is on screen (null until first applied) and what was asked for last: plain refs, since applying
   // a look is imperative and must never wait for a React render.
   const shown = useRef<Look | null>(null);
@@ -84,8 +82,8 @@ export function ThemeRuntimeBridge() {
 
   const apply = useCallback((look: Look) => {
     shown.current = look;
-    UnistylesRuntime.updateTheme('light', () => buildTheme('light', look.paletteId, look.style));
-    UnistylesRuntime.updateTheme('dark', () => buildTheme('dark', look.paletteId, look.style));
+    UnistylesRuntime.updateTheme('light', () => buildTheme('light', look.paletteId));
+    UnistylesRuntime.updateTheme('dark', () => buildTheme('dark', look.paletteId));
     UnistylesRuntime.setTheme(look.scheme);
     UnistylesRuntime.setRootViewBackgroundColor(canvasOf(look));
     // Status and navigation bar icons: dark on the light canvas, light on the dark one.

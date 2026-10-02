@@ -22,12 +22,14 @@ afterEach(() => {
 });
 
 describe.each(SCHEMES)('LoginScreen in %s', (scheme) => {
-  it('new: title, benefits, providers, Skip and legal footer', async () => {
+  it('new: the choices and one honest line, nothing to read before choosing', async () => {
     renderWithApp(<LoginScreen intent="new" />, { scheme });
-    expect(screen.getByRole('header', { name: 'Keep your wave safe' })).toBeTruthy();
-    expect(screen.getByText('Your training in Streak')).toBeTruthy();
-    expect(screen.getByText('One account for both apps')).toBeTruthy();
-    expect(screen.getByText('Private by default')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Sign in' })).toBeTruthy();
+    // One line, and it is true: signing in is optional and backs nothing up.
+    expect(screen.getByText('Optional. Workouts stay on this phone.')).toBeTruthy();
+    expect(screen.queryByText(/backed up|across devices|never lose|sync/i)).toBeNull();
+    // No list of benefits to read through before the buttons.
+    expect(screen.queryByText('Private by default')).toBeNull();
     expect(await screen.findByRole('button', { name: 'Sign in with Apple' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Skip for now' })).toBeTruthy();

@@ -1,11 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler } from 'react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import {
+  bodyweightFields,
   formatHeight,
   formatRest,
   formatWeight,
+  heightFields,
+  parseBodyweightKg,
+  parseHeightCm,
+  parseRestSeconds,
+  restFields,
   UNIT_SYSTEMS,
   type StepDirection,
   type WeightUnit,
@@ -44,6 +50,9 @@ export function useOnboardingViewModel(step: OnboardingStep) {
   const stepBodyweight = useTrainingPreferencesStore((s) => s.stepBodyweight);
   const stepHeight = useTrainingPreferencesStore((s) => s.stepHeight);
   const stepRest = useTrainingPreferencesStore((s) => s.stepRest);
+  const setBodyweightKg = useTrainingPreferencesStore((s) => s.setBodyweightKg);
+  const setHeightCm = useTrainingPreferencesStore((s) => s.setHeightCm);
+  const setRestSeconds = useTrainingPreferencesStore((s) => s.setRestSeconds);
   const inSession = useAuthStore((s) => s.status === 'signedIn' || s.status === 'guest');
   const { finishOnboarding } = useSessionActions();
   const [finishing, setFinishing] = useState(false);
@@ -67,7 +76,7 @@ export function useOnboardingViewModel(step: OnboardingStep) {
       haptics.success();
     } catch (cause) {
       console.error(`[onboarding] Could not finish (${cause instanceof Error ? cause.name : 'unknown'})`); // TODO(Sentry)
-      showInfo({ title: "Couldn't finish setup", sub: 'Please try again.' });
+      showInfo({ title: "Couldn't finish setup", sub: 'Try again.' });
     } finally {
       setFinishing(false);
     }
@@ -104,6 +113,36 @@ export function useOnboardingViewModel(step: OnboardingStep) {
     [stepRest],
   );
 
+  // A typed value replaces the old one only when it reads as a number (and says so); a slip changes nothing.
+  const onBodyweightType = useCallback(
+    (parts: readonly string[]) => {
+      const kg = parseBodyweightKg(parts[0] ?? '', unit);
+      if (kg !== null) setBodyweightKg(kg);
+      return kg !== null;
+    },
+    [unit, setBodyweightKg],
+  );
+  const onHeightType = useCallback(
+    (parts: readonly string[]) => {
+      const cm = parseHeightCm(parts, unit);
+      if (cm !== null) setHeightCm(cm);
+      return cm !== null;
+    },
+    [unit, setHeightCm],
+  );
+  const onRestType = useCallback(
+    (parts: readonly string[]) => {
+      const seconds = parseRestSeconds(parts);
+      if (seconds !== null) setRestSeconds(seconds);
+      return seconds !== null;
+    },
+    [setRestSeconds],
+  );
+  // What a held value opens into; kept the same between renders like the handlers.
+  const bodyweightInput = useMemo(() => bodyweightFields(bodyweightKg, unit), [bodyweightKg, unit]);
+  const heightInput = useMemo(() => heightFields(heightCm, unit), [heightCm, unit]);
+  const restInput = useMemo(() => restFields(restSeconds), [restSeconds]);
+
   const onPrimary =
     step === 0 ? () => showOnboardingStep(1) : inSession ? () => void finish() : () => openLogin('new');
 
@@ -123,6 +162,9 @@ export function useOnboardingViewModel(step: OnboardingStep) {
     bodyweightLabel: formatWeight(bodyweightKg, unit),
     heightLabel: formatHeight(heightCm, unit),
     restLabel: formatRest(restSeconds),
+    bodyweightInput,
+    heightInput,
+    restInput,
 
     onPrimary,
     onHaveAccount: () => openLogin('existing'),
@@ -133,6 +175,9 @@ export function useOnboardingViewModel(step: OnboardingStep) {
     onBodyweightStep,
     onHeightStep,
     onRestStep,
+    onBodyweightType,
+    onHeightType,
+    onRestType,
   };
 }
 

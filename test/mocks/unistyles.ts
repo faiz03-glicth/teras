@@ -7,16 +7,12 @@
 import { createElement, type ComponentType } from 'react';
 
 import { buildTheme } from '@/theme/buildTheme';
-import type { ColorScheme, HeatPaletteId, Theme, VisualStyle } from '@/theme/types';
+import type { ColorScheme, HeatPaletteId, Theme } from '@/theme/types';
 
-let currentTheme: Theme = buildTheme('light', 'meadow', 'classic');
+let currentTheme: Theme = buildTheme('light', 'meadow');
 
-export function setTestTheme(
-  scheme: ColorScheme,
-  style: VisualStyle = 'classic',
-  palette: HeatPaletteId = 'meadow',
-) {
-  currentTheme = buildTheme(scheme, palette, style);
+export function setTestTheme(scheme: ColorScheme, palette: HeatPaletteId = 'meadow') {
+  currentTheme = buildTheme(scheme, palette);
 }
 
 export function getTestTheme(): Theme {

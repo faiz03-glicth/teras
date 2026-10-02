@@ -6,16 +6,19 @@ interface IconProps {
   size?: number;
   color: string;
   strokeWidth?: number;
+  /** Fills the shape too, for an icon that is "on" (a favourite's heart). */
+  fill?: string;
 }
 
 /** Decorative by default: icons never carry meaning on their own, the surrounding control's label does. */
-export function Icon({ name, size = 24, color, strokeWidth = 1.9 }: IconProps) {
+export function Icon({ name, size = 24, color, strokeWidth = 1.9, fill = 'none' }: IconProps) {
   const Glyph = ICONS[isIconName(name) ? name : 'sparkles'];
   return (
     <Glyph
       size={size}
       color={color}
       strokeWidth={strokeWidth}
+      fill={fill}
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     />

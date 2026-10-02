@@ -67,9 +67,8 @@ const styles = StyleSheet.create((theme) => ({
     bottom: 0,
     flexDirection: 'row',
     paddingTop: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
+    backgroundColor: theme.material.bar.background,
+    boxShadow: theme.material.bar.shadow,
   },
   tab: { flex: 1, alignItems: 'center', gap: theme.spacing.xs, minHeight: 48 },
   pill: (on: boolean) => ({
@@ -78,6 +77,9 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.radii.pill,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+    // The tab you are on is pressed into the bar, gold-tinted; with its gold icon and bolder label it
+    // reads as chosen even where inset shadows do not draw.
     backgroundColor: on ? theme.colors.accentSoft : 'transparent',
+    boxShadow: on ? theme.material.pressed.shadow : undefined,
   }),
 }));

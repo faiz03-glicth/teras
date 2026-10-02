@@ -4,7 +4,6 @@ import { StyleSheet } from 'react-native-unistyles';
 import type { AuthIntent } from '@/features/auth/domain/types';
 import { Banner, Button, ContentSwap, LogoMark, NavBar, Screen, ScreenTransition } from '@/shared/ui';
 
-import { BenefitsCard } from './components/BenefitsCard';
 import { CodeStep } from './components/CodeStep';
 import { EmailStep } from './components/EmailStep';
 import { LegalFooter } from './components/LegalFooter';
@@ -48,7 +47,6 @@ export function LoginScreen({ intent }: { intent: AuthIntent }) {
 
       <ScreenTransition index={vm.stepIndex} style={styles.step}>
         <LoginHeader title={vm.heading.title} subtitle={vm.heading.subtitle} />
-        {vm.step === 'providers' && <BenefitsCard benefits={vm.benefits} />}
         <View style={styles.spacer} />
         {vm.banner ? <Banner message={vm.banner} testID="login-banner" /> : null}
 
