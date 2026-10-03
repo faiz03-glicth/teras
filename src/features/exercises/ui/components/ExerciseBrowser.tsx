@@ -1,7 +1,16 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Button, Card, EmptyState, ErrorState, LoadingState, SectionLabel, TextField } from '@/shared/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  SectionLabel,
+  Text,
+  TextField,
+} from '@/shared/ui';
 
 import type { ExerciseBrowserModel } from '../useExerciseBrowser';
 import { ExerciseRow } from './ExerciseRow';
@@ -69,17 +78,26 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
               section.key === 'all' && browser.canClearFilters ? browser.onClearFilters : undefined
             }
           />
-          <Card tight divided>
-            {section.rows.map((choice) => (
-              <ExerciseRow
-                key={choice.id}
-                choice={choice}
-                onPress={onPick}
-                onInfo={onInfo}
-                testID={`${section.key}-${choice.id}`}
-              />
-            ))}
-          </Card>
+          {(section.groups ?? [{ key: section.key, title: null, rows: section.rows }]).map((group) => (
+            <View key={group.key} style={styles.group}>
+              {group.title !== null && (
+                <Text variant="sub" weight="semibold" accessibilityRole="header" style={styles.muscle}>
+                  {group.title}
+                </Text>
+              )}
+              <Card tight divided>
+                {group.rows.map((choice) => (
+                  <ExerciseRow
+                    key={choice.id}
+                    choice={choice}
+                    onPress={onPick}
+                    onInfo={onInfo}
+                    testID={`${section.key}-${choice.id}`}
+                  />
+                ))}
+              </Card>
+            </View>
+          ))}
         </View>
       ))}
 
@@ -128,5 +146,7 @@ const styles = StyleSheet.create((theme) => ({
   // Close under the search, as one control: what to look for, then where.
   filters: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: -theme.spacing.sm },
   group: { gap: theme.spacing.sm },
+  // A plain heading per muscle, no card of its own: the rows' card is enough.
+  muscle: { paddingHorizontal: theme.spacing.xs, marginTop: theme.spacing.xs },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 }));

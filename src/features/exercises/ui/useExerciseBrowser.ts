@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo } from 'react';
 
 import type { ExerciseRow } from '@/core/db/schema';
-import { browserSections, muscleBadge } from '@/features/exercises/domain/browse';
+import { browserSections, groupByMuscle, muscleBadge } from '@/features/exercises/domain/browse';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, muscleSummary } from '@/features/exercises/domain/labels';
 import { useWorkoutOwner } from '@/features/workouts/hooks/useWorkoutQueries';
 import { openCreateExercise, openEquipmentFilter } from '@/shared/actions';
@@ -24,10 +24,19 @@ export interface ExerciseChoice {
   label: string;
 }
 
+/** The exercises of one primary muscle, under a plain heading ("Chest"). */
+export interface ExerciseGroup {
+  key: string;
+  title: string;
+  rows: ExerciseChoice[];
+}
+
 export interface BrowserSection {
   key: 'favourites' | 'recent' | 'all';
   title: string;
   rows: ExerciseChoice[];
+  /** The full list only: its rows grouped by primary muscle, the chosen muscle first. */
+  groups?: ExerciseGroup[];
 }
 
 /** One of the two filter buttons: what it is set to, and what a screen reader says for it. */
@@ -88,13 +97,20 @@ export function useExerciseBrowser() {
         label: `${row.name}, ${muscles}${favourite ? ', favourite' : ''}`,
       };
     };
+    const page = found.matches.slice(0, shown);
+    const groups = groupByMuscle(page, muscle).map((group) => ({
+      key: group.muscle,
+      title: MUSCLE_LABELS[group.muscle],
+      rows: group.rows.map(choice),
+    }));
     const sections: BrowserSection[] = [
       { key: 'favourites', title: 'Favourites', rows: found.favourites.map(choice) },
       { key: 'recent', title: 'Recent', rows: found.recent.map(choice) },
       {
         key: 'all',
         title: found.filtered ? countExercises(found.matches.length) : 'All exercises',
-        rows: found.matches.slice(0, shown).map(choice),
+        rows: groups.flatMap((group) => group.rows),
+        groups,
       },
     ];
     return {

@@ -14,7 +14,7 @@ import { BodyMap } from './BodyMap';
 export function MusclePanel({ filter }: { filter: MuscleFilterModel }) {
   return (
     <Animated.View entering={layoutMotion.fadeUp} style={styles.panel} testID="muscle-panel">
-      <Card>
+      <Card style={styles.canvas}>
         <BodyMap highlight={filter.highlight} onRegion={filter.onRegion} />
       </Card>
       <ChipRow
@@ -31,4 +31,5 @@ export function MusclePanel({ filter }: { filter: MuscleFilterModel }) {
 
 const styles = StyleSheet.create((theme) => ({
   panel: { gap: theme.spacing.md },
+  canvas: { backgroundColor: theme.colors.bodyCanvas },
 }));

@@ -1,4 +1,4 @@
-import type { Equipment, ExerciseRow, Muscle } from '@/core/db/schema';
+import { MUSCLES, type Equipment, type ExerciseRow, type Muscle } from '@/core/db/schema';
 
 import { MUSCLE_LABELS } from './labels';
 import { searchExercises } from './search';
@@ -64,4 +64,22 @@ export function browserSections(
 /** PURE: the two letters that mark an exercise's row, from its primary muscle: "CH" for chest. */
 export function muscleBadge(muscle: Muscle): string {
   return MUSCLE_LABELS[muscle].slice(0, 2).toUpperCase();
+}
+
+export interface MuscleGroup {
+  muscle: Muscle;
+  rows: ExerciseRow[];
+}
+
+/**
+ * PURE: exercises grouped by their primary muscle, never repeated for a secondary one. Groups follow the
+ * library's muscle order, the chosen muscle (if any) first; each keeps the order it was given (library
+ * order, or best match first while searching).
+ */
+export function groupByMuscle(rows: readonly ExerciseRow[], lead: Muscle | null): MuscleGroup[] {
+  const order = lead === null ? MUSCLES : [lead, ...MUSCLES.filter((muscle) => muscle !== lead)];
+  return order.flatMap((muscle) => {
+    const mine = rows.filter((row) => row.primaryMuscle === muscle);
+    return mine.length > 0 ? [{ muscle, rows: mine }] : [];
+  });
 }

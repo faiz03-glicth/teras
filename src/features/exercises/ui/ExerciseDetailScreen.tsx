@@ -213,7 +213,7 @@ const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
   head: { gap: theme.spacing.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs },
-  muscles: { gap: theme.spacing.md },
+  muscles: { gap: theme.spacing.md, backgroundColor: theme.colors.bodyCanvas },
   muscleList: { gap: theme.spacing.sm },
   muscle: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   swatch: { width: 10, height: 10, borderRadius: 3 },

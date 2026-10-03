@@ -1,6 +1,6 @@
 import type { ExerciseRow } from '@/core/db/schema';
 
-import { browserSections, muscleBadge } from '../browse';
+import { browserSections, groupByMuscle, muscleBadge } from '../browse';
 
 const row = (id: string, name: string, over: Partial<ExerciseRow> = {}): ExerciseRow => ({
   id,
@@ -103,5 +103,42 @@ describe('browserSections, filtered by muscle and equipment', () => {
     expect(
       browserSections(library, { ...none, query: 'bench', muscle: 'chest' }).matches.map((one) => one.id),
     ).toEqual(['bench', 'dips']);
+  });
+});
+
+describe('grouping exercises by muscle', () => {
+  const ids = (groups: ReturnType<typeof groupByMuscle>) =>
+    groups.map((group) => [group.muscle, group.rows.map((r) => r.id)]);
+
+  it('puts each exercise under its primary muscle only, groups in library muscle order', () => {
+    const rows = [
+      row('fly', 'Cable Fly'),
+      row('press', 'Overhead Press', { primaryMuscle: 'shoulders', secondaryMuscles: ['triceps'] }),
+      row('bench', 'Bench Press', { secondaryMuscles: ['triceps', 'shoulders'] }),
+      row('pushdown', 'Tricep Pushdown', { primaryMuscle: 'triceps' }),
+    ];
+
+    expect(ids(groupByMuscle(rows, null))).toEqual([
+      ['chest', ['fly', 'bench']],
+      ['shoulders', ['press']],
+      ['triceps', ['pushdown']],
+    ]);
+  });
+
+  it('leads with the muscle chosen, keeping the order within each group', () => {
+    const rows = [
+      row('press', 'Overhead Press', { primaryMuscle: 'shoulders' }),
+      row('bench', 'Bench Press', { secondaryMuscles: ['shoulders'] }),
+      row('raise', 'Lateral Raise', { primaryMuscle: 'shoulders' }),
+    ];
+
+    expect(ids(groupByMuscle(rows, 'shoulders'))).toEqual([
+      ['shoulders', ['press', 'raise']],
+      ['chest', ['bench']],
+    ]);
+  });
+
+  it('has no groups when nothing matches', () => {
+    expect(groupByMuscle([], 'chest')).toEqual([]);
   });
 });
