@@ -96,15 +96,17 @@ describe('what the exercise is', () => {
   it('shows them on the body, the main one strongest', async () => {
     const { theme } = detail('bench-press-barbell');
     // The drawing is hidden from screen readers: the rows beside it name the muscles.
-    const fillOf = (name: string) =>
-      screen.getByTestId(`region-${name}`, { includeHiddenElements: true }).props.fill;
+    const hidden = { includeHiddenElements: true };
+    const fillOf = (testID: string) => screen.getByTestId(testID, hidden).props.fill;
     // How react-native-svg hands a plain colour to the native view.
     const svgColor = (color: string) => ({ type: 0, payload: processColor(color) });
 
     expect(await screen.findByLabelText('Primary, Chest')).toBeTruthy();
-    expect(fillOf('pectorals')).toEqual(svgColor(theme.heat[4]));
-    expect(fillOf('triceps')).toEqual(svgColor(theme.heat[2]));
-    expect(fillOf('quadriceps')).toEqual(svgColor(theme.colors.border));
+    // The muscles worked are shaded over the plain body; the rest stay plain.
+    expect(fillOf('highlight-pectorals')).toEqual(svgColor(theme.heat[4]));
+    expect(fillOf('highlight-triceps')).toEqual(svgColor(theme.heat[2]));
+    expect(screen.queryByTestId('highlight-quadriceps', hidden)).toBeNull();
+    expect(fillOf('region-quadriceps')).toEqual(svgColor(theme.colors.bodyMuscle));
   });
 
   it('suggests more for the same muscle, and opens one', async () => {

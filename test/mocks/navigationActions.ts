@@ -16,7 +16,6 @@ export const openActiveWorkout = jest.fn();
 export const openAddExercise = jest.fn();
 export const openExerciseLibrary = jest.fn();
 export const openExercise = jest.fn();
-export const openMuscleFilter = jest.fn();
 export const openEquipmentFilter = jest.fn();
 export const openCreateExercise = jest.fn();
 export const returnToWorkout = jest.fn();

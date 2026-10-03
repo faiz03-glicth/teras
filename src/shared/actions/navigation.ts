@@ -90,11 +90,6 @@ export function openExercise(id: string): void {
   router.push(routes.exercise(id));
 }
 
-/** Form sheet over the exercise browser: narrow it to one muscle. */
-export function openMuscleFilter(): void {
-  router.push(routes.muscleFilter());
-}
-
 /** Form sheet over the exercise browser: narrow it to one kind of equipment. */
 export function openEquipmentFilter(): void {
   router.push(routes.equipmentFilter());

@@ -4,10 +4,11 @@ import type { ExerciseRow } from '@/core/db/schema';
 import { browserSections, muscleBadge } from '@/features/exercises/domain/browse';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, muscleSummary } from '@/features/exercises/domain/labels';
 import { useWorkoutOwner } from '@/features/workouts/hooks/useWorkoutQueries';
-import { openCreateExercise, openEquipmentFilter, openMuscleFilter } from '@/shared/actions';
+import { openCreateExercise, openEquipmentFilter } from '@/shared/actions';
 
 import { useExerciseList, useFavouriteIds, useRecentExercises } from '../hooks/useExerciseQueries';
 import { useExerciseBrowserStore } from '../state/exerciseBrowserStore';
+import { useMuscleFilter } from './useMuscleFilter';
 
 /** One exercise as the browser lists it, ready to render. */
 export interface ExerciseChoice {
@@ -46,9 +47,10 @@ const filterOf = (name: string, chosen: string | null, all: string): BrowserFilt
 };
 
 /**
- * The exercise browser, shared by Add exercise and the Exercise library: search, equipment and muscle
- * filters, then Favourites, Recent and every exercise, forty at a time. What a tap on a row does is the
- * screen's own business. Each time it opens it starts from the whole library.
+ * The exercise browser, shared by Add exercise and the Exercise library: search, the equipment filter
+ * (a sheet) and the muscle filter (the body, opened in place above the list), then Favourites, Recent
+ * and every exercise, forty at a time. What a tap on a row does is the screen's own business. Each time
+ * it opens it starts from the whole library.
  */
 export function useExerciseBrowser() {
   const owner = useWorkoutOwner();
@@ -58,7 +60,9 @@ export function useExerciseBrowser() {
   const shown = useExerciseBrowserStore((state) => state.shown);
   const setQuery = useExerciseBrowserStore((state) => state.setQuery);
   const showMore = useExerciseBrowserStore((state) => state.showMore);
+  const clearFilters = useExerciseBrowserStore((state) => state.clearFilters);
   const clear = useExerciseBrowserStore((state) => state.clear);
+  const muscles = useMuscleFilter();
   const library = useExerciseList(owner);
   const favourites = useFavouriteIds(owner);
   const recent = useRecentExercises(owner);
@@ -113,14 +117,16 @@ export function useExerciseBrowser() {
     placeholder: library.data ? `Search ${library.data.length} exercises` : 'Search exercises',
     equipmentFilter: filterOf('Equipment', equipment && EQUIPMENT_LABELS[equipment], 'All equipment'),
     muscleFilter: filterOf('Muscle', muscle && MUSCLE_LABELS[muscle], 'All muscles'),
+    muscles,
     sections: view.sections,
     remaining: view.remaining,
     empty: status === 'ready' && view.empty,
+    canClearFilters: muscle !== null || equipment !== null,
     onQueryChange: setQuery,
     onShowMore: showMore,
+    onClearFilters: clearFilters,
     onClear: clear,
     onOpenEquipment: () => openEquipmentFilter(),
-    onOpenMuscle: () => openMuscleFilter(),
     onCreate: () => openCreateExercise(),
     onRetry: useCallback(() => void refetch(), [refetch]),
   };

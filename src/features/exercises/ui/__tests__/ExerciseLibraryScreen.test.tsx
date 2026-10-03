@@ -60,14 +60,12 @@ describe('the exercise library', () => {
 describe('filtering the library', () => {
   const browser = () => useExerciseBrowserStore.getState();
 
-  it('opens the equipment and muscle filters', async () => {
+  it('opens the equipment filter', async () => {
     library();
 
     fireEvent.press(await screen.findByRole('button', { name: 'Equipment, All equipment' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Muscle, All muscles' }));
 
     expect(actions.openEquipmentFilter).toHaveBeenCalled();
-    expect(actions.openMuscleFilter).toHaveBeenCalled();
   });
 
   it('lists only what the filters allow, and says which are on', async () => {
@@ -110,5 +108,95 @@ describe('filtering the library', () => {
 
     expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
     expect(screen.getByTestId('exercise-search').props.value).toBe('');
+    expect(screen.queryByTestId('muscle-panel')).toBeNull();
+  });
+});
+
+describe('the muscle filter', () => {
+  const browser = () => useExerciseBrowserStore.getState();
+  // The drawing is hidden from screen readers, which pick from the list of muscles instead.
+  const hidden = { includeHiddenElements: true };
+  const lit = (region: string) => screen.queryByTestId(`highlight-${region}`, hidden);
+
+  async function openMuscles() {
+    library();
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Muscle, All muscles' }));
+  }
+
+  it('opens in place: the body above, the whole list still below', async () => {
+    await openMuscles();
+
+    expect(screen.getByTestId('muscle-panel')).toBeTruthy();
+    expect(screen.getByTestId('body-map', hidden)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Muscle, All muscles' })).toBeExpanded();
+    expect(screen.getByRole('radio', { name: 'All muscles' })).toBeChecked();
+    expect(screen.getByText('ALL EXERCISES')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
+  });
+
+  it('lights the muscle picked and narrows the list, keeping the body in view', async () => {
+    await openMuscles();
+
+    fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));
+
+    expect(await screen.findByText('2 EXERCISES')).toBeTruthy();
+    expect(lit('pectorals')).toBeTruthy();
+    expect(screen.getByTestId('muscle-panel')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Chest' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Muscle, Chest' })).toBeTruthy();
+    expect(screen.getByTestId('all-bench-press-barbell')).toBeTruthy();
+    expect(screen.queryByTestId('all-squat-barbell')).toBeNull();
+    expect(actions.goBack).not.toHaveBeenCalled();
+  });
+
+  it('picks a muscle tapped on the body', async () => {
+    await openMuscles();
+
+    fireEvent.press(screen.getByTestId('region-reardelts', hidden));
+
+    expect(await screen.findByText('1 EXERCISE')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Shoulders' })).toBeChecked();
+    expect(lit('deltoids')).toBeTruthy();
+    expect(lit('reardelts')).toBeTruthy();
+  });
+
+  it('moves the light to the next muscle picked', async () => {
+    await openMuscles();
+    fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));
+
+    fireEvent.press(screen.getByRole('radio', { name: 'Shoulders' }));
+
+    expect(await screen.findByText('1 EXERCISE')).toBeTruthy();
+    expect(lit('deltoids')).toBeTruthy();
+    expect(lit('pectorals')).toBeNull();
+  });
+
+  it('clears every filter at once, leaving the body plain and open', async () => {
+    await openMuscles();
+    fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));
+    act(() => browser().setEquipment('dumbbell'));
+    expect(await screen.findByText('1 EXERCISE')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Clear filters' }));
+
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+    expect(lit('pectorals')).toBeNull();
+    expect(screen.getByRole('radio', { name: 'All muscles' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Equipment, All equipment' })).toBeTruthy();
+    expect(screen.getByTestId('muscle-panel')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
+  });
+
+  it('closes from its button, keeping the muscle chosen', async () => {
+    await openMuscles();
+    fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));
+    expect(await screen.findByText('2 EXERCISES')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Muscle, Chest' }));
+
+    expect(screen.queryByTestId('muscle-panel')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Muscle, Chest' })).not.toBeExpanded();
+    expect(screen.getByText('2 EXERCISES')).toBeTruthy();
   });
 });

@@ -1,15 +1,24 @@
-# Exercise library: muscle filter (body map / chip) and equipment filter, combined. Read-only.
+# Exercise library: muscle filter (opens in place, picked by chip) and equipment filter, combined. Read-only.
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
+- tapOn: { id: 'tab-workout' }
 - tapOn:
-    id: "workout-library"
-- tapOn: "All muscles"
-- tapOn: "Chest"
-- assertVisible: "14 EXERCISES"
-- tapOn: "All equipment"
-- tapOn: "Dumbbell"
-- assertVisible: "4 EXERCISES"
-- assertVisible: "Chest Fly (Dumbbell)"
+    id: 'workout-library'
+- tapOn: { id: 'exercise-filter-muscle' }
+- assertVisible: { id: 'muscle-panel' }
+- tapOn: { id: 'muscle-filter-chest' }
+- assertVisible: 'Muscle, Chest'
+- scrollUntilVisible:
+    element: '14 EXERCISES'
+- scrollUntilVisible:
+    element: { id: 'exercise-filter-equipment' }
+    direction: UP
+- tapOn: { id: 'exercise-filter-equipment' }
+- tapOn: 'Dumbbell'
+- assertVisible: { id: 'muscle-panel' }
+- scrollUntilVisible:
+    element: '4 EXERCISES'
+- scrollUntilVisible:
+    element: 'Chest Fly (Dumbbell)'
 - back

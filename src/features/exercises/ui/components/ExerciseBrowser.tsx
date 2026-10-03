@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, ErrorState, LoadingState, SectionLabel, TextF
 import type { ExerciseBrowserModel } from '../useExerciseBrowser';
 import { ExerciseRow } from './ExerciseRow';
 import { FilterButton } from './FilterButton';
+import { MusclePanel } from './MusclePanel';
 
 export interface ExerciseBrowserProps {
   browser: ExerciseBrowserModel;
@@ -14,9 +15,9 @@ export interface ExerciseBrowserProps {
 }
 
 /**
- * Search and the equipment and muscle filters, then the lists: Favourites and Recent first, then every
- * exercise (or the matches), forty at a time. Shared by Add exercise and the Exercise library; each says
- * what picking one does.
+ * Search and the equipment and muscle filters (the body opens in place, above the list it narrows), then
+ * the lists: Favourites and Recent first, then every exercise (or the matches), forty at a time. Shared by
+ * Add exercise and the Exercise library; each says what picking one does.
  */
 export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProps) {
   return (
@@ -44,11 +45,14 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
         <FilterButton
           label={browser.muscleFilter.label}
           active={browser.muscleFilter.active}
-          onPress={browser.onOpenMuscle}
+          expanded={browser.muscles.open}
+          onPress={browser.muscles.onToggle}
           accessibilityLabel={browser.muscleFilter.accessibilityLabel}
           testID="exercise-filter-muscle"
         />
       </View>
+
+      {browser.muscles.open && <MusclePanel filter={browser.muscles} />}
 
       {browser.status === 'loading' && <LoadingState label="Loading exercises" />}
       {browser.status === 'error' && (
@@ -59,7 +63,12 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
 
       {browser.sections.map((section) => (
         <View key={section.key} style={styles.group}>
-          <SectionLabel>{section.title}</SectionLabel>
+          <SectionHeading
+            title={section.title}
+            onClearFilters={
+              section.key === 'all' && browser.canClearFilters ? browser.onClearFilters : undefined
+            }
+          />
           <Card tight divided>
             {section.rows.map((choice) => (
               <ExerciseRow
@@ -98,8 +107,26 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
   );
 }
 
+/** A section's title; over the matches while a filter is on, with the way to take them all off. */
+function SectionHeading({ title, onClearFilters }: { title: string; onClearFilters?: () => void }) {
+  if (!onClearFilters) return <SectionLabel>{title}</SectionLabel>;
+  return (
+    <View style={styles.heading}>
+      <SectionLabel>{title}</SectionLabel>
+      <Button
+        label="Clear filters"
+        variant="ghost"
+        size="sm"
+        onPress={onClearFilters}
+        testID="exercise-clear-filters"
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create((theme) => ({
   // Close under the search, as one control: what to look for, then where.
   filters: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: -theme.spacing.sm },
   group: { gap: theme.spacing.sm },
+  heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 }));

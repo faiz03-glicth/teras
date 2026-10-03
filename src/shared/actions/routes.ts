@@ -19,7 +19,6 @@ export const routes = {
   routine: (id: string): Href => ({ pathname: '/routine/[id]', params: { id } }),
   exerciseLibrary: (): Href => '/exercises',
   exercise: (id: string): Href => ({ pathname: '/exercise/[id]', params: { id } }),
-  muscleFilter: (): Href => '/muscle-filter',
   equipmentFilter: (): Href => '/equipment-filter',
   createExercise: (): Href => '/create-exercise',
   workoutSaved: (id: string): Href => ({ pathname: '/workout/saved/[id]', params: { id } }),

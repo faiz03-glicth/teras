@@ -1,0 +1,37 @@
+# Exercise library: the muscle filter opens in place. Pick a muscle (the body stays, the list narrows),
+# pick another, Clear filters (whole list, panel still open, All muscles chosen), then close it. Read-only.
+# The body drawing is hidden from accessibility, so Maestro picks by chip; Jest covers taps on the body.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-filter-muscle' }
+- assertVisible: { id: 'muscle-panel' }
+- assertVisible: { id: 'muscle-filter-all' }
+- tapOn: { id: 'muscle-filter-chest' }
+- assertVisible: { id: 'muscle-panel' }
+- assertVisible: 'Muscle, Chest'
+- scrollUntilVisible:
+    element: '14 EXERCISES'
+- assertVisible: { id: 'exercise-clear-filters' }
+- scrollUntilVisible:
+    element: { id: 'muscle-filter-lats' }
+    direction: UP
+- tapOn: { id: 'muscle-filter-lats' }
+- assertVisible: { id: 'muscle-panel' }
+- assertVisible: 'Muscle, Lats'
+- scrollUntilVisible:
+    element: { id: 'exercise-clear-filters' }
+- tapOn: { id: 'exercise-clear-filters' }
+- scrollUntilVisible:
+    element: 'ALL EXERCISES'
+- assertNotVisible: { id: 'exercise-clear-filters' }
+- scrollUntilVisible:
+    element: { id: 'exercise-filter-muscle' }
+    direction: UP
+- assertVisible: 'Muscle, All muscles'
+- assertVisible: { id: 'muscle-panel' }
+- tapOn: { id: 'exercise-filter-muscle' }
+- assertNotVisible: { id: 'muscle-panel' }
+- back
