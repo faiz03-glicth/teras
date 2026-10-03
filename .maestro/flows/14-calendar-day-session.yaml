@@ -1,0 +1,12 @@
+# Home → Calendar → a workout → Session; Calendar → today → Day sheet. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: "Training wave, .*"
+- assertVisible: { id: "calendar-screen" }
+- assertVisible: { id: "calendar-wave" }
+- tapOn: { id: "calendar-workout-.*", index: 0 }
+- assertVisible: { id: "session-screen" }
+- back
+- tapOn: ".*, today: .*"
+- assertVisible: { id: "day-sheet" }

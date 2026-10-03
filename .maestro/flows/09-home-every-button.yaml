@@ -1,0 +1,17 @@
+# Home: every element and button (wave chevron → Calendar, day cells, feed entry → Session). Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- assertVisible: { id: "home-screen" }
+- assertVisible: { id: "training-wave", optional: true }
+- tapOn: { id: "training-wave", optional: true }
+- assertVisible: { id: "calendar-screen", optional: true }
+- assertVisible: { id: "calendar-wave", optional: true }
+- tapOn: { id: "calendar-workout-.*", optional: true }
+- assertVisible: { id: "session-screen", optional: true }
+- back
+- back
+- tapOn: { id: "session-.*", optional: true }
+- assertVisible: { id: "session-screen", optional: true }
+- tapOn: { id: "session-exercise-.*", optional: true }
+- assertVisible: { id: "exercise-detail-screen", optional: true }

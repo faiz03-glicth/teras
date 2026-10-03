@@ -1,0 +1,19 @@
+# SENDS A REAL EMAIL CODE. Set EMAIL: maestro test -e EMAIL=you@example.com ...
+# Stops at the code screen (the code must be typed by a person).
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: "tab-profile" }
+- tapOn:
+    id: "profile-replay"
+- tapOn:
+    id: "onboarding-have-account"
+- tapOn:
+    id: "login-continue-email"
+- tapOn:
+    id: "login-email-input"
+- inputText: ${EMAIL}
+- tapOn:
+    id: "login-send-code"
+- assertVisible:
+    id: "login-different-email"

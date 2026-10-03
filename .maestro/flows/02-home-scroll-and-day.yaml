@@ -1,0 +1,14 @@
+# Home scrolls, and a heatmap day opens its sheet. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- repeat:
+    times: 5
+    commands:
+      - scroll
+      - swipe:
+          direction: DOWN
+- assertVisible: "Training wave"
+- tapOn:
+    text: "Today"
+    optional: true

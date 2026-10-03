@@ -1,0 +1,11 @@
+# Profile renders its settings. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: "tab-profile" }
+- assertVisible:
+    id: "profile-screen"
+- assertVisible:
+    id: "profile-theme"
+- assertVisible:
+    id: "profile-replay"

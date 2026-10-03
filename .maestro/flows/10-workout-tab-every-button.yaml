@@ -1,0 +1,20 @@
+# Workout tab: every button opens its screen, then returns. Read-only (nothing started or saved).
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: "tab-workout" }
+- assertVisible: { id: "workout-screen" }
+- tapOn: { id: "routine-new" }
+- assertVisible: { id: "edit-routine-screen" }
+- back
+- repeat:
+    times: 3
+    commands:
+      - tapOn: { id: "routine-edit-.*", index: 0 }
+      - assertVisible: { id: "edit-routine-screen" }
+      - back
+- tapOn: { id: "workout-library" }
+- assertVisible: { id: "exercise-library-screen" }
+- back
+- tapOn: { id: "workout-resume", optional: true }
+- assertVisible: { id: "active-workout-screen", optional: true }
