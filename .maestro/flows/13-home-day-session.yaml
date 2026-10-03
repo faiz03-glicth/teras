@@ -2,13 +2,13 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- assertVisible: { id: "training-wave" }
-- tapOn: ".*, today: .*"
-- assertVisible: { id: "day-sheet" }
-- assertVisible: { id: "day-level" }
-- tapOn: { id: "day-workout-.*", index: 0, optional: true }
-- assertVisible: { id: "session-screen", optional: true }
+- assertVisible: { id: 'training-wave' }
+- tapOn: '.*, today: .*'
+- assertVisible: { id: 'day-sheet' }
+- assertVisible: { id: 'day-level' }
+- tapOn: { id: 'day-workout-.*', index: 0, optional: true }
+- assertVisible: { id: 'session-screen', optional: true }
 - back
-- tapOn: { id: "feed-.*", index: 0 }
-- assertVisible: { id: "session-screen" }
+- tapOn: { id: 'feed-.*', index: 0 }
+- assertVisible: { id: 'session-screen' }
 - back

@@ -2,11 +2,11 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
+- tapOn: { id: 'tab-workout' }
 - tapOn:
-    id: "workout-start-empty"
+    id: 'workout-start-empty'
 - tapOn:
-    id: "discard-workout"
-- tapOn: "DISCARD"
+    id: 'discard-workout'
+- tapOn: 'DISCARD'
 - assertVisible:
-    id: "workout-start-empty"
+    id: 'workout-start-empty'

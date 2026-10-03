@@ -8,20 +8,20 @@ appId: com.faiz.teras.local
 - openLink: teras-local://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
 - extendedWaitUntil:
     visible:
-      id: "onboarding-primary"
+      id: 'onboarding-primary'
     timeout: 60000
 - tapOn:
-    id: "onboarding-primary"
+    id: 'onboarding-primary'
 - assertVisible:
-    id: "setup-unit"
+    id: 'setup-unit'
 - assertVisible:
-    id: "setup-bodyweight"
+    id: 'setup-bodyweight'
 - tapOn:
-    id: "onboarding-primary"
+    id: 'onboarding-primary'
 - assertVisible:
-    id: "login-skip"
+    id: 'login-skip'
 - tapOn:
-    id: "login-skip"
+    id: 'login-skip'
 - extendedWaitUntil:
-    visible: "Training wave"
+    visible: 'Training wave'
     timeout: 20000

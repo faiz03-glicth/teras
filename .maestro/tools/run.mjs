@@ -16,12 +16,17 @@ const WRITES = join(ROOT, 'writes');
 const REPORTS = join(ROOT, 'reports');
 const APP_ID = process.env.TERAS_APP_ID || 'com.faiz.teras.local';
 const METRO_URL = 'http://localhost:8081/status';
-const ADB = process.env.ADB_PATH || join(process.env.LOCALAPPDATA || '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
+const ADB =
+  process.env.ADB_PATH || join(process.env.LOCALAPPDATA || '', 'Android', 'Sdk', 'platform-tools', 'adb.exe');
 const MAX_MESSAGE = 160;
 
 const q = (arg) => `"${String(arg).replace(/"/g, '\\"')}"`;
 const sh = (cmd, args) => spawnSync(`${cmd} ${args.map(q).join(' ')}`, { encoding: 'utf8', shell: true });
-const firstLine = (text) => (text || '').split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith('WARNING:'))[0] || '';
+const firstLine = (text) =>
+  (text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('WARNING:'))[0] || '';
 const isInside = (file, dir) => file === dir || file.startsWith(dir + sep);
 
 function listFlows(target) {
@@ -36,7 +41,8 @@ function listFlows(target) {
 function failureMessage(junitPath, result) {
   try {
     const xml = readFileSync(junitPath, 'utf8');
-    const match = xml.match(/<failure[^>]*message="([^"]*)"/) || xml.match(/<failure[^>]*>([\s\S]*?)<\/failure>/);
+    const match =
+      xml.match(/<failure[^>]*message="([^"]*)"/) || xml.match(/<failure[^>]*>([\s\S]*?)<\/failure>/);
     if (match) return firstLine(match[1]).slice(0, MAX_MESSAGE);
   } catch {
     // no junit file written; fall back to the process output below
@@ -45,14 +51,31 @@ function failureMessage(junitPath, result) {
 }
 
 function runFlow(file, attempt) {
-  const name = relative(ROOT, file).replace(/[\\/]/g, '_').replace(/\.ya?ml$/, '');
+  const name = relative(ROOT, file)
+    .replace(/[\\/]/g, '_')
+    .replace(/\.ya?ml$/, '');
   const out = join(REPORTS, `${name}.a${attempt}`);
   mkdirSync(out, { recursive: true });
   const junit = join(out, 'junit.xml');
   const started = Date.now();
-  const result = sh('maestro', ['test', file, '--format', 'junit', '--output', junit, '--debug-output', join(out, 'debug')]);
+  const result = sh('maestro', [
+    'test',
+    file,
+    '--format',
+    'junit',
+    '--output',
+    junit,
+    '--debug-output',
+    join(out, 'debug'),
+  ]);
   const ok = result.status === 0;
-  return { name, ok, seconds: +((Date.now() - started) / 1000).toFixed(1), message: ok ? '' : failureMessage(junit, result), evidence: out };
+  return {
+    name,
+    ok,
+    seconds: +((Date.now() - started) / 1000).toFixed(1),
+    message: ok ? '' : failureMessage(junit, result),
+    evidence: out,
+  };
 }
 
 function runAll(files) {
@@ -90,12 +113,26 @@ async function doctor() {
     console.log(`${ok ? 'OK     ' : 'MISSING'} ${label}${ok ? '' : ` -> ${fix}`}`);
     if (!ok) missing++;
   };
-  check('maestro CLI', sh('maestro', ['--version']).status === 0, 'install Maestro and add it to PATH (https://maestro.mobile.dev)');
+  check(
+    'maestro CLI',
+    sh('maestro', ['--version']).status === 0,
+    'install Maestro and add it to PATH (https://maestro.mobile.dev)',
+  );
   const online = (sh(ADB, ['devices']).stdout || '').split(/\r?\n/).filter((line) => /\tdevice$/.test(line));
-  check(`adb device connected (${online.length})`, online.length >= 1, 'enable USB debugging, accept the prompt on the phone, use a data cable');
+  check(
+    `adb device connected (${online.length})`,
+    online.length >= 1,
+    'enable USB debugging, accept the prompt on the phone, use a data cable',
+  );
   if (online.length) {
-    const installed = (sh(ADB, ['shell', 'pm', 'list', 'packages', APP_ID]).stdout || '').includes(`package:${APP_ID}`);
-    check(`app installed (${APP_ID})`, installed, 'install the dev build (npm run android), or set TERAS_APP_ID');
+    const installed = (sh(ADB, ['shell', 'pm', 'list', 'packages', APP_ID]).stdout || '').includes(
+      `package:${APP_ID}`,
+    );
+    check(
+      `app installed (${APP_ID})`,
+      installed,
+      'install the dev build (npm run android), or set TERAS_APP_ID',
+    );
     const reversed = (sh(ADB, ['reverse', '--list']).stdout || '').includes('tcp:8081');
     check('adb reverse tcp:8081', reversed, 'run: adb reverse tcp:8081 tcp:8081');
   }
@@ -106,7 +143,9 @@ async function doctor() {
 function requireDevice() {
   const online = (sh(ADB, ['devices']).stdout || '').split(/\r?\n/).filter((line) => /\tdevice$/.test(line));
   if (online.length > 0) return;
-  console.error('ENVIRONMENT: no adb device connected. Reconnect the phone, accept USB debugging, run: adb reverse tcp:8081 tcp:8081, then retry.');
+  console.error(
+    'ENVIRONMENT: no adb device connected. Reconnect the phone, accept USB debugging, run: adb reverse tcp:8081 tcp:8081, then retry.',
+  );
   process.exit(3);
 }
 
@@ -120,7 +159,9 @@ if (command === 'all') process.exit(runAll(listFlows(FLOWS)));
 if (command === 'flow' && target) {
   const resolved = resolve(target);
   if (isInside(resolved, WRITES) && (!allowWrites || statSync(resolved).isDirectory())) {
-    console.error('REFUSED: writes/ flows wipe data or send real email. Pass ONE file and --allow-writes after the owner approves.');
+    console.error(
+      'REFUSED: writes/ flows wipe data or send real email. Pass ONE file and --allow-writes after the owner approves.',
+    );
     process.exit(2);
   }
   process.exit(runAll(listFlows(resolved)));

@@ -2,10 +2,10 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-profile" }
-- tapOn: { id: "profile-theme" }
+- tapOn: { id: 'tab-profile' }
+- tapOn: { id: 'profile-theme' }
 - back
-- scrollUntilVisible: { element: { id: "profile-logout" } }
-- tapOn: { id: "profile-logout" }
-- tapOn: { text: "LOG OUT", optional: true }
-- assertVisible: { id: "onboarding-primary" }
+- scrollUntilVisible: { element: { id: 'profile-logout' } }
+- tapOn: { id: 'profile-logout' }
+- tapOn: { text: 'LOG OUT', optional: true }
+- assertVisible: { id: 'onboarding-primary' }

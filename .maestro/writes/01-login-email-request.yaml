@@ -3,17 +3,17 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-profile" }
+- tapOn: { id: 'tab-profile' }
 - tapOn:
-    id: "profile-replay"
+    id: 'profile-replay'
 - tapOn:
-    id: "onboarding-have-account"
+    id: 'onboarding-have-account'
 - tapOn:
-    id: "login-continue-email"
+    id: 'login-continue-email'
 - tapOn:
-    id: "login-email-input"
+    id: 'login-email-input'
 - inputText: ${EMAIL}
 - tapOn:
-    id: "login-send-code"
+    id: 'login-send-code'
 - assertVisible:
-    id: "login-different-email"
+    id: 'login-different-email'

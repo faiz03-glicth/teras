@@ -8,7 +8,7 @@ appId: com.faiz.teras.local
       - scroll
       - swipe:
           direction: DOWN
-- assertVisible: "Training wave"
+- assertVisible: 'Training wave'
 - tapOn:
-    text: "Today"
+    text: 'Today'
     optional: true

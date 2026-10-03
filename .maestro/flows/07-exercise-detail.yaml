@@ -2,10 +2,10 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
+- tapOn: { id: 'tab-workout' }
 - tapOn:
-    id: "workout-library"
-- tapOn: "About Bench Press (Barbell)"
-- assertVisible: "Bench Press (Barbell)"
+    id: 'workout-library'
+- tapOn: 'About Bench Press (Barbell)'
+- assertVisible: 'Bench Press (Barbell)'
 - back
 - back

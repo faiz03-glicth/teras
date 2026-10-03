@@ -2,9 +2,9 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
-- tapOn: "New routine"
-- assertVisible: "No exercises yet"
+- tapOn: { id: 'tab-workout' }
+- tapOn: 'New routine'
+- assertVisible: 'No exercises yet'
 - back
-- assertNotVisible: "Discard changes?"
-- assertVisible: "Routines|ROUTINES"
+- assertNotVisible: 'Discard changes?'
+- assertVisible: 'Routines|ROUTINES'

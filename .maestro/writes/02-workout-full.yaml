@@ -3,33 +3,33 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
+- tapOn: { id: 'tab-workout' }
 - tapOn:
-    id: "workout-start-empty"
+    id: 'workout-start-empty'
 - assertVisible:
-    id: "active-workout-screen"
+    id: 'active-workout-screen'
 - tapOn:
-    id: "add-exercise"
+    id: 'add-exercise'
 - tapOn:
-    id: "all-bench-press-barbell"
-- assertVisible: "Bench Press (Barbell)"
+    id: 'all-bench-press-barbell'
+- assertVisible: 'Bench Press (Barbell)'
 - tapOn:
-    text: "KG"
+    text: 'KG'
     optional: true
 - tapOn:
-    id: "set-done-0"
+    id: 'set-done-0'
     optional: true
 - assertVisible:
-    id: "rest-bar"
+    id: 'rest-bar'
     optional: true
 - tapOn:
-    id: "finish-workout"
+    id: 'finish-workout'
 - tapOn:
-    text: "FINISH"
+    text: 'FINISH'
     optional: true
 - extendedWaitUntil:
     visible:
-      id: "workout-saved-screen"
+      id: 'workout-saved-screen'
     timeout: 10000
 - tapOn:
-    id: "saved-done"
+    id: 'saved-done'

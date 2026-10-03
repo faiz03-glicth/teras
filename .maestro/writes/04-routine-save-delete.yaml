@@ -2,18 +2,18 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-workout" }
-- tapOn: "New routine"
+- tapOn: { id: 'tab-workout' }
+- tapOn: 'New routine'
 - tapOn:
-    id: "routine-name"
+    id: 'routine-name'
 - eraseText
-- inputText: "Maestro Test"
-- tapOn: "Add exercise"
+- inputText: 'Maestro Test'
+- tapOn: 'Add exercise'
 - tapOn:
-    id: "all-plank"
-- tapOn: "Save"
-- assertVisible: "Maestro Test"
-- tapOn: "Edit Maestro Test"
-- tapOn: "Delete routine"
-- tapOn: "DELETE"
-- assertNotVisible: "Maestro Test"
+    id: 'all-plank'
+- tapOn: 'Save'
+- assertVisible: 'Maestro Test'
+- tapOn: 'Edit Maestro Test'
+- tapOn: 'Delete routine'
+- tapOn: 'DELETE'
+- assertNotVisible: 'Maestro Test'

@@ -5,9 +5,9 @@ appId: com.faiz.teras.local
     appId: com.faiz.teras.local
 - openLink: teras-local://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
 - extendedWaitUntil:
-    visible: "Home"
+    visible: 'Home'
     timeout: 60000
 - extendedWaitUntil:
-    visible: { id: "tab-home" }
+    visible: { id: 'tab-home' }
     timeout: 30000
-- tapOn: { id: "tab-home" }
+- tapOn: { id: 'tab-home' }

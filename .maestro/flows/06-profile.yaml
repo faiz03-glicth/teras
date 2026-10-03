@@ -2,10 +2,10 @@
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: { id: "tab-profile" }
+- tapOn: { id: 'tab-profile' }
 - assertVisible:
-    id: "profile-screen"
+    id: 'profile-screen'
 - assertVisible:
-    id: "profile-theme"
+    id: 'profile-theme'
 - assertVisible:
-    id: "profile-replay"
+    id: 'profile-replay'

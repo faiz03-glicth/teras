@@ -5,7 +5,7 @@ appId: com.faiz.teras.local
 - repeat:
     times: 10
     commands:
-      - tapOn: { id: "tab-workout" }
-      - tapOn: { id: "tab-profile" }
-      - tapOn: { id: "tab-home" }
-- assertVisible: "Training wave"
+      - tapOn: { id: 'tab-workout' }
+      - tapOn: { id: 'tab-profile' }
+      - tapOn: { id: 'tab-home' }
+- assertVisible: 'Training wave'
