@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 
-import { motion, useStateTransition } from '@/theme';
+import { motion } from '@/theme';
 
 import { Crossfade } from './Crossfade';
 import { Text } from './Text';
@@ -45,15 +45,12 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
   testID,
 }: SegmentedControlProps<T>) {
-  const { theme } = useUnistyles();
-  const tint = useStateTransition('backgroundColor', 'normal');
-  const glass = theme.glass !== null;
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value),
   );
 
-  // Glass: the pill's position, in segments, and each segment's width once the track is measured.
+  // The key's position, in segments, and each segment's width once the track is measured.
   const [segment, setSegment] = useState(0);
   const position = useSharedValue(index);
   useEffect(() => {
@@ -71,9 +68,9 @@ export function SegmentedControl<T extends string>({
       style={styles.track}
       accessibilityRole="radiogroup"
       accessibilityLabel={accessibilityLabel}
-      onLayout={glass ? measure : undefined}
+      onLayout={measure}
     >
-      {glass && segment > 0 && (
+      {segment > 0 && (
         <Animated.View
           pointerEvents="none"
           style={[styles.pill(segment), pill]}
@@ -92,12 +89,8 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="radio"
             accessibilityLabel={option.detail ? `${option.label}, ${option.detail}` : option.label}
             accessibilityState={{ checked: selected }}
-            // Classic: unselected segments take the track's colour (not transparent) so the tint eases
-            // cleanly. Glass: segments are clear; the pill underneath is the selection.
-            style={[
-              styles.segment,
-              !glass && [{ backgroundColor: selected ? theme.colors.accentSoft : theme.colors.subtle }, tint],
-            ]}
+            // Segments are clear: the raised key sliding underneath is the selection.
+            style={styles.segment}
           >
             <Crossfade
               active={selected}
@@ -139,7 +132,9 @@ const styles = StyleSheet.create((theme) => ({
     gap: GAP,
     padding: PAD,
     borderRadius: theme.radii.control,
-    backgroundColor: theme.colors.subtle,
+    // The track is pressed into the material; the chosen segment is a key raised out of it.
+    backgroundColor: theme.material.inset.background,
+    boxShadow: theme.material.inset.shadow,
   },
   segment: {
     flex: 1,
@@ -156,7 +151,7 @@ const styles = StyleSheet.create((theme) => ({
     bottom: PAD,
     width,
     borderRadius: theme.radii.control - PAD,
-    backgroundColor: theme.glass?.strong,
-    boxShadow: theme.glass?.card.shadow,
+    backgroundColor: theme.material.raisedSm.background,
+    boxShadow: theme.material.raisedSm.shadow,
   }),
 }));

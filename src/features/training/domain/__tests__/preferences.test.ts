@@ -1,10 +1,17 @@
 import {
   BODYWEIGHT_KG,
+  bodyweightFields,
   formatHeight,
   formatRest,
+  formatVolume,
   formatWeight,
   HEIGHT_CM,
+  heightFields,
+  parseBodyweightKg,
+  parseHeightCm,
+  parseRestSeconds,
   REST_SECONDS,
+  restFields,
   stepBodyweightKg,
   stepHeightCm,
   stepRestSeconds,
@@ -81,5 +88,78 @@ describe('formatting', () => {
     expect(formatRest(60)).toBe('1 min');
     expect(formatRest(90)).toBe('1 min 30 s');
     expect(formatRest(95)).toBe('1 min 35 s');
+  });
+
+  it('shows training volume in whole units, its thousands grouped', () => {
+    expect(formatVolume(4820, 'kg')).toBe('4,820 kg');
+    expect(formatVolume(4819.6, 'kg')).toBe('4,820 kg');
+    expect(formatVolume(950, 'kg')).toBe('950 kg');
+    expect(formatVolume(1234567, 'kg')).toBe('1,234,567 kg');
+    expect(formatVolume(0, 'kg')).toBe('0 kg');
+  });
+
+  it('converts volume to pounds only for display', () => {
+    expect(formatVolume(4820, 'lb')).toBe('10,626 lb');
+  });
+});
+
+describe('typing a value instead of stepping it', () => {
+  it('lays the value out as it reads, one field per number', () => {
+    expect(bodyweightFields(70, 'kg').map((f) => [f.text, f.suffix])).toEqual([['70', 'kg']]);
+    expect(bodyweightFields(70, 'lb').map((f) => [f.text, f.suffix])).toEqual([['154.3', 'lb']]);
+    expect(heightFields(170, 'kg').map((f) => [f.text, f.suffix])).toEqual([['170', 'cm']]);
+    expect(heightFields(170, 'lb').map((f) => [f.text, f.suffix])).toEqual([
+      ['5', 'ft'],
+      ['7', 'in'],
+    ]);
+    expect(restFields(90).map((f) => [f.text, f.suffix])).toEqual([
+      ['1', 'min'],
+      ['30', 's'],
+    ]);
+    expect(restFields(45).map((f) => f.text)).toEqual(['0', '45']);
+  });
+
+  it('reads bodyweight in the unit shown, to the tenth, and stores kilograms', () => {
+    expect(parseBodyweightKg('82.5', 'kg')).toBe(82.5);
+    expect(parseBodyweightKg('82,46', 'kg')).toBe(82.5);
+    expect(parseBodyweightKg(' 90 ', 'kg')).toBe(90);
+    // Typed in pounds, shown back exactly as typed.
+    expect(formatWeight(parseBodyweightKg('180', 'lb') ?? 0, 'lb')).toBe('180 lb');
+    expect(formatWeight(parseBodyweightKg('154.7', 'lb') ?? 0, 'lb')).toBe('154.7 lb');
+  });
+
+  it('reads height as centimetres, or as feet and inches', () => {
+    expect(parseHeightCm(['182'], 'kg')).toBe(182);
+    expect(parseHeightCm(['182.4'], 'kg')).toBe(182);
+    expect(formatHeight(parseHeightCm(['6', '1'], 'lb') ?? 0, 'lb')).toBe('6 ft 1 in');
+    // A blank part is zero, and inches past 12 carry into feet.
+    expect(formatHeight(parseHeightCm(['5', ''], 'lb') ?? 0, 'lb')).toBe('5 ft 0 in');
+    expect(formatHeight(parseHeightCm(['5', '14'], 'lb') ?? 0, 'lb')).toBe('6 ft 2 in');
+  });
+
+  it('reads rest as minutes and seconds, carrying seconds past 60', () => {
+    expect(parseRestSeconds(['2', '0'])).toBe(120);
+    expect(parseRestSeconds(['1', '30'])).toBe(90);
+    expect(parseRestSeconds(['0', '90'])).toBe(90);
+    expect(parseRestSeconds(['', '45'])).toBe(45);
+  });
+
+  it('keeps a typed value within the same range as the steppers', () => {
+    expect(parseBodyweightKg('900', 'kg')).toBe(BODYWEIGHT_KG.max);
+    expect(parseBodyweightKg('5', 'kg')).toBe(BODYWEIGHT_KG.min);
+    expect(parseHeightCm(['999'], 'kg')).toBe(HEIGHT_CM.max);
+    expect(parseHeightCm(['3', '0'], 'lb')).toBe(HEIGHT_CM.min);
+    expect(parseRestSeconds(['0', '5'])).toBe(REST_SECONDS.min);
+    expect(parseRestSeconds(['9', '0'])).toBe(REST_SECONDS.max);
+  });
+
+  it('reads nothing from a blank or a non-number, so the value stays as it was', () => {
+    expect(parseBodyweightKg('', 'kg')).toBeNull();
+    expect(parseBodyweightKg('abc', 'kg')).toBeNull();
+    expect(parseBodyweightKg('7.0.1', 'kg')).toBeNull();
+    expect(parseHeightCm([''], 'kg')).toBeNull();
+    expect(parseHeightCm(['', ''], 'lb')).toBeNull();
+    expect(parseHeightCm(['5', 'x'], 'lb')).toBeNull();
+    expect(parseRestSeconds(['', ''])).toBeNull();
   });
 });

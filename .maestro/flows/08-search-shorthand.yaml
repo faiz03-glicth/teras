@@ -1,0 +1,13 @@
+# Library search with shorthand. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn:
+    id: 'workout-library'
+- tapOn:
+    id: 'exercise-search'
+- inputText: 'ohp'
+- assertVisible: 'Overhead Press (Barbell)'
+- tapOn: { text: 'Clear', optional: true }
+- back

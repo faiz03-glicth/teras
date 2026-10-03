@@ -1,0 +1,10 @@
+# New routine with no changes leaves without asking. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: 'New routine'
+- assertVisible: 'No exercises yet'
+- back
+- assertNotVisible: 'Discard changes?'
+- assertVisible: 'Routines|ROUTINES'

@@ -47,10 +47,10 @@ describe.each(SCHEMES)('the segmented control in %s', (scheme) => {
   ] as const;
   const layout = { nativeEvent: { layout: { x: 0, y: 0, width: 126, height: 44 } } };
 
-  it('glides one frosted pill to the choice with Liquid Glass, and has none in Classic', () => {
-    setTestTheme(scheme, 'glass');
+  it('slides one raised key along its inset track to the choice', () => {
+    setTestTheme(scheme);
     const onChange = jest.fn();
-    const { rerender } = render(
+    render(
       <SegmentedControl
         options={OPTIONS}
         value="W"
@@ -63,18 +63,6 @@ describe.each(SCHEMES)('the segmented control in %s', (scheme) => {
     expect(screen.getByTestId('seg-pill')).toBeTruthy();
     fireEvent.press(screen.getByRole('radio', { name: 'M' }));
     expect(onChange).toHaveBeenCalledWith('M');
-
-    setTestTheme(scheme, 'classic');
-    rerender(
-      <SegmentedControl
-        options={OPTIONS}
-        value="W"
-        onChange={onChange}
-        accessibilityLabel="Range"
-        testID="seg"
-      />,
-    );
-    expect(screen.queryByTestId('seg-pill')).toBeNull();
   });
 });
 describe('toast helpers', () => {

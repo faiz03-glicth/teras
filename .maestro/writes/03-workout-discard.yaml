@@ -1,0 +1,12 @@
+# WRITES then removes: start empty workout and discard it.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn:
+    id: 'workout-start-empty'
+- tapOn:
+    id: 'discard-workout'
+- tapOn: 'DISCARD'
+- assertVisible:
+    id: 'workout-start-empty'

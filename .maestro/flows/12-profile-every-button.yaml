@@ -1,0 +1,15 @@
+# Profile: each toggle pressed twice (state unchanged), theme switched and back. Read-only net effect.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-profile' }
+- assertVisible: { id: 'profile-screen' }
+- assertVisible: { id: 'profile-name' }
+- tapOn: { id: 'profile-haptics' }
+- tapOn: { id: 'profile-haptics' }
+- tapOn: { id: 'profile-sounds' }
+- tapOn: { id: 'profile-sounds' }
+- tapOn: { id: 'profile-reduce-motion' }
+- tapOn: { id: 'profile-reduce-motion' }
+- scrollUntilVisible: { element: { id: 'profile-logout' } }
+- assertVisible: { id: 'profile-replay' }

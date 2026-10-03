@@ -18,6 +18,11 @@ export interface WorkoutDayRepository {
   recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals): Promise<WorkoutDay>;
   /** Days in the range (inclusive), oldest first. */
   list(owner: WorkoutDayOwner, from: ISODate, to: ISODate): Promise<WorkoutDay[]>;
+  /**
+   * The volumes of the training days in the 90 days before `date`: what that day's level was judged
+   * against. The Day detail shows a day against them; recordDay reads the very same window.
+   */
+  windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]>;
   /** Sends the signed-in user's days that aren't on the server yet. Returns how many were sent. */
   pushPending(userId: string): Promise<number>;
 }
@@ -51,8 +56,7 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
 
   async recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals): Promise<WorkoutDay> {
     const { dao, uuid, now } = this.deps;
-    const window = await dao.trainingVolumes(owner, addDays(date, -HEAT_WINDOW_DAYS), addDays(date, -1));
-    const level = heatLevel(totals, window);
+    const level = heatLevel(totals, await this.windowBefore(owner, date));
     const existing = await dao.getByDate(owner, date);
     const timestamp = now();
     const row = {
@@ -74,6 +78,10 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
 
   async list(owner: WorkoutDayOwner, from: ISODate, to: ISODate): Promise<WorkoutDay[]> {
     return (await this.deps.dao.list(owner, from, to)).map(toDay);
+  }
+
+  windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]> {
+    return this.deps.dao.trainingVolumes(owner, addDays(date, -HEAT_WINDOW_DAYS), addDays(date, -1));
   }
 
   pushPending(userId: string): Promise<number> {

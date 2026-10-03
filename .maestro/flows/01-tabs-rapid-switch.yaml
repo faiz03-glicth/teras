@@ -1,0 +1,11 @@
+# Rapid tab switching: the app must stay responsive and land on Home.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- repeat:
+    times: 10
+    commands:
+      - tapOn: { id: 'tab-workout' }
+      - tapOn: { id: 'tab-profile' }
+      - tapOn: { id: 'tab-home' }
+- assertVisible: 'Training wave'

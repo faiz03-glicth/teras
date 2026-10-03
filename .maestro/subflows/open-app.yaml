@@ -1,0 +1,13 @@
+# Opens the dev build straight into the JS bundle (skips the dev launcher).
+appId: com.faiz.teras.local
+---
+- launchApp:
+    appId: com.faiz.teras.local
+- openLink: teras-local://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible: 'Home'
+    timeout: 60000
+- extendedWaitUntil:
+    visible: { id: 'tab-home' }
+    timeout: 30000
+- tapOn: { id: 'tab-home' }

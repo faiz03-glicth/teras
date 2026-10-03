@@ -60,7 +60,10 @@ export const exercises = sqliteTable(
   ],
 );
 
-/** One row per favourited exercise. Removing a favourite deletes the row. */
+/**
+ * One row per person and favourited exercise. Removing a favourite deletes the row. Unique per owner;
+ * guest rows have no owner (SQLite lets NULLs repeat), so the DAO checks before adding one.
+ */
 export const exerciseFavourites = sqliteTable(
   'exercise_favourites',
   {
@@ -69,7 +72,7 @@ export const exerciseFavourites = sqliteTable(
       .notNull()
       .references(() => exercises.id, { onDelete: 'cascade' }),
   },
-  (table) => [uniqueIndex('exercise_favourites_exercise').on(table.exerciseId)],
+  (table) => [uniqueIndex('exercise_favourites_owner_exercise').on(table.userId, table.exerciseId)],
 );
 
 export type ExerciseRow = typeof exercises.$inferSelect;

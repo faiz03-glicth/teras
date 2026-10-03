@@ -1,0 +1,24 @@
+# Edit routine without saving: reorder, add from the library, then Discard (header Back and Android Back).
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: 'Edit Push Day'
+- assertVisible: 'Edit routine'
+- assertVisible: '5 EXERCISES'
+- tapOn: 'Move Overhead Press (Barbell) up'
+- tapOn: 'Add exercise'
+- tapOn:
+    id: 'all-ab-wheel-rollout'
+- assertVisible: '6 EXERCISES'
+- assertVisible: 'Ab Wheel Rollout'
+# Android Back asks first; keep editing
+- back
+- assertVisible: 'Discard changes?'
+- tapOn: 'KEEP EDITING'
+- assertVisible: 'Edit routine'
+# Header Back asks too; discard
+- tapOn: 'Back'
+- assertVisible: 'Discard changes?'
+- tapOn: 'DISCARD'
+- assertVisible: '5 exercises · Bench Press (Barbell).*'

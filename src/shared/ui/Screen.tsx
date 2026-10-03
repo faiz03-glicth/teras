@@ -6,7 +6,6 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { motion } from '@/theme';
 
-import { Backdrop } from './Backdrop';
 import { PressDelay } from './pressDelay';
 
 export interface ScreenProps {
@@ -24,6 +23,8 @@ export interface ScreenProps {
   /** 'wide' = 24pt side padding (onboarding, login); default is the 16pt gutter. */
   inset?: 'default' | 'wide';
   contentStyle?: StyleProp<ViewStyle>;
+  /** Docked under the content, outside the scroll: stays in view however far the content scrolls. */
+  footer?: ReactNode;
   testID?: string;
 }
 
@@ -37,12 +38,12 @@ export function Screen({
   edges = ['top', 'bottom'],
   inset = 'default',
   contentStyle,
+  footer,
   testID,
 }: ScreenProps) {
   const content = [styles.content(inset, withTabBar), contentStyle];
   return (
     <SafeAreaView edges={edges} style={styles.root} testID={testID}>
-      <Backdrop />
       {scroll ? (
         // A press that becomes a scroll never presses (motion.scroll): starting a scroll on a card or a
         // month doesn't dip it, which is what makes a scroll feel like it's fighting the finger.
@@ -68,6 +69,7 @@ export function Screen({
           <View style={[styles.grow, content]}>{children}</View>
         </Pressable>
       )}
+      {footer}
     </SafeAreaView>
   );
 }

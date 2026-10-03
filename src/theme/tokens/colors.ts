@@ -29,6 +29,9 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     dangerSoft: '#F6DCCB',
     scrim: 'rgba(30,18,6,0.42)',
     thumb: '#FFFFFF',
+    // subtle and border: on parchment the drawing already reads.
+    bodySilhouette: '#EFDDA6',
+    bodyMuscle: '#D7C27E',
   },
   dark: {
     canvas: '#16110C',
@@ -49,5 +52,8 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     dangerSoft: '#3D251B',
     scrim: 'rgba(0,0,0,0.55)',
     thumb: '#FFFFFF',
+    // surfaceRaised and border2: subtle and border vanished into the walnut card; muscles now reach 3:1.
+    bodySilhouette: '#30261D',
+    bodyMuscle: '#7E6D5A',
   },
 };

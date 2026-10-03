@@ -4,7 +4,6 @@ export type ColorScheme = 'light' | 'dark';
 export type ThemePreference = 'system' | 'light' | 'dark';
 /** 'system' follows the phone's Reduce Motion setting; 'on'/'off' override it for this app. */
 export type ReduceMotionPreference = 'system' | 'on' | 'off';
-export type VisualStyle = 'glass' | 'classic';
 export type HeatPaletteId = 'meadow' | 'ocean' | 'violet' | 'amber';
 export type ActivityColorKey = 'green' | 'orange' | 'purple' | 'blue' | 'pink' | 'teal';
 
@@ -34,6 +33,9 @@ export interface SemanticColors {
   scrim: string;
   /** Switch knob: white in both schemes, like the platform's own switches. */
   thumb: string;
+  /** The muscle map's body (head, hands, joints) and its unselected muscles, on a raised card. */
+  bodySilhouette: string;
+  bodyMuscle: string;
 }
 
 export type TypographyVariant =
@@ -84,33 +86,25 @@ export interface Elevation {
   raised: string;
 }
 
-export interface GlassMaterial {
-  /**
-   * The canvas behind every screen: soft glows of green and blue over `canvasBase`, as CSS
-   * `radial-gradient` layers (React Native draws them natively on iOS and Android).
-   */
-  backdrop: string;
-  /** `shadow`: a lit top edge and a soft drop, so a translucent card reads as a pane of glass. */
-  card: { background: string; edge: string; shadow: string };
-  /** The primary button's inner light and green glow. */
-  accentShadow: string;
-  strong: string;
-  tint: string;
-  /**
-   * The floating tab bar: a frosted layer over the content (`blur`, 0–100) under a translucent `tint`, lit
-   * along its top (`highlight`, a CSS gradient) and edged like the cards. Only this bar and toasts blur:
-   * they're small, and blur costs a pass over what's behind them every frame the content moves.
-   * `edgeLight` is the lit rim (inset lines, drawn above the frost); `shadow` the drop below the bar.
-   */
-  tabBar: { tint: string; blur: number; highlight: string; edgeLight: string; shadow: string };
-  /** The + button: lit from inside (`highlight`, a CSS gradient over the green), a frosted `ring`, a green glow. */
-  fab: { highlight: string; ring: string; shadow: string };
-  /** The active-tab highlight that slides between tabs. */
-  pill: string;
-  sheet: { tint: string; blur: number };
-  toast: { background: string; foreground: string; blur: number };
-  canvasBase: string;
-  heatEmpty: string;
+/**
+ * The physical material every surface is made of (see materials/soft.ts). `ground` is what the screen is;
+ * `raised` and `raisedSm` are lifted out of it, `inset` is pressed into it, and `pressed` is what a raised
+ * control becomes under a finger. Shadows are CSS box-shadow strings (New Architecture).
+ */
+export interface SoftMaterial {
+  ground: string;
+  /** Cards, buttons and other large controls. */
+  raised: { background: string; shadow: string };
+  /** Small controls (icon buttons, ticks): a shallower lift, so depth scales with size. */
+  raisedSm: { background: string; shadow: string };
+  /** Inputs, wells and selected states: a darker fill AND an inner shadow, so it reads without the shadow. */
+  inset: { background: string; shadow: string };
+  /** A raised control while held: its lift replaced by a shallow press. */
+  pressed: { shadow: string };
+  /** The tab bar: the material's top layer over scrolling content, casting a soft shadow upward. */
+  bar: { background: string; shadow: string };
+  /** The gold primary action. `edge` is its outline where gold alone would not separate from the ground. */
+  accent: { background: string; shadow: string; pressedShadow: string; edge: string | null };
 }
 
 export interface BrandColors {
@@ -120,7 +114,6 @@ export interface BrandColors {
 
 export interface Theme {
   scheme: ColorScheme;
-  style: VisualStyle;
   paletteId: HeatPaletteId;
   colors: SemanticColors;
   activity: Record<ActivityColorKey, string>;
@@ -129,8 +122,8 @@ export interface Theme {
   heatInk: HeatSteps;
   brand: BrandColors;
   elevation: Elevation;
-  /** Present only when the Liquid Glass style is active. */
-  glass: GlassMaterial | null;
+  /** The soft material: raised, inset and pressed surfaces, one source for every depth in the app. */
+  material: SoftMaterial;
   typography: Record<TypographyVariant, TextVariantStyle>;
   fonts: { regular: string; medium: string; semibold: string; bold: string; googleLabel: string };
   spacing: Spacing;

@@ -128,9 +128,7 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row' as const,
     flexWrap: 'wrap' as const,
     borderRadius: Math.round(size * (22 / 76)),
-    borderWidth: 1,
-    borderColor: theme.glass?.card.edge ?? theme.colors.border,
-    backgroundColor: theme.glass?.strong ?? theme.colors.surface,
-    boxShadow: theme.elevation.card ?? undefined,
+    backgroundColor: theme.material.raised.background,
+    boxShadow: theme.material.raised.shadow,
   }),
 }));

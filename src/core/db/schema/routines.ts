@@ -3,11 +3,16 @@ import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core
 import { syncColumns } from './columns';
 import { exercises } from './exercises';
 
-/** A routine the person built: an ordered list of exercises with targets. Local only. */
+/**
+ * A routine: an ordered list of exercises with targets. Local only. The starters seeded by the migration
+ * have no owner, like a guest's own routines; `is_starter` tells them apart, so signing in claims what
+ * the guest built and leaves the starters for everyone on the phone.
+ */
 export const routines = sqliteTable('routines', {
   ...syncColumns(),
   name: text('name').notNull(),
   position: integer('position').notNull(),
+  isStarter: integer('is_starter', { mode: 'boolean' }).notNull().default(false),
 });
 
 /**

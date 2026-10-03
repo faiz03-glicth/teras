@@ -15,6 +15,8 @@ export interface IconButtonProps {
   accessibilityLabel: string;
   /** No background circle (nav bars). */
   plain?: boolean;
+  /** On: the icon turns accent and fills (a favourite's heart). Its label should say what a press does. */
+  active?: boolean;
   disabled?: boolean;
   testID?: string;
 }
@@ -30,6 +32,7 @@ export function IconButton({
   onPressOut,
   accessibilityLabel,
   plain = false,
+  active = false,
   disabled = false,
   testID,
 }: IconButtonProps) {
@@ -48,8 +51,14 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       style={[styles.base(plain), { opacity: disabled ? 0.45 : 1 }, fade]}
+      pressedStyle={plain ? undefined : styles.pressed}
     >
-      <Icon name={icon} size={plain ? 24 : 20} color={theme.colors.text} />
+      <Icon
+        name={icon}
+        size={plain ? 24 : 20}
+        color={active ? theme.colors.accentText : theme.colors.text}
+        fill={active ? theme.colors.accentText : 'none'}
+      />
     </PressableScale>
   );
 }
@@ -61,6 +70,9 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: SIZE / 2,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: plain ? 'transparent' : theme.glass ? theme.glass.strong : theme.colors.subtle,
+    // A small raised key; `plain` (nav bars) stays flat, like an icon printed on the surface.
+    backgroundColor: plain ? 'transparent' : theme.material.raisedSm.background,
+    boxShadow: plain ? undefined : theme.material.raisedSm.shadow,
   }),
+  pressed: { boxShadow: theme.material.pressed.shadow },
 }));

@@ -1,0 +1,27 @@
+# WIPES APP DATA (clearState): Get Started → Set up → Sign in → Skip for now (guest).
+# Never run on the owner's phone without consent.
+appId: com.faiz.teras.local
+---
+- launchApp:
+    appId: com.faiz.teras.local
+    clearState: true
+- openLink: teras-local://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+- extendedWaitUntil:
+    visible:
+      id: 'onboarding-primary'
+    timeout: 60000
+- tapOn:
+    id: 'onboarding-primary'
+- assertVisible:
+    id: 'setup-unit'
+- assertVisible:
+    id: 'setup-bodyweight'
+- tapOn:
+    id: 'onboarding-primary'
+- assertVisible:
+    id: 'login-skip'
+- tapOn:
+    id: 'login-skip'
+- extendedWaitUntil:
+    visible: 'Training wave'
+    timeout: 20000

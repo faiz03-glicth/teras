@@ -60,8 +60,10 @@ reports/
 eslint-report.json
 gl-code-quality-report.json
 
-# Supabase stays on this computer only (not in the public repos)
-supabase/
+# Supabase stays on this computer only (not in the public repos). Anchored to the root: a bare
+# `supabase/` also matched src/core/supabase/, the app's own client code, which then never reached git
+# or EAS (the first EAS build failed on it).
+/supabase/
 
 
 # local env files (all variants)

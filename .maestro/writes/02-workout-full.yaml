@@ -1,0 +1,35 @@
+# WRITES DATA: start empty workout, add exercise, log a set, rest, finish, Saved screen.
+# Fails if a workout is already in progress (finish or discard it first).
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn:
+    id: 'workout-start-empty'
+- assertVisible:
+    id: 'active-workout-screen'
+- tapOn:
+    id: 'add-exercise'
+- tapOn:
+    id: 'all-bench-press-barbell'
+- assertVisible: 'Bench Press (Barbell)'
+- tapOn:
+    text: 'KG'
+    optional: true
+- tapOn:
+    id: 'set-done-0'
+    optional: true
+- assertVisible:
+    id: 'rest-bar'
+    optional: true
+- tapOn:
+    id: 'finish-workout'
+- tapOn:
+    text: 'FINISH'
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: 'workout-saved-screen'
+    timeout: 10000
+- tapOn:
+    id: 'saved-done'

@@ -82,6 +82,46 @@ describe('recordDay', () => {
   });
 });
 
+describe('windowBefore', () => {
+  it('is the volumes of the training days in the 90 days before a day: what it was judged against', async () => {
+    const { repo } = await setup();
+    await repo.recordDay(USER, day(0), totals(4000));
+    await repo.recordDay(USER, day(5), totals(6000));
+    await repo.recordDay(USER, day(10), totals(9000));
+
+    expect((await repo.windowBefore(USER, day(10))).sort()).toEqual([4000, 6000]);
+  });
+
+  it('leaves out days without volume, the day itself, and days more than 90 days back', async () => {
+    const { repo } = await setup();
+    await repo.recordDay(USER, day(0), totals(4000));
+    await repo.recordDay(USER, day(50), { volumeKg: 0, sets: 3, workouts: 1 });
+    await repo.recordDay(USER, day(95), totals(7000));
+
+    expect(await repo.windowBefore(USER, day(95))).toEqual([]);
+    expect(await repo.windowBefore(USER, day(96))).toEqual([7000]);
+  });
+
+  it('agrees with the level a day was recorded at', async () => {
+    const { repo } = await setup();
+    for (let i = 0; i < 5; i += 1) await repo.recordDay(USER, day(i), totals(5000 + i * 1000));
+
+    const recorded = await repo.recordDay(USER, day(6), totals(4500));
+
+    // Five earlier days, all heavier: the window that put it in the bottom quartile is the one returned.
+    expect(recorded.level).toBe(1);
+    expect(await repo.windowBefore(USER, day(6))).toHaveLength(5);
+  });
+
+  it("keeps a guest's days apart from a signed-in person's", async () => {
+    const { repo } = await setup();
+    await repo.recordDay(null, day(0), totals(4000));
+
+    expect(await repo.windowBefore(USER, day(1))).toEqual([]);
+    expect(await repo.windowBefore(null, day(1))).toEqual([4000]);
+  });
+});
+
 describe('pushPending', () => {
   it('sends the days that are not on the server yet, once', async () => {
     const { repo, api } = await setup();

@@ -11,8 +11,8 @@ import type { Theme } from './types';
 const initial = useThemePreferencesStore.getState();
 
 const appThemes = {
-  light: buildTheme('light', initial.paletteId, initial.style),
-  dark: buildTheme('dark', initial.paletteId, initial.style),
+  light: buildTheme('light', initial.paletteId),
+  dark: buildTheme('dark', initial.paletteId),
 };
 
 const breakpoints = { xs: 0, md: 600 } as const;

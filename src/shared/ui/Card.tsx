@@ -10,12 +10,20 @@ export interface CardProps {
   /** Draws a hairline between each child row. */
   divided?: boolean;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
-export function Card({ children, tight = false, tone = 'default', divided = false, style }: CardProps) {
+export function Card({
+  children,
+  tight = false,
+  tone = 'default',
+  divided = false,
+  style,
+  testID,
+}: CardProps) {
   const rows = divided ? Children.toArray(children).filter(isValidElement) : null;
   return (
-    <View style={[styles.card(tight, tone), style]}>
+    <View style={[styles.card(tight, tone), style]} testID={testID}>
       {rows
         ? rows.map((row, index) => (
             <Fragment key={row.key ?? index}>
@@ -31,17 +39,12 @@ export function Card({ children, tight = false, tone = 'default', divided = fals
 const styles = StyleSheet.create((theme) => ({
   card: (tight: boolean, tone: 'default' | 'accentSoft') => ({
     borderRadius: theme.radii.card,
-    borderWidth: 1,
     paddingVertical: tight ? theme.spacing.xs : theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
-    backgroundColor:
-      tone === 'accentSoft'
-        ? theme.colors.accentSoft
-        : (theme.glass?.card.background ?? theme.colors.surface),
-    borderColor: tone === 'accentSoft' ? 'transparent' : (theme.glass?.card.edge ?? theme.colors.border),
-    // Glass: a lit edge and a soft drop make the translucent card read as a pane over the backdrop.
-    boxShadow:
-      (tone === 'default' ? theme.glass?.card.shadow : undefined) ?? theme.elevation.card ?? undefined,
+    // A card is the material raised. The gold-tinted tone is the opposite, a well pressed into it, for a
+    // panel that reports a state (the rest timer) rather than one that holds content.
+    backgroundColor: tone === 'accentSoft' ? theme.colors.accentSoft : theme.material.raised.background,
+    boxShadow: tone === 'accentSoft' ? theme.material.inset.shadow : theme.material.raised.shadow,
   }),
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.border },
 }));

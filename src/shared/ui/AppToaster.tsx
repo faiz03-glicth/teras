@@ -14,8 +14,9 @@ import { dismissAllToasts, useToastsAreAtTop } from './toast';
 export function AppToaster() {
   const { theme, rt } = useUnistyles();
   const top = useToastsAreAtTop();
-  const background = theme.glass?.toast.background ?? theme.colors.text;
-  const foreground = theme.glass?.toast.foreground ?? theme.colors.canvas;
+  // Inverted ink on its own slab, so a toast is never mistaken for part of the screen beneath it.
+  const background = theme.colors.text;
+  const foreground = theme.colors.canvas;
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -31,7 +32,7 @@ export function AppToaster() {
       theme={theme.scheme}
       swipeToDismissDirection="left"
       toastOptions={{
-        style: { backgroundColor: background, borderRadius: theme.glass ? 22 : 16, borderWidth: 0 },
+        style: { backgroundColor: background, borderRadius: theme.radii.control, borderWidth: 0 },
         titleStyle: { color: foreground, fontFamily: theme.fonts.semibold, fontSize: 14 },
         descriptionStyle: { color: foreground, opacity: 0.75, fontFamily: theme.fonts.regular, fontSize: 13 },
         // Undo: plain text in the heatmap's mid green (as in the prototype), legible on the inverted toast.

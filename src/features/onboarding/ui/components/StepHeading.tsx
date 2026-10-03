@@ -9,7 +9,8 @@ export function StepHeading({
   style,
 }: {
   title: string;
-  body: string;
+  /** A line under the title, only when the title cannot carry the step alone. */
+  body?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -17,9 +18,11 @@ export function StepHeading({
       <Text variant="display" accessibilityRole="header">
         {title}
       </Text>
-      <Text variant="lead" tone="secondary">
-        {body}
-      </Text>
+      {body ? (
+        <Text variant="lead" tone="secondary">
+          {body}
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -9,7 +9,6 @@ export type {
   Theme,
   ThemePreference,
   TypographyVariant,
-  VisualStyle,
 } from './types';
 export { buildTheme } from './buildTheme';
 export { HEAT_PALETTE_IDS, heatPalettes } from './tokens/heatPalettes';

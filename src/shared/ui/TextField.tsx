@@ -23,8 +23,9 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   const { theme } = useUnistyles();
   const [focused, setFocused] = useState(false);
   const outline = useStateTransition('borderColor');
-  // A visible outline at rest (3:1) says "you can type here"; focus and errors take over smoothly.
-  const borderColor = error ? theme.colors.danger : focused ? theme.colors.accentText : theme.colors.border2;
+  // Pressed into the material, with a subtle darker edge at rest; focus and errors take the edge over, so
+  // both states read without the shadow.
+  const borderColor = error ? theme.colors.danger : focused ? theme.colors.accentText : theme.colors.border;
 
   return (
     <View style={styles.wrapper}>
@@ -67,8 +68,9 @@ const styles = StyleSheet.create((theme) => ({
     gap: 10,
     paddingHorizontal: 14,
     borderRadius: theme.radii.control,
-    borderWidth: 1.5,
-    backgroundColor: theme.colors.subtle,
+    borderWidth: 1,
+    backgroundColor: theme.material.inset.background,
+    boxShadow: theme.material.inset.shadow,
   },
   input: {
     flex: 1,

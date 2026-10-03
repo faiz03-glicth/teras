@@ -76,6 +76,7 @@ module.exports = defineConfig([
     files: [
       'src/shared/ui/**/*.tsx',
       'src/features/**/ui/**/*Screen.tsx',
+      'src/features/**/ui/**/*Sheet.tsx',
       'src/features/**/ui/**/components/**',
     ],
     rules: { 'no-restricted-imports': restrict([...DATA_SDKS, ROUTER, ...VIEW_ONLY]) },

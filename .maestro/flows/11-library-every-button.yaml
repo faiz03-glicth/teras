@@ -1,0 +1,29 @@
+# Exercise library: filters (every equipment option), sheets open/close, Create sheet opens (not submitted),
+# detail screen buttons (favourite toggled twice = unchanged, similar exercise). Read-only net effect.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: { id: 'workout-library' }
+- assertVisible: { id: 'exercise-library-screen' }
+- tapOn: 'All equipment'
+- assertVisible: { id: 'equipment-filter-sheet' }
+- back
+- tapOn: { id: 'exercise-filter-muscle' }
+- assertVisible: { id: 'muscle-panel' }
+- tapOn: { id: 'exercise-filter-muscle' }
+- assertNotVisible: { id: 'muscle-panel' }
+- tapOn: { id: 'exercise-create' }
+- assertVisible: { id: 'create-exercise-sheet' }
+- assertVisible: { id: 'create-exercise-name' }
+- scrollUntilVisible: { element: { id: 'create-equipment' }, optional: true }
+- scrollUntilVisible: { element: { id: 'create-muscle' }, optional: true }
+- back
+- tapOn: 'About Bench Press (Barbell)'
+- assertVisible: { id: 'exercise-detail-screen' }
+- tapOn: { id: 'exercise-favourite' }
+- tapOn: { id: 'exercise-favourite' }
+- scrollUntilVisible: { element: { id: 'similar-.*' }, optional: true }
+- tapOn: { id: 'similar-.*', index: 0, optional: true }
+- back
+- back
