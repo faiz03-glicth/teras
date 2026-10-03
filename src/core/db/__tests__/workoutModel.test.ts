@@ -27,8 +27,14 @@ describe('workout data model', () => {
 
   it('seeds the built-in exercise library with valid values', () => {
     const rows = db.select().from(exercises).all();
+    const builtIn = rows.filter((row) => row.createdAt === '2026-09-30T00:00:00.000Z');
+    const names = rows.map((row) => row.name.toLowerCase());
 
-    expect(rows).toHaveLength(104);
+    // 104 of the library's own (migration 0001), then the open dataset's (0004), never a name twice.
+    expect(builtIn).toHaveLength(104);
+    expect(rows).toHaveLength(104 + 1123);
+    expect(new Set(names).size).toBe(names.length);
+    expect(new Set(rows.map((row) => row.id)).size).toBe(rows.length);
     for (const row of rows) {
       expect(EQUIPMENT).toContain(row.equipment);
       expect(MUSCLES).toContain(row.primaryMuscle);

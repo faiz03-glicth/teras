@@ -92,7 +92,8 @@ describe('the exercise browser', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Show more (5 left)' }));
 
-    expect(screen.getByTestId('all-ex-44')).toBeTruthy();
+    // A screenful at once, the rest of the page a frame later.
+    expect(await screen.findByTestId('all-ex-44')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
   });
 

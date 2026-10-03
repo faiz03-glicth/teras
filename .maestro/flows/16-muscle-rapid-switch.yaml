@@ -1,0 +1,34 @@
+# Exercise library: rapid muscle switching and search + filter combinations must not pile up lag or leave
+# a stale list. Chips are tapped without waiting for the list in between. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-filter-muscle' }
+- tapOn: { id: 'muscle-filter-chest' }
+- tapOn: { id: 'muscle-filter-lats' }
+- tapOn: { id: 'muscle-filter-upper_back' }
+- tapOn: { id: 'muscle-filter-all' }
+- tapOn: { id: 'muscle-filter-chest' }
+- assertVisible: 'Muscle, Chest'
+- assertVisible: { id: 'muscle-panel' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'bench'
+- hideKeyboard
+- scrollUntilVisible:
+    element: '\d+ EXERCISES'
+- scrollUntilVisible:
+    element: { id: 'exercise-search' }
+    direction: UP
+- tapOn: { id: 'exercise-search' }
+- eraseText: 10
+- hideKeyboard
+- tapOn: { id: 'muscle-filter-lats' }
+- assertVisible: 'Muscle, Lats'
+- scrollUntilVisible:
+    element: { id: 'exercise-clear-filters' }
+- tapOn: { id: 'exercise-clear-filters' }
+- scrollUntilVisible:
+    element: 'ALL EXERCISES'
+- back

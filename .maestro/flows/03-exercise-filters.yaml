@@ -10,7 +10,7 @@ appId: com.faiz.teras.local
 - tapOn: { id: 'muscle-filter-chest' }
 - assertVisible: 'Muscle, Chest'
 - scrollUntilVisible:
-    element: '14 EXERCISES'
+    element: '[0-9]+ EXERCISES'
 - scrollUntilVisible:
     element: { id: 'exercise-filter-equipment' }
     direction: UP
@@ -18,7 +18,7 @@ appId: com.faiz.teras.local
 - tapOn: 'Dumbbell'
 - assertVisible: { id: 'muscle-panel' }
 - scrollUntilVisible:
-    element: '4 EXERCISES'
+    element: '[0-9]+ EXERCISES'
 - scrollUntilVisible:
     element: 'Chest Fly (Dumbbell)'
 - back

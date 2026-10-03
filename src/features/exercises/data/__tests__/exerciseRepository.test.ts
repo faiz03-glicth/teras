@@ -34,13 +34,16 @@ const custom = (id: string, name: string, userId: string | null) => ({
   isCustom: true,
 });
 
+/** The built-in library (migration 0001) and the open exercise dataset (0004). */
+const LIBRARY_SIZE = 104 + 1123;
+
 describe('the exercise library', () => {
   it('offers every built-in exercise, in alphabetical order', async () => {
     const { repo } = await setup();
 
     const all = await repo.list(USER);
 
-    expect(all).toHaveLength(104);
+    expect(all).toHaveLength(LIBRARY_SIZE);
     expect(all.map((row) => row.name)).toEqual([...all.map((row) => row.name)].sort());
   });
 
@@ -52,7 +55,7 @@ describe('the exercise library', () => {
 
     const all = await repo.list(USER);
 
-    expect(all).toHaveLength(105);
+    expect(all).toHaveLength(LIBRARY_SIZE + 1);
     expect(all.some((row) => row.id === 'mine')).toBe(true);
   });
 
@@ -70,7 +73,7 @@ describe('the exercise library', () => {
   it('still offers the built-in exercises to a guest', async () => {
     const { repo } = await setup();
 
-    expect(await repo.list(null)).toHaveLength(104);
+    expect(await repo.list(null)).toHaveLength(LIBRARY_SIZE);
   });
 
   it('searches the library by name, muscle or equipment', async () => {
@@ -78,7 +81,9 @@ describe('the exercise library', () => {
 
     const found = await repo.search(USER, 'ohp');
 
-    expect(found.map((row) => row.id)).toEqual(['overhead-press-barbell']);
+    // The library's own overhead press first, then the open dataset's variations.
+    expect(found[0]?.id).toBe('overhead-press-barbell');
+    for (const row of found) expect(row.name).toMatch(/overhead press/i);
   });
 
   it('looks one up by id', async () => {
@@ -258,7 +263,7 @@ describe('creating an exercise', () => {
     const result = await repo.create(USER, { name: 'plank', equipment: 'bodyweight', primaryMuscle: 'abs' });
 
     expect(result).toEqual({ ok: false, reason: 'Plank is already in your exercises' });
-    expect(await repo.list(USER)).toHaveLength(104);
+    expect(await repo.list(USER)).toHaveLength(LIBRARY_SIZE);
   });
 
   it("lets a guest create one, which becomes the account's on signing in", async () => {
@@ -270,6 +275,6 @@ describe('creating an exercise', () => {
     expect((await repo.list(USER)).find((row) => row.name === 'Landmine Press')).toMatchObject({
       userId: USER,
     });
-    expect(await repo.list(null)).toHaveLength(104);
+    expect(await repo.list(null)).toHaveLength(LIBRARY_SIZE);
   });
 });

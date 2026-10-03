@@ -1,3 +1,4 @@
+import { memo, startTransition, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -62,67 +63,136 @@ export function ExerciseBrowser({ browser, onPick, onInfo }: ExerciseBrowserProp
       </View>
 
       {browser.muscles.open && <MusclePanel filter={browser.muscles} />}
+      <ExerciseResults results={browser.results} onPick={onPick} onInfo={onInfo} />
+    </>
+  );
+}
 
-      {browser.status === 'loading' && <LoadingState label="Loading exercises" />}
-      {browser.status === 'error' && (
+interface ExerciseResultsProps {
+  results: ExerciseBrowserModel['results'];
+  onPick: (id: string) => void;
+  onInfo: (id: string) => void;
+}
+
+/**
+ * The lists under the filters. Memoised: a pick re-renders the body and chips at once, and this only when
+ * the (deferred) results change, so the highlight never waits for the list.
+ */
+const ExerciseResults = memo(function ExerciseResults({ results, onPick, onInfo }: ExerciseResultsProps) {
+  const budget = useRowBudget(results);
+  const left = { rows: budget };
+  return (
+    <>
+      {results.status === 'loading' && <LoadingState label="Loading exercises" />}
+      {results.status === 'error' && (
         <Card>
-          <ErrorState title="Couldn't load exercises" onRetry={browser.onRetry} />
+          <ErrorState title="Couldn't load exercises" onRetry={results.onRetry} />
         </Card>
       )}
 
-      {browser.sections.map((section) => (
+      {results.sections.map((section) => (
         <View key={section.key} style={styles.group}>
           <SectionHeading
             title={section.title}
             onClearFilters={
-              section.key === 'all' && browser.canClearFilters ? browser.onClearFilters : undefined
+              section.key === 'all' && results.canClearFilters ? results.onClearFilters : undefined
             }
           />
-          {(section.groups ?? [{ key: section.key, title: null, rows: section.rows }]).map((group) => (
-            <View key={group.key} style={styles.group}>
-              {group.title !== null && (
-                <Text variant="sub" weight="semibold" accessibilityRole="header" style={styles.muscle}>
-                  {group.title}
-                </Text>
-              )}
-              <Card tight divided>
-                {group.rows.map((choice) => (
-                  <ExerciseRow
-                    key={choice.id}
-                    choice={choice}
-                    onPress={onPick}
-                    onInfo={onInfo}
-                    testID={`${section.key}-${choice.id}`}
-                  />
-                ))}
-              </Card>
-            </View>
-          ))}
+          <Card tight divided>
+            {sectionItems(section, left, onPick, onInfo)}
+          </Card>
         </View>
       ))}
 
-      {browser.remaining > 0 && (
+      {results.remaining > 0 && (
         <Button
-          label={`Show more (${browser.remaining} left)`}
+          label={`Show more (${results.remaining} left)`}
           variant="secondary"
-          onPress={browser.onShowMore}
+          onPress={results.onShowMore}
           testID="exercises-more"
         />
       )}
 
-      {browser.empty && (
+      {results.empty && (
         <Card>
           <EmptyState
             icon="search"
             title="No exercise matches"
             body="Check the spelling, clear a filter, or create it yourself."
-            secondaryAction={{ label: 'Clear', onPress: browser.onClear }}
-            action={{ label: 'Create exercise', onPress: browser.onCreate }}
+            secondaryAction={{ label: 'Clear', onPress: results.onClear }}
+            action={{ label: 'Create exercise', onPress: results.onCreate }}
           />
         </Card>
       )}
     </>
   );
+});
+
+/** Rows drawn as soon as the results change: a screenful under the body. The rest follow a frame later. */
+const FIRST_ROWS = 12;
+
+/**
+ * How many rows to draw: a screenful at once when the results change, then the whole page in a
+ * background update React can interrupt, so a pick never waits for rows below the fold.
+ */
+function useRowBudget(results: unknown): number {
+  const [state, setState] = useState({ for: results, all: false });
+  if (state.for !== results) setState({ for: results, all: false });
+  const all = state.for === results && state.all;
+  useEffect(() => {
+    if (all) return;
+    const frame = requestAnimationFrame(() =>
+      startTransition(() => setState((now) => (now.for === results ? { ...now, all: true } : now))),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [all, results]);
+  return all ? Number.POSITIVE_INFINITY : FIRST_ROWS;
+}
+
+/**
+ * A section's headings and rows as one flat list of children. Rows are keyed by their place on the page,
+ * not by exercise: picking another muscle gives the same row components new exercises to show (a cheap
+ * update) instead of tearing forty rows down and building forty new ones (measured at over two seconds
+ * on the phone in a dev build). Headings sit between them, keyed by muscle.
+ */
+function sectionItems(
+  section: ExerciseBrowserModel['results']['sections'][number],
+  left: { rows: number },
+  onPick: (id: string) => void,
+  onInfo: (id: string) => void,
+) {
+  let slot = 0;
+  const items = (section.groups ?? [{ key: section.key, title: null, rows: section.rows }]).flatMap(
+    (group) => [
+      ...(group.title === null
+        ? []
+        : [
+            <Text
+              key={`group-${group.key}`}
+              variant="caption"
+              tone="tertiary"
+              weight="semibold"
+              accessibilityRole="header"
+              style={styles.muscle}
+            >
+              {group.title}
+            </Text>,
+          ]),
+      ...group.rows
+        .slice(0, Math.max(0, left.rows))
+        .map((choice) => (
+          <ExerciseRow
+            key={`row-${(left.rows--, slot++)}`}
+            choice={choice}
+            onPress={onPick}
+            onInfo={onInfo}
+            testID={`${section.key}-${choice.id}`}
+          />
+        )),
+    ],
+  );
+  // A heading whose rows are not drawn yet waits for them.
+  return items.filter((item, index) => !(item.type === Text && items[index + 1]?.type !== ExerciseRow));
 }
 
 /** A section's title; over the matches while a filter is on, with the way to take them all off. */
@@ -146,7 +216,7 @@ const styles = StyleSheet.create((theme) => ({
   // Close under the search, as one control: what to look for, then where.
   filters: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: -theme.spacing.sm },
   group: { gap: theme.spacing.sm },
-  // A plain heading per muscle, no card of its own: the rows' card is enough.
-  muscle: { paddingHorizontal: theme.spacing.xs, marginTop: theme.spacing.xs },
+  // A plain heading per muscle inside the list's one card: no card of its own.
+  muscle: { paddingTop: theme.spacing.md, paddingBottom: theme.spacing.xs },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 }));

@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo } from 'react';
+import { useCallback, useDeferredValue, useLayoutEffect, useMemo } from 'react';
 
 import type { ExerciseRow } from '@/core/db/schema';
 import { browserSections, groupByMuscle, muscleBadge } from '@/features/exercises/domain/browse';
@@ -48,6 +48,21 @@ export interface BrowserFilter {
 
 const NONE: readonly string[] = [];
 
+const openCreate = () => openCreateExercise();
+
+const toChoice = (row: ExerciseRow, favourite: boolean): ExerciseChoice => {
+  const muscles = muscleSummary(row);
+  return {
+    id: row.id,
+    name: row.name,
+    muscles,
+    badge: muscleBadge(row.primaryMuscle),
+    custom: row.isCustom,
+    favourite,
+    label: `${row.name}, ${muscles}${favourite ? ', favourite' : ''}`,
+  };
+};
+
 const countExercises = (count: number) => `${count} exercise${count === 1 ? '' : 's'}`;
 
 const filterOf = (name: string, chosen: string | null, all: string): BrowserFilter => {
@@ -81,24 +96,30 @@ export function useExerciseBrowser() {
   // Before the first paint, so a search left from the last visit never shows.
   useLayoutEffect(() => clear(), [clear]);
 
-  const view = useMemo(() => {
-    const found = browserSections(library.data ?? [], { query, favouriteIds, recentIds, muscle, equipment });
+  // Each row's choice is built once per library (and favourites), not on every pick: the same object
+  // each time lets the memoised rows skip re-rendering when only the filters change.
+  const choices = useMemo(() => {
     const isFavourite = new Set(favouriteIds);
-    const choice = (row: ExerciseRow): ExerciseChoice => {
-      const muscles = muscleSummary(row);
-      const favourite = isFavourite.has(row.id);
-      return {
-        id: row.id,
-        name: row.name,
-        muscles,
-        badge: muscleBadge(row.primaryMuscle),
-        custom: row.isCustom,
-        favourite,
-        label: `${row.name}, ${muscles}${favourite ? ', favourite' : ''}`,
-      };
-    };
+    return new Map((library.data ?? []).map((row) => [row.id, toChoice(row, isFavourite.has(row.id))]));
+  }, [favouriteIds, library.data]);
+
+  // The filters as the list sees them. The body, chips and buttons follow a pick at once (urgent); the
+  // list follows in a background render React can interrupt, so a tap never waits for the list.
+  const listQuery = useDeferredValue(query);
+  const listMuscle = useDeferredValue(muscle);
+  const listEquipment = useDeferredValue(equipment);
+
+  const view = useMemo(() => {
+    const found = browserSections(library.data ?? [], {
+      query: listQuery,
+      favouriteIds,
+      recentIds,
+      muscle: listMuscle,
+      equipment: listEquipment,
+    });
+    const choice = (row: ExerciseRow): ExerciseChoice => choices.get(row.id) ?? toChoice(row, false);
     const page = found.matches.slice(0, shown);
-    const groups = groupByMuscle(page, muscle).map((group) => ({
+    const groups = groupByMuscle(page, listMuscle).map((group) => ({
       key: group.muscle,
       title: MUSCLE_LABELS[group.muscle],
       rows: group.rows.map(choice),
@@ -118,14 +139,33 @@ export function useExerciseBrowser() {
       remaining: Math.max(0, found.matches.length - shown),
       empty: found.matches.length === 0,
     };
-  }, [equipment, favouriteIds, library.data, muscle, query, recentIds, shown]);
+  }, [choices, favouriteIds, library.data, listEquipment, listMuscle, listQuery, recentIds, shown]);
 
   const { refetch } = library;
+  const onRetry = useCallback(() => void refetch(), [refetch]);
   const status = library.isError
     ? ('error' as const)
     : library.isPending
       ? ('loading' as const)
       : ('ready' as const);
+
+  // Everything the list below the filters shows, as one value that only changes when the list does (from
+  // the deferred filters): the urgent render after a pick skips the list entirely.
+  const results = useMemo(
+    () => ({
+      status,
+      sections: view.sections,
+      remaining: view.remaining,
+      empty: status === 'ready' && view.empty,
+      canClearFilters: listMuscle !== null || listEquipment !== null,
+      onShowMore: showMore,
+      onClearFilters: clearFilters,
+      onClear: clear,
+      onCreate: openCreate,
+      onRetry,
+    }),
+    [clear, clearFilters, listEquipment, listMuscle, onRetry, showMore, status, view],
+  );
 
   return {
     status,
@@ -134,17 +174,10 @@ export function useExerciseBrowser() {
     equipmentFilter: filterOf('Equipment', equipment && EQUIPMENT_LABELS[equipment], 'All equipment'),
     muscleFilter: filterOf('Muscle', muscle && MUSCLE_LABELS[muscle], 'All muscles'),
     muscles,
-    sections: view.sections,
-    remaining: view.remaining,
-    empty: status === 'ready' && view.empty,
-    canClearFilters: muscle !== null || equipment !== null,
+    results,
     onQueryChange: setQuery,
-    onShowMore: showMore,
-    onClearFilters: clearFilters,
-    onClear: clear,
     onOpenEquipment: () => openEquipmentFilter(),
-    onCreate: () => openCreateExercise(),
-    onRetry: useCallback(() => void refetch(), [refetch]),
+    onCreate: openCreate,
   };
 }
 

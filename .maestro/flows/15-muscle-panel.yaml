@@ -13,7 +13,7 @@ appId: com.faiz.teras.local
 - assertVisible: { id: 'muscle-panel' }
 - assertVisible: 'Muscle, Chest'
 - scrollUntilVisible:
-    element: '14 EXERCISES'
+    element: '[0-9]+ EXERCISES'
 - assertVisible: { id: 'exercise-clear-filters' }
 - scrollUntilVisible:
     element: { id: 'muscle-filter-lats' }

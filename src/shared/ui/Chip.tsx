@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -34,14 +35,14 @@ export function ChipRow<T extends string>({
   scroll = false,
   testID,
 }: ChipRowProps<T>) {
+  // Each chip is memoised on (label, selected), so a pick re-renders only the two chips that change.
   const chips = options.map((option) => (
     <Chip
       key={option.value}
+      value={option.value}
       label={option.label}
       selected={option.value === value}
-      onPress={() => {
-        if (option.value !== value) onChange(option.value);
-      }}
+      onSelect={onChange as (value: string) => void}
       testID={testID && `${testID}-${option.value}`}
     />
   ));
@@ -68,19 +69,22 @@ export function ChipRow<T extends string>({
 }
 
 interface ChipProps {
+  value: string;
   label: string;
   selected: boolean;
-  onPress: () => void;
+  onSelect: (value: string) => void;
   testID?: string;
 }
 
-function Chip({ label, selected, onPress, testID }: ChipProps) {
+const Chip = memo(function Chip({ value, label, selected, onSelect, testID }: ChipProps) {
   const { theme } = useUnistyles();
   const tint = useStateTransition('backgroundColor', 'normal');
   return (
     <PressableScale
       testID={testID}
-      onPress={onPress}
+      onPress={() => {
+        if (!selected) onSelect(value);
+      }}
       accessibilityRole="radio"
       accessibilityLabel={label}
       accessibilityState={{ checked: selected }}
@@ -97,7 +101,7 @@ function Chip({ label, selected, onPress, testID }: ChipProps) {
       </Text>
     </PressableScale>
   );
-}
+});
 
 const styles = StyleSheet.create((theme) => ({
   chip: {
