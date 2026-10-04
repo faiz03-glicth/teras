@@ -1,0 +1,44 @@
+# Library search ranking: the familiar exercise first, the equipment asked for first. Read-only; 19 has more.
+# Rows are found by testID (`all-<exercise id>`); "below" checks the order the list shows them in.
+# Each search opens the library afresh (opening it clears the last search: erasing text depends on where
+# the tap left the cursor), and hides the keyboard, which covers all but two rows.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'shoulder press'
+- hideKeyboard
+- assertVisible: 'Shoulders'
+- assertVisible:
+    id: 'all-overhead-press-barbell'
+    below: 'Shoulders'
+- assertVisible:
+    id: 'all-shoulder-press-dumbbell'
+    below: { id: 'all-overhead-press-barbell' }
+- assertVisible:
+    id: 'all-shoulder-press-machine'
+    below: { id: 'all-shoulder-press-dumbbell' }
+- back
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'dumbbell shoulder press'
+- hideKeyboard
+- assertVisible: { id: 'all-shoulder-press-dumbbell' }
+- assertVisible:
+    id: 'all-arnold-press-dumbbell'
+    below: { id: 'all-shoulder-press-dumbbell' }
+- back
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'bench press'
+- hideKeyboard
+- assertVisible: { id: 'all-bench-press-barbell' }
+- assertVisible:
+    id: 'all-bench-press-dumbbell'
+    below: { id: 'all-bench-press-barbell' }
+- back

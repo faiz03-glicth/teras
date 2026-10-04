@@ -54,6 +54,16 @@ export type BrowserItem =
 const placeOf = (index: number, count: number): CardPlace =>
   count === 1 ? 'only' : index === 0 ? 'first' : index === count - 1 ? 'last' : 'middle';
 
+/*
+ * The list's key and kind of each item. FlashList 2.0.2 updates its own count of the rows while it
+ * renders, so a render React sets aside (the list follows a search in the background, and a more urgent
+ * update can interrupt it) can leave it asking, for a render, about rows past the end of a list that just
+ * got shorter. These answer for such a row instead of failing; the list puts itself right on its next
+ * layout, and draws nothing for it meanwhile.
+ */
+export const itemKey = (item: BrowserItem | undefined, index: number): string => item?.key ?? `gone-${index}`;
+export const itemKind = (item: BrowserItem | undefined): BrowserItem['kind'] => item?.kind ?? 'row';
+
 /** PURE: the sections as one flat list: a title, then its card's headings and rows. */
 function listItems(sections: readonly BrowserSection[], clearable: boolean): BrowserItem[] {
   const items: BrowserItem[] = [];
@@ -142,8 +152,12 @@ export function useExerciseBrowser() {
   const favouriteIds = favourites.data ?? NONE;
   const recentIds = recent.data ?? NONE;
 
-  // Before the first paint, so a search left from the last visit never shows.
-  useLayoutEffect(() => clear(), [clear]);
+  // Afresh before the first paint, and again on closing, so the next visit's first paint is already the
+  // whole library: opening on a search's few rows that then grew to the whole library crashed the list.
+  useLayoutEffect(() => {
+    clear();
+    return clear;
+  }, [clear]);
 
   // Each row's choice is built once per library (and favourites), not on every pick: the same object
   // each time lets the memoised rows skip re-rendering when only the filters change.
@@ -167,7 +181,7 @@ export function useExerciseBrowser() {
       equipment: listEquipment,
     });
     const choice = (row: ExerciseRow): ExerciseChoice => choices.get(row.id) ?? toChoice(row, false);
-    const groups = groupByMuscle(found.matches, listMuscle).map((group) => ({
+    const groups = groupByMuscle(found.matches, listMuscle, found.searching).map((group) => ({
       key: group.muscle,
       title: MUSCLE_LABELS[group.muscle],
       rows: group.rows.map(choice),

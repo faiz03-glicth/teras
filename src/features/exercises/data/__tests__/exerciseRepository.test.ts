@@ -34,11 +34,11 @@ const custom = (id: string, name: string, userId: string | null) => ({
   isCustom: true,
 });
 
-/** The built-in library (migration 0001) and the open exercise dataset (0004). */
-const LIBRARY_SIZE = 104 + 1123;
+/** The built-in library (migration 0001) and the open exercise dataset (0004), as 0005 curates them. */
+const LIBRARY_SIZE = 624;
 
 describe('the exercise library', () => {
-  it('offers every built-in exercise, in alphabetical order', async () => {
+  it('offers the curated library, in alphabetical order', async () => {
     const { repo } = await setup();
 
     const all = await repo.list(USER);
@@ -81,9 +81,14 @@ describe('the exercise library', () => {
 
     const found = await repo.search(USER, 'ohp');
 
-    // The library's own overhead press first, then the open dataset's variations.
-    expect(found[0]?.id).toBe('overhead-press-barbell');
-    for (const row of found) expect(row.name).toMatch(/overhead press/i);
+    // The library's own overhead press first, then the other shoulder presses: it is one movement.
+    expect(found.slice(0, 3).map((row) => row.id)).toEqual([
+      'overhead-press-barbell',
+      'shoulder-press-dumbbell',
+      'shoulder-press-machine',
+    ]);
+    for (const row of found) expect(row).toMatchObject({ name: expect.stringMatching(/press/i) });
+    expect(found.every((row) => row.primaryMuscle === 'shoulders')).toBe(true);
   });
 
   it('looks one up by id', async () => {
