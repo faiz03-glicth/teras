@@ -1,0 +1,16 @@
+# Profile's FFMI sheet: opened, body fat stepped up, closed. Read-only (nothing is saved by looking at it).
+# Split from 21 because the phone's task killer ends Maestro's driver on longer runs.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-profile' }
+- assertVisible: { id: 'profile-screen' }
+- scrollUntilVisible:
+    element: { id: 'profile-ffmi' }
+- tapOn: { id: 'profile-ffmi' }
+- assertVisible: { id: 'ffmi-sheet' }
+- assertVisible: { id: 'ffmi-body-fat-value' }
+- assertVisible: { id: 'ffmi-index' }
+- tapOn: { id: 'ffmi-body-fat-plus' }
+- back
+- assertVisible: { id: 'profile-screen' }

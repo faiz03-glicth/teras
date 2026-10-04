@@ -1,4 +1,5 @@
 import {
+  weightNumber,
   BODYWEIGHT_KG,
   bodyweightFields,
   formatHeight,
@@ -161,5 +162,17 @@ describe('typing a value instead of stepping it', () => {
     expect(parseHeightCm(['', ''], 'lb')).toBeNull();
     expect(parseHeightCm(['5', 'x'], 'lb')).toBeNull();
     expect(parseRestSeconds(['', ''])).toBeNull();
+  });
+});
+
+describe('weightNumber', () => {
+  it('is the weight in the unit shown, without the unit: "70", "70.5", "154.3"', () => {
+    expect(weightNumber(70, 'kg')).toBe('70');
+    expect(weightNumber(70.5, 'kg')).toBe('70.5');
+    expect(weightNumber(70, 'lb')).toBe('154.3');
+  });
+
+  it('is what formatWeight puts before the unit', () => {
+    expect(formatWeight(70.5, 'kg')).toBe(`${weightNumber(70.5, 'kg')} kg`);
   });
 });

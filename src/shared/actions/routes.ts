@@ -8,6 +8,8 @@ export const routes = {
   tab: (tab: Tab): Href => (tab === 'home' ? '/' : `/${tab}`),
   calendar: (): Href => '/calendar',
   records: (): Href => '/records',
+  logWeight: (): Href => '/log-weight',
+  ffmi: (): Href => '/ffmi',
   day: (date: ISODate): Href => ({ pathname: '/day/[date]', params: { date } }),
   session: (id: string): Href => ({ pathname: '/session/[id]', params: { id } }),
   onboarding: (step: OnboardingStep): Href => ({ pathname: '/onboarding', params: { step: String(step) } }),

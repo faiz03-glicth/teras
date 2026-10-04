@@ -1,0 +1,19 @@
+# Profile's bodyweight card: the weight and BMI shown, then Log weight opened, stepped and closed without
+# saving. Read-only: Save would write a weigh-in, so it is not pressed here. 22 does FFMI.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-profile' }
+- assertVisible: { id: 'profile-screen' }
+- scrollUntilVisible:
+    element: { id: 'profile-body' }
+- assertVisible: { id: 'profile-bodyweight' }
+- assertVisible: 'BMI.*'
+- scrollUntilVisible:
+    element: { id: 'profile-log-weight' }
+- tapOn: { id: 'profile-log-weight' }
+- assertVisible: { id: 'log-weight-sheet' }
+- assertVisible: { id: 'log-weight-value' }
+- tapOn: { id: 'log-weight-plus' }
+- back
+- assertVisible: { id: 'profile-screen' }

@@ -122,3 +122,47 @@ describe('the dashboard', () => {
     expect(action).toHaveBeenCalled();
   });
 });
+
+describe('the bodyweight card', () => {
+  it('shows the bodyweight, and the BMI it makes with the height', async () => {
+    act(() => useTrainingPreferencesStore.setState({ bodyweightKg: 70, heightCm: 170 }));
+    profile();
+
+    expect(await screen.findByRole('header', { name: 'Bodyweight · BMI' })).toBeTruthy();
+    expect(screen.getByTestId('profile-bodyweight')).toHaveTextContent('70');
+    expect(screen.getByText('kg')).toBeTruthy();
+    // 70 / 1.7² = 24.2, one phrase for a screen reader.
+    expect(screen.getByLabelText('BMI 24.2, Normal weight')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'BMI is a rough estimate for adults and does not reflect individual health. Not medical advice.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('names the band the BMI falls in', async () => {
+    act(() => useTrainingPreferencesStore.setState({ bodyweightKg: 95, heightCm: 175 }));
+    profile();
+
+    expect(await screen.findByLabelText('BMI 31.0, Obese')).toBeTruthy();
+  });
+
+  it('shows the bodyweight in pounds when they are the unit', async () => {
+    act(() => useTrainingPreferencesStore.setState({ unit: 'lb', bodyweightKg: 70 }));
+    profile();
+
+    expect(await screen.findByTestId('profile-bodyweight')).toHaveTextContent('154.3');
+    expect(screen.getByText('lb')).toBeTruthy();
+  });
+
+  it.each([
+    ['Log weight', actions.openLogWeight],
+    ['FFMI', actions.openFfmi],
+  ])('opens %s', async (label, action) => {
+    profile();
+
+    fireEvent.press(await screen.findByRole('button', { name: label }));
+
+    expect(action).toHaveBeenCalled();
+  });
+});

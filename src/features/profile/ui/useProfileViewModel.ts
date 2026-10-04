@@ -1,7 +1,10 @@
 import { useState } from 'react';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
-import { openCalendar, openExerciseLibrary, openRecords } from '@/shared/actions';
+import { BMI_CATEGORY_LABELS, bmiOf, formatIndex } from '@/features/training/domain/body';
+import { weightNumber } from '@/features/training/domain/preferences';
+import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { openCalendar, openExerciseLibrary, openFfmi, openLogWeight, openRecords } from '@/shared/actions';
 import { useSessionActions } from '@/shared/actions/session';
 import { useHapticPreferencesStore } from '@/shared/state/hapticPreferencesStore';
 import { useSoundPreferencesStore } from '@/shared/state/soundPreferencesStore';
@@ -43,6 +46,10 @@ export function useProfileViewModel() {
   const { signOut } = useSessionActions();
   const [signingOut, setSigningOut] = useState(false);
   const chart = useWeeklyChart();
+  const unit = useTrainingPreferencesStore((s) => s.unit);
+  const bodyweightKg = useTrainingPreferencesStore((s) => s.bodyweightKg);
+  const heightCm = useTrainingPreferencesStore((s) => s.heightCm);
+  const bmi = bmiOf(bodyweightKg, heightCm);
 
   const isGuest = user?.provider === 'guest';
 
@@ -53,6 +60,16 @@ export function useProfileViewModel() {
       provider: user?.provider ?? 'guest',
     }),
     chart,
+    body: {
+      weight: weightNumber(bodyweightKg, unit),
+      unit,
+      bmi: formatIndex(bmi.value),
+      category: bmi.category,
+      categoryLabel: BMI_CATEGORY_LABELS[bmi.category],
+      position: bmi.position,
+      onLogWeight: openLogWeight,
+      onFfmi: openFfmi,
+    },
     accountLine: isGuest ? 'Guest · your training stays on this phone' : (user?.email ?? 'Signed in'),
     theme,
     themeOptions: THEME_OPTIONS,

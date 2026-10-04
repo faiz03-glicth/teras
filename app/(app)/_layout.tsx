@@ -39,6 +39,8 @@ export default function AppLayout() {
       <Stack.Screen name="day/[date]" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       <Stack.Screen name="equipment-filter" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       <Stack.Screen name="create-exercise" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      <Stack.Screen name="log-weight" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      <Stack.Screen name="ffmi" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
     </Stack>
   );
 }

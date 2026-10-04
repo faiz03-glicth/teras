@@ -5,6 +5,7 @@ import type { ProfileRepository } from '@/features/profile/data/ProfileRepositor
 import type { Profile } from '@/features/profile/domain/Profile';
 import type { ExerciseRepository } from '@/features/exercises/data/ExerciseRepository';
 import type { RoutineRepository } from '@/features/routines/data/RoutineRepository';
+import type { BodyweightRepository } from '@/features/training/data/BodyweightRepository';
 import type { WorkoutDayRepository } from '@/features/workoutDays/data/WorkoutDayRepository';
 import type { Workout, WorkoutRepository } from '@/features/workouts/data/WorkoutRepository';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
@@ -155,6 +156,13 @@ export function createFakeRoutineRepository(): FakeRoutineRepository {
   };
 }
 
+type Bodyweight = BodyweightRepository;
+export type FakeBodyweightRepository = { [K in keyof Bodyweight]: jest.Mock };
+
+export function createFakeBodyweightRepository(): FakeBodyweightRepository {
+  return { log: mockFn<Bodyweight['log']>(async () => undefined) };
+}
+
 export function createFakeRepositories(): Repositories & {
   auth: FakeAuthRepository;
   profile: FakeProfileRepository;
@@ -162,6 +170,7 @@ export function createFakeRepositories(): Repositories & {
   exercises: FakeExerciseRepository;
   workouts: FakeWorkoutRepository;
   routines: FakeRoutineRepository;
+  bodyweight: FakeBodyweightRepository;
 } {
   return {
     auth: createFakeAuthRepository(),
@@ -170,5 +179,6 @@ export function createFakeRepositories(): Repositories & {
     exercises: createFakeExerciseRepository(),
     workouts: createFakeWorkoutRepository(),
     routines: createFakeRoutineRepository(),
+    bodyweight: createFakeBodyweightRepository(),
   };
 }

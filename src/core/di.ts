@@ -13,6 +13,11 @@ import {
 import { createProfileDao } from '@/features/profile/data/local/profileDao';
 import { createRoutineDao } from '@/features/routines/data/local/routineDao';
 import { LocalRoutineRepository, type RoutineRepository } from '@/features/routines/data/RoutineRepository';
+import {
+  LocalBodyweightRepository,
+  type BodyweightRepository,
+} from '@/features/training/data/BodyweightRepository';
+import { createBodyweightDao } from '@/features/training/data/local/bodyweightDao';
 import { LocalFirstProfileRepository } from '@/features/profile/data/LocalFirstProfileRepository';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
 import { createProfileApi } from '@/features/profile/data/remote/profileApi';
@@ -42,6 +47,7 @@ export interface Repositories {
   exercises: ExerciseRepository;
   workouts: WorkoutRepository;
   routines: RoutineRepository;
+  bodyweight: BodyweightRepository;
 }
 
 /** Composition root: the only place concrete data sources and services are wired together. */
@@ -99,5 +105,11 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
-  return { auth, profile, workoutDays, exercises, workouts, routines };
+  const bodyweight = new LocalBodyweightRepository({
+    dao: createBodyweightDao(db),
+    uuid: expoCryptoService.uuid,
+    now: nowIso,
+  });
+
+  return { auth, profile, workoutDays, exercises, workouts, routines, bodyweight };
 }

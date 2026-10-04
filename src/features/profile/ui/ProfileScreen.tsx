@@ -14,11 +14,12 @@ import {
   Text,
 } from '@/shared/ui';
 
+import { BmiScale } from './components/BmiScale';
 import { useProfileViewModel } from './useProfileViewModel';
 
 /**
- * Profile: the account, the last twelve weeks of training, and how the app looks, moves, sounds and feels.
- * The dashboard opens Records, the exercise library and the Calendar. The bodyweight card comes later.
+ * Profile: the account, the last twelve weeks of training, the bodyweight and BMI, and how the app looks,
+ * moves, sounds and feels. The dashboard opens Records, the exercise library and the Calendar.
  */
 export function ProfileScreen() {
   const vm = useProfileViewModel();
@@ -90,6 +91,50 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      <Card style={styles.body} testID="profile-body">
+        <Text variant="headline" accessibilityRole="header">
+          Bodyweight · BMI
+        </Text>
+        <View style={styles.thisWeek}>
+          <Text variant="display" style={styles.number} testID="profile-bodyweight">
+            {vm.body.weight}
+          </Text>
+          <Text variant="headline" tone="secondary">
+            {vm.body.unit}
+          </Text>
+        </View>
+        <Text variant="sub" accessibilityLabel={`BMI ${vm.body.bmi}, ${vm.body.categoryLabel}`}>
+          <Text variant="sub" tone="secondary">
+            BMI{' '}
+          </Text>
+          <Text variant="sub" weight="semibold" style={styles.number}>
+            {vm.body.bmi}
+          </Text>
+          <Text variant="sub" weight="semibold" tone={vm.body.category === 'normal' ? 'accent' : 'primary'}>
+            {'  '}
+            {vm.body.categoryLabel}
+          </Text>
+        </Text>
+        <BmiScale position={vm.body.position} category={vm.body.category} />
+        <View style={styles.bodyActions}>
+          <View style={styles.dashboardItem}>
+            <Button
+              label="Log weight"
+              icon="plus"
+              variant="secondary"
+              onPress={vm.body.onLogWeight}
+              testID="profile-log-weight"
+            />
+          </View>
+          <View style={styles.dashboardItem}>
+            <Button label="FFMI" variant="secondary" onPress={vm.body.onFfmi} testID="profile-ffmi" />
+          </View>
+        </View>
+        <Text variant="mini" tone="tertiary">
+          BMI is a rough estimate for adults and does not reflect individual health. Not medical advice.
+        </Text>
+      </Card>
+
       <View style={styles.group}>
         <SectionLabel>Theme</SectionLabel>
         <SegmentedControl
@@ -158,6 +203,8 @@ const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
   group: { gap: theme.spacing.sm },
   chart: { gap: theme.spacing.md },
+  body: { gap: theme.spacing.sm },
+  bodyActions: { flexDirection: 'row', gap: theme.spacing.sm, marginTop: theme.spacing.sm },
   // Two to a row, as in the prototype.
   dashboard: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
   dashboardItem: { flexBasis: '47%', flexGrow: 1 },
