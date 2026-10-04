@@ -163,6 +163,16 @@ export function useExerciseBests(owner: WorkoutOwner, exerciseIds: readonly stri
   });
 }
 
+/** Every exercise's record as it stands, the most recently trained first: the Records list. */
+export function useAllRecords(owner: WorkoutOwner) {
+  const { workouts } = useRepositories();
+  return useQuery({
+    queryKey: [...workoutKeys.history, owner, 'records-all'],
+    queryFn: () => workouts.records(owner),
+    networkMode: 'always',
+  });
+}
+
 /** The personal records a finished workout set, for its Saved screen. */
 export function useNewRecords(owner: WorkoutOwner, id: string | null) {
   const { workouts } = useRepositories();

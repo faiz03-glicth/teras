@@ -43,6 +43,11 @@ export function openCalendar(): void {
   router.push(routes.calendar());
 }
 
+/** Every exercise's record, from Profile's dashboard. */
+export function openRecords(): void {
+  router.push(routes.records());
+}
+
 /** A day's detail, as a sheet over the wave it was tapped on. */
 export function openDay(date: ISODate): void {
   router.push(routes.day(date));

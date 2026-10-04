@@ -20,6 +20,7 @@ export const openEquipmentFilter = jest.fn();
 export const openCreateExercise = jest.fn();
 export const returnToWorkout = jest.fn();
 export const openCalendar = jest.fn();
+export const openRecords = jest.fn();
 export const openDay = jest.fn();
 export const openSession = jest.fn();
 export const openWorkoutSaved = jest.fn();

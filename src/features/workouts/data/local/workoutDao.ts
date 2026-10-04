@@ -79,6 +79,14 @@ export interface ExerciseBests {
   seconds: number | null;
 }
 
+/** One exercise's bests across every finished workout, for the Records list. */
+export interface RecordRow extends ExerciseBests {
+  name: string;
+  type: ExerciseType;
+  /** When the latest finished workout with a set of it started: the list's order. */
+  lastAt: string;
+}
+
 /** A completed set of one exercise, with the finished workout it was done in. */
 export interface ExerciseSetRow {
   workoutId: string;
@@ -150,6 +158,8 @@ export interface WorkoutDao {
    * out: the domain's record rule.
    */
   bests(owner: WorkoutOwner, exerciseIds: readonly string[], before?: string): Promise<ExerciseBests[]>;
+  /** The same bests for every exercise the owner has completed a set of, with its name and type. */
+  records(owner: WorkoutOwner): Promise<RecordRow[]>;
 
   /**
    * Every completed set of one exercise across the owner's finished workouts, the latest workout first
@@ -475,6 +485,36 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
             eq(workoutSets.status, 'done'),
             ne(workoutSets.setType, 'warmup'),
             inArray(workoutExercises.exerciseId, [...exerciseIds]),
+          ),
+        )
+        .groupBy(workoutExercises.exerciseId)
+        .all();
+    },
+
+    async records(owner) {
+      return db
+        .select({
+          exerciseId: workoutExercises.exerciseId,
+          name: exercises.name,
+          type: exercises.type,
+          weightKg: sql<
+            number | null
+          >`max(case when ${workoutSets.reps} > 0 then ${workoutSets.weightKg} end)`,
+          reps: max(workoutSets.reps),
+          seconds: max(workoutSets.seconds),
+          lastAt: sql<string>`max(${workouts.startedAt})`,
+        })
+        .from(workoutSets)
+        .innerJoin(workoutExercises, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+        .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+        .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+        .where(
+          and(
+            ownedBy(owner),
+            isNotNull(workouts.endedAt),
+            live,
+            eq(workoutSets.status, 'done'),
+            ne(workoutSets.setType, 'warmup'),
           ),
         )
         .groupBy(workoutExercises.exerciseId)

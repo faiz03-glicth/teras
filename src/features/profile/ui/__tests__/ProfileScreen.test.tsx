@@ -3,6 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
+import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
@@ -105,5 +106,19 @@ describe('the weekly chart', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
 
     expect(await screen.findByText('2,000 kg')).toBeTruthy();
+  });
+});
+
+describe('the dashboard', () => {
+  it.each([
+    ['Records', actions.openRecords],
+    ['Exercises', actions.openExerciseLibrary],
+    ['Calendar', actions.openCalendar],
+  ])('opens %s', async (label, action) => {
+    profile();
+
+    fireEvent.press(await screen.findByRole('button', { name: label }));
+
+    expect(action).toHaveBeenCalled();
   });
 });

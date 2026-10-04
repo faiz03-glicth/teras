@@ -6,7 +6,7 @@ import type { ISODate } from '@/shared/lib/date/isoDate';
 
 import { sessionSeconds } from '../domain/duration';
 import type { ExerciseSession } from '../domain/progress';
-import { newRecords, type PersonalRecord, type SetBests } from '../domain/records';
+import { newRecords, recordValue, type PersonalRecord, type SetBests } from '../domain/records';
 import type { PreviousSet } from '../domain/setUnits';
 import { dayTotals } from '../domain/totals';
 import type { WorkoutDao, WorkoutOwner } from './local/workoutDao';
@@ -138,6 +138,11 @@ export interface WorkoutRepository {
    * exercise never completed has no entry.
    */
   bests(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<Partial<Record<string, SetBests>>>;
+  /**
+   * Every exercise's record as it stands, across the owner's finished workouts: the Records list, the one
+   * trained most recently first. An exercise with nothing that counts (a weight never lifted) has none.
+   */
+  records(owner: WorkoutOwner): Promise<PersonalRecord[]>;
   /**
    * Every finished workout an exercise was completed in, the latest first, with its completed sets: what
    * an exercise's records, chart and history are worked out from.
@@ -302,6 +307,19 @@ export class LocalWorkoutRepository implements WorkoutRepository {
 
   bests(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<Partial<Record<string, SetBests>>> {
     return this.bestsOf(owner, exerciseIds);
+  }
+
+  async records(owner: WorkoutOwner): Promise<PersonalRecord[]> {
+    const rows = await this.deps.dao.records(owner);
+    return [...rows]
+      .sort((a, b) => b.lastAt.localeCompare(a.lastAt))
+      .map(({ exerciseId, name, type, ...bests }) => ({
+        exerciseId,
+        name,
+        type,
+        value: recordValue(type, bests),
+      }))
+      .filter((record) => record.value > 0);
   }
 
   private async bestsOf(

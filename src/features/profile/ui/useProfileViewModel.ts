@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
+import { openCalendar, openExerciseLibrary, openRecords } from '@/shared/actions';
 import { useSessionActions } from '@/shared/actions/session';
 import { useHapticPreferencesStore } from '@/shared/state/hapticPreferencesStore';
 import { useSoundPreferencesStore } from '@/shared/state/soundPreferencesStore';
@@ -24,7 +25,7 @@ export const REDUCE_MOTION_OPTIONS = [
 ] as const satisfies readonly { value: ReduceMotionPreference; label: string }[];
 
 /**
- * Profile, for now: the account, the weekly chart, the look and feel (theme, motion, sound, haptics), and
+ * Profile, for now: the account, the weekly chart, the dashboard, the look and feel (theme, motion, sound, haptics), and
  * logging out.
  */
 export function useProfileViewModel() {
@@ -60,6 +61,13 @@ export function useProfileViewModel() {
     soundEffects,
     haptics: hapticsOn,
     signingOut,
+
+    // The dashboard: the prototype's Streak link waits for the cross-app contract to be decided.
+    dashboard: [
+      { label: 'Records', icon: 'trophy', onPress: openRecords, testID: 'profile-records' },
+      { label: 'Exercises', icon: 'dumbbell', onPress: openExerciseLibrary, testID: 'profile-exercises' },
+      { label: 'Calendar', icon: 'calendar', onPress: openCalendar, testID: 'profile-calendar' },
+    ] as const,
 
     onThemeChange: setTheme,
     onReduceMotionChange: setReduceMotion,

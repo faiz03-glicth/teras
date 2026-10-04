@@ -18,7 +18,7 @@ import { useProfileViewModel } from './useProfileViewModel';
 
 /**
  * Profile: the account, the last twelve weeks of training, and how the app looks, moves, sounds and feels.
- * The dashboard and the bodyweight card come later.
+ * The dashboard opens Records, the exercise library and the Calendar. The bodyweight card comes later.
  */
 export function ProfileScreen() {
   const vm = useProfileViewModel();
@@ -72,6 +72,23 @@ export function ProfileScreen() {
           testID="profile-chart-measure"
         />
       </Card>
+
+      <View style={styles.group}>
+        <SectionLabel>Dashboard</SectionLabel>
+        <View style={styles.dashboard}>
+          {vm.dashboard.map((item) => (
+            <View key={item.label} style={styles.dashboardItem}>
+              <Button
+                label={item.label}
+                icon={item.icon}
+                variant="secondary"
+                onPress={item.onPress}
+                testID={item.testID}
+              />
+            </View>
+          ))}
+        </View>
+      </View>
 
       <View style={styles.group}>
         <SectionLabel>Theme</SectionLabel>
@@ -141,6 +158,9 @@ const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
   group: { gap: theme.spacing.sm },
   chart: { gap: theme.spacing.md },
+  // Two to a row, as in the prototype.
+  dashboard: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+  dashboardItem: { flexBasis: '47%', flexGrow: 1 },
   thisWeek: { flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.xs },
   number: { fontVariant: ['tabular-nums'] },
 }));

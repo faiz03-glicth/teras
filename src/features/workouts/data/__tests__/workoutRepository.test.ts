@@ -891,3 +891,49 @@ describe("each exercise's records as they stand", () => {
     expect(await repo.bests(null, [BENCH])).toMatchObject({ [BENCH]: { weightKg: 100 } });
   });
 });
+
+describe('every record', () => {
+  it('lists each exercise with its record, the one trained most recently first', async () => {
+    const { repo } = await setup();
+    await logged(repo, [
+      [BENCH, [{ weightKg: 60, reps: 8 }]],
+      [SQUAT, [{ weightKg: 100, reps: 5 }]],
+    ]);
+    await logged(repo, [[BENCH, [{ weightKg: 65, reps: 5 }]]]);
+
+    expect(await repo.records(USER)).toEqual([
+      { exerciseId: BENCH, name: 'Bench Press (Barbell)', type: 'weighted', value: 65 },
+      { exerciseId: SQUAT, name: 'Squat (Barbell)', type: 'weighted', value: 100 },
+    ]);
+  });
+
+  it('measures each by its type, and leaves out what never counted', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    await logSet(repo, started.id, 'plank', { seconds: 75 });
+    await logSet(repo, started.id, 'pull-up', { reps: 12 });
+    await logSet(repo, started.id, SQUAT, { weightKg: 100, reps: 0 });
+    await repo.finish(started.id);
+
+    const records = await repo.records(USER);
+
+    expect(records.map(({ exerciseId, value }) => [exerciseId, value])).toEqual(
+      expect.arrayContaining([
+        ['plank', 75],
+        ['pull-up', 12],
+      ]),
+    );
+    // A weight never lifted is no record.
+    expect(records.map((record) => record.exerciseId)).not.toContain(SQUAT);
+  });
+
+  it('counts only finished workouts of the person', async () => {
+    const { repo } = await setup();
+    await logged(repo, [[BENCH, [{ weightKg: 100, reps: 5 }]]], null);
+    const running = await startEmpty(repo);
+    await logSet(repo, running.id, SQUAT, { weightKg: 100, reps: 5 });
+
+    expect(await repo.records(USER)).toEqual([]);
+    expect(await repo.records(null)).toMatchObject([{ exerciseId: BENCH, value: 100 }]);
+  });
+});
