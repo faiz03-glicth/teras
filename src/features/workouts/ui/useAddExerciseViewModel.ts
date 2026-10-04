@@ -15,6 +15,8 @@ import { useActiveWorkoutSummary, useSetActiveWorkout, useWorkoutOwner } from '.
  * The exercise browser, and adding the exercise picked to the workout in progress, or to the routine
  * being edited. A routine keeps it in its draft: nothing is written until the routine is saved.
  */
+const openExerciseById = (exerciseId: string) => openExercise(exerciseId);
+
 export function useAddExerciseViewModel(target: AddExerciseTarget = 'workout') {
   const { workouts } = useRepositories();
   const owner = useWorkoutOwner();
@@ -58,11 +60,17 @@ export function useAddExerciseViewModel(target: AddExerciseTarget = 'workout') {
     [cacheWorkout, restSeconds, workout, workouts],
   );
 
+  // Stable, so the memoised rows of the list skip re-rendering when only the filters change.
+  const onPick = useCallback(
+    (exerciseId: string) =>
+      target === 'routine' ? pickForRoutine(exerciseId) : void addToWorkout(exerciseId),
+    [addToWorkout, pickForRoutine, target],
+  );
+
   return {
     browser,
-    onPick: (exerciseId: string) =>
-      target === 'routine' ? pickForRoutine(exerciseId) : void addToWorkout(exerciseId),
-    onInfo: (exerciseId: string) => openExercise(exerciseId),
+    onPick,
+    onInfo: openExerciseById,
     onBack: () => goBack(),
   };
 }

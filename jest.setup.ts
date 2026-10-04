@@ -46,3 +46,15 @@ jest.mock('sonner-native', () => ({
   }),
   Toaster: () => null,
 }));
+
+// FlashList draws only what fits the screen it measures; tests have no layout, so give it a phone-sized one.
+// (The package's own jestSetup swaps in a RecyclerView this version doesn't export.)
+jest.mock('@shopify/flash-list/dist/recyclerview/utils/measureLayout', () => {
+  const screen = { x: 0, y: 0, width: 400, height: 900 };
+  return {
+    ...jest.requireActual('@shopify/flash-list/dist/recyclerview/utils/measureLayout'),
+    measureParentSize: jest.fn(() => screen),
+    measureFirstChildLayout: jest.fn(() => screen),
+    measureItemLayout: jest.fn(() => ({ x: 0, y: 0, width: 400, height: 60 })),
+  };
+});

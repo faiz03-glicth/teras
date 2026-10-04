@@ -200,3 +200,38 @@ describe('the muscle filter', () => {
     expect(screen.getByText('2 EXERCISES')).toBeTruthy();
   });
 });
+
+describe('the list, grouped by muscle', () => {
+  const browser = () => useExerciseBrowserStore.getState();
+  const headings = () => screen.getAllByRole('header').map((node) => node.props.children);
+
+  it('heads each primary muscle once, in the library order', async () => {
+    library();
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+
+    expect(headings()).toEqual(expect.arrayContaining(['Chest', 'Biceps', 'Abs', 'Quads']));
+    expect(screen.getAllByRole('header', { name: 'Chest' })).toHaveLength(1);
+  });
+
+  it('files an exercise under its primary muscle, even when filtered by a secondary one', async () => {
+    library();
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+
+    act(() => browser().setMuscle('shoulders'));
+
+    expect(await screen.findByText('1 EXERCISE')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Chest' })).toBeTruthy();
+    expect(screen.queryByRole('header', { name: 'Shoulders' })).toBeNull();
+  });
+
+  it('keeps the grouping while searching', async () => {
+    library();
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+
+    act(() => browser().setQuery('bench'));
+
+    expect(await screen.findByText('2 EXERCISES')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Chest' })).toBeTruthy();
+    expect(screen.queryByRole('header', { name: 'Quads' })).toBeNull();
+  });
+});

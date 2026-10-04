@@ -1,0 +1,10 @@
+# Exercise library: fling through the list and back. For frame timings, scripts run
+# subflows/library-flings.yaml alone after resetting `dumpsys gfxinfo`. Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+- tapOn: { id: 'workout-library' }
+- assertVisible: 'ALL EXERCISES'
+- runFlow: ../subflows/library-flings.yaml
+- back

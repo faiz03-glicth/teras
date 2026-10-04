@@ -7,16 +7,19 @@ import { contrastRatio } from '../tokens/contrast';
 describe('the muscle map colours', () => {
   it('in Walnut, make every muscle stand out from the card and from the body around it', () => {
     const colors = semanticColors.dark;
-    const card = softMaterials.dark.raised.background;
+    const card = colors.bodyCanvas;
 
-    expect(contrastRatio(colors.bodyMuscle, card)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(card, softMaterials.dark.raised.background)).toBeGreaterThan(1.1);
+    expect(contrastRatio(colors.bodyMuscle, card)).toBeGreaterThanOrEqual(4);
     expect(contrastRatio(colors.bodyMuscle, colors.bodySilhouette)).toBeGreaterThanOrEqual(2.5);
-    expect(contrastRatio(colors.bodySilhouette, card)).toBeGreaterThan(1.1);
+    expect(contrastRatio(colors.bodySilhouette, card)).toBeGreaterThanOrEqual(1.4);
+    expect(contrastRatio(colors.text, card)).toBeGreaterThanOrEqual(4.5);
   });
 
   it('in Parchment, stay as they were', () => {
     const colors = semanticColors.light;
 
+    expect(colors.bodyCanvas).toBe(softMaterials.light.raised.background);
     expect(colors.bodySilhouette).toBe(colors.subtle);
     expect(colors.bodyMuscle).toBe(colors.border);
   });

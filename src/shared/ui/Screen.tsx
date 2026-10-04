@@ -13,6 +13,11 @@ export interface ScreenProps {
   /** Scrolls (the platform's own scroll view: native momentum, nothing in the way). */
   scroll?: boolean;
   /**
+   * The child is a virtualised list (FlatList) that scrolls itself and pads its own content: the screen
+   * adds no scroll view and no padding around it, only the press delay a scroll needs.
+   */
+  list?: boolean;
+  /**
    * The screen has text fields: scrolling also keeps the focused one above the keyboard. Only these
    * screens pay for keyboard tracking; every other screen scrolls on the plain native scroll view.
    */
@@ -33,6 +38,7 @@ const TAB_BAR_CLEARANCE = 104;
 export function Screen({
   children,
   scroll = false,
+  list = false,
   keyboard = false,
   withTabBar = false,
   edges = ['top', 'bottom'],
@@ -44,7 +50,9 @@ export function Screen({
   const content = [styles.content(inset, withTabBar), contentStyle];
   return (
     <SafeAreaView edges={edges} style={styles.root} testID={testID}>
-      {scroll ? (
+      {list ? (
+        <PressDelay value={motion.scroll.pressDelayMs}>{children}</PressDelay>
+      ) : scroll ? (
         // A press that becomes a scroll never presses (motion.scroll): starting a scroll on a card or a
         // month doesn't dip it, which is what makes a scroll feel like it's fighting the finger.
         <PressDelay value={motion.scroll.pressDelayMs}>

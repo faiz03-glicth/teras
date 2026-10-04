@@ -33,7 +33,8 @@ export interface SemanticColors {
   scrim: string;
   /** Switch knob: white in both schemes, like the platform's own switches. */
   thumb: string;
-  /** The muscle map's body (head, hands, joints) and its unselected muscles, on a raised card. */
+  /** The card behind the muscle map, then its body (head, hands, joints) and its unselected muscles. */
+  bodyCanvas: string;
   bodySilhouette: string;
   bodyMuscle: string;
 }

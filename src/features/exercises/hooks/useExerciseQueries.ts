@@ -20,6 +20,9 @@ export function useExerciseList(owner: ExerciseOwner) {
     queryKey: exerciseKeys.library(owner),
     queryFn: () => exercises.list(owner),
     networkMode: 'always',
+    // ~1,200 rows that only change when an exercise is created (which invalidates this): read once, not
+    // again each time the browser opens.
+    staleTime: Infinity,
   });
 }
 

@@ -81,19 +81,21 @@ describe('the exercise browser', () => {
     expect(screen.queryByTestId('all-squat-barbell')).toBeNull();
   });
 
-  it('lists forty at a time, and says how many more there are', async () => {
+  it('offers the whole library in one list, drawing only what is near the screen', async () => {
     const many = Array.from({ length: 45 }, (_, index) =>
       exerciseRow(`ex-${index}`, `Exercise ${String(index).padStart(2, '0')}`),
     );
     open((fakes) => fakes.exercises.list.mockResolvedValue(many));
 
-    expect(await screen.findByTestId('all-ex-39')).toBeTruthy();
-    expect(screen.queryByTestId('all-ex-40')).toBeNull();
-
-    fireEvent.press(screen.getByRole('button', { name: 'Show more (5 left)' }));
-
-    expect(screen.getByTestId('all-ex-44')).toBeTruthy();
+    expect(await screen.findByTestId('all-ex-0')).toBeTruthy();
+    // Virtualised: the far end isn't drawn until it is scrolled to, and there is no paging button.
+    expect(screen.queryByTestId('all-ex-44')).toBeNull();
     expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
+
+    // Scrolling there is the list's own work (Maestro flow 17 flings it on the phone); a search reaches it.
+    fireEvent.changeText(screen.getByTestId('exercise-search'), 'Exercise 44');
+
+    expect(await screen.findByTestId('all-ex-44')).toBeTruthy();
   });
 
   it('says when nothing matches, and clears the search', async () => {
