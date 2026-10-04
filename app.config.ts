@@ -1,11 +1,27 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 const BUNDLE_ID = 'com.faiz.teras';
-const IS_LOCAL = process.env.APP_VARIANT === 'local';
+
+/**
+ * Which app a build is (`APP_VARIANT`). Each has its own ID, so they sit side by side on one phone, each
+ * signed with its own key and keeping its own data:
+ * - `local`: "Teras Local", built on this computer (scripts/expo-local.js), loads code from `npm start`.
+ * - `sandbox`: "SandBoxTeras", the EAS `preview` APK, a release build to try on the phone.
+ * - unset: "ProdTeras", the EAS `production` build for Google Play.
+ */
+const VARIANTS = {
+  local: { name: 'Teras Local', id: `${BUNDLE_ID}.local`, scheme: 'teras-local' },
+  sandbox: { name: 'SandBoxTeras', id: `${BUNDLE_ID}.sandbox`, scheme: 'teras-sandbox' },
+  production: { name: 'ProdTeras', id: BUNDLE_ID, scheme: 'teras' },
+} as const;
+const VARIANT =
+  process.env.APP_VARIANT === 'local' || process.env.APP_VARIANT === 'sandbox'
+    ? VARIANTS[process.env.APP_VARIANT]
+    : VARIANTS.production;
 
 /** The EAS project on expo.dev (account `faiz-glitch`, slug `teras`). */
 const EAS_PROJECT_ID = 'da6556e1-8c6d-42b7-bd0f-22123924d92c';
-const APP_ID = IS_LOCAL ? `${BUNDLE_ID}.local` : BUNDLE_ID;
+const APP_ID = VARIANT.id;
 
 /**
  * Google Sign-In on iOS needs the *reversed* iOS client ID as a URL scheme:
@@ -25,10 +41,10 @@ function googleIosUrlScheme(): string {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: IS_LOCAL ? 'Teras Local' : 'Teras',
+  name: VARIANT.name,
   slug: 'teras',
   owner: 'faiz-glitch',
-  scheme: IS_LOCAL ? 'teras-local' : 'teras',
+  scheme: VARIANT.scheme,
   version: '1.0.0',
   orientation: 'portrait',
   // The Core Orb, in the app's own colours (assets are drawn from src/theme/tokens).
