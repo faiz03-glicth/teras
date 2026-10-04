@@ -1,0 +1,29 @@
+# Library search as people type it: a plain word, a plural and a single letter. Read-only.
+# Like 18 (split from it: the phone's background manager kills Maestro's driver on long runs), each
+# search opens the library afresh and hides the keyboard.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-workout' }
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'squat'
+- hideKeyboard
+- assertVisible: { id: 'all-squat-barbell' }
+- back
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 'chin ups'
+- hideKeyboard
+- assertVisible: { id: 'all-chin-up' }
+- back
+
+- tapOn: { id: 'workout-library' }
+- tapOn: { id: 'exercise-search' }
+- inputText: 't bar'
+- hideKeyboard
+- assertVisible: '3 EXERCISES'
+- assertVisible: { id: 'all-t-bar-row-barbell' }
+- back

@@ -14,7 +14,13 @@ import {
   TextField,
 } from '@/shared/ui';
 
-import type { BrowserItem, CardPlace, ExerciseBrowserModel } from '../useExerciseBrowser';
+import {
+  itemKey,
+  itemKind,
+  type BrowserItem,
+  type CardPlace,
+  type ExerciseBrowserModel,
+} from '../useExerciseBrowser';
 import { ExerciseRow } from './ExerciseRow';
 import { FilterButton } from './FilterButton';
 import { MusclePanel } from './MusclePanel';
@@ -27,8 +33,6 @@ export interface ExerciseBrowserProps {
   header: ReactNode;
 }
 
-const keyOf = (item: BrowserItem) => item.key;
-const kindOf = (item: BrowserItem) => item.kind;
 // The muscle panel opening above the list must push the list down, not hold the rows still under it.
 const KEEP_PLACE = { disabled: true } as const;
 
@@ -43,7 +47,9 @@ export function ExerciseBrowser({ browser, onPick, onInfo, header }: ExerciseBro
   const { results } = browser;
   const { onClearFilters } = results;
   const renderItem: ListRenderItem<BrowserItem> = useCallback(
-    ({ item }) => {
+    // A row past the end of the list for a render (see `itemKey`) draws nothing.
+    ({ item }: { item: BrowserItem | undefined }) => {
+      if (item === undefined) return null;
       if (item.kind === 'section') {
         return (
           <SectionHeading title={item.title} onClearFilters={item.clearable ? onClearFilters : undefined} />
@@ -73,8 +79,8 @@ export function ExerciseBrowser({ browser, onPick, onInfo, header }: ExerciseBro
   return (
     <FlashList
       data={results.items}
-      keyExtractor={keyOf}
-      getItemType={kindOf}
+      keyExtractor={itemKey}
+      getItemType={itemKind}
       maintainVisibleContentPosition={KEEP_PLACE}
       renderItem={renderItem}
       ListHeaderComponent={

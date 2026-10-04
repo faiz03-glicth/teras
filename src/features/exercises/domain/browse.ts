@@ -7,10 +7,15 @@ export interface BrowserSections {
   /** Favourites and recent lead the list, but only before anything is searched for. */
   favourites: ExerciseRow[];
   recent: ExerciseRow[];
-  /** Every exercise that matches, in library order. */
+  /**
+   * Every exercise that matches: the best match first while searching, otherwise in library order
+   * (familiar exercises before their variations). A chosen muscle's own exercises come first either way.
+   */
   matches: ExerciseRow[];
   /** Something narrows the list, so it is a count of matches rather than "All exercises". */
   filtered: boolean;
+  /** Something is typed, so the matches are in best-match order. */
+  searching: boolean;
 }
 
 export interface BrowserFilters {
@@ -22,11 +27,20 @@ export interface BrowserFilters {
   equipment?: Equipment | null;
 }
 
-/** PURE: the exercises working a muscle, those it works most (its primary) before the rest. */
-function working(rows: readonly ExerciseRow[], muscle: Muscle): ExerciseRow[] {
+/**
+ * PURE: the exercises working a muscle that match the query: those it works most (its primary) first,
+ * then the rest, each part best match (or library order) first.
+ */
+function working(rows: readonly ExerciseRow[], muscle: Muscle, query: string): ExerciseRow[] {
   return [
-    ...rows.filter((row) => row.primaryMuscle === muscle),
-    ...rows.filter((row) => row.primaryMuscle !== muscle && row.secondaryMuscles.includes(muscle)),
+    ...searchExercises(
+      rows.filter((row) => row.primaryMuscle === muscle),
+      query,
+    ),
+    ...searchExercises(
+      rows.filter((row) => row.primaryMuscle !== muscle && row.secondaryMuscles.includes(muscle)),
+      query,
+    ),
   ];
 }
 
@@ -39,10 +53,10 @@ export function browserSections(
   rows: readonly ExerciseRow[],
   { query, favouriteIds, recentIds, muscle = null, equipment = null }: BrowserFilters,
 ): BrowserSections {
-  const filtered = query.trim() !== '' || muscle !== null || equipment !== null;
+  const searching = query.trim() !== '';
+  const filtered = searching || muscle !== null || equipment !== null;
   const byId = new Map(rows.map((row) => [row.id, row]));
   const ofEquipment = equipment === null ? rows : rows.filter((row) => row.equipment === equipment);
-  const candidates = muscle === null ? ofEquipment : working(ofEquipment, muscle);
   const pick = (ids: readonly string[]) =>
     filtered
       ? []
@@ -53,8 +67,9 @@ export function browserSections(
   return {
     favourites: pick(favouriteIds),
     recent: pick(recentIds),
-    matches: searchExercises(candidates, query),
+    matches: muscle === null ? searchExercises(ofEquipment, query) : working(ofEquipment, muscle, query),
     filtered,
+    searching,
   };
 }
 
@@ -70,11 +85,18 @@ export interface MuscleGroup {
 
 /**
  * PURE: exercises grouped by their primary muscle, never repeated for a secondary one. Groups follow the
- * library's muscle order, the chosen muscle (if any) first; each keeps the order it was given (library
- * order, or best match first while searching).
+ * library's muscle order or, `byBestMatch` (while searching), the order of each group's best match; the
+ * chosen muscle (if any) leads either way. Each group keeps the order it was given.
  */
-export function groupByMuscle(rows: readonly ExerciseRow[], lead: Muscle | null): MuscleGroup[] {
-  const order = lead === null ? MUSCLES : [lead, ...MUSCLES.filter((muscle) => muscle !== lead)];
+export function groupByMuscle(
+  rows: readonly ExerciseRow[],
+  lead: Muscle | null,
+  byBestMatch = false,
+): MuscleGroup[] {
+  const muscles: readonly Muscle[] = byBestMatch
+    ? [...new Set(rows.map((row) => row.primaryMuscle))]
+    : MUSCLES;
+  const order = lead === null ? muscles : [lead, ...muscles.filter((muscle) => muscle !== lead)];
   return order.flatMap((muscle) => {
     const mine = rows.filter((row) => row.primaryMuscle === muscle);
     return mine.length > 0 ? [{ muscle, rows: mine }] : [];

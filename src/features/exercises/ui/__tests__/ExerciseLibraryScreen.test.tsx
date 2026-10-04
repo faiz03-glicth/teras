@@ -110,6 +110,22 @@ describe('filtering the library', () => {
     expect(screen.getByTestId('exercise-search').props.value).toBe('');
     expect(screen.queryByTestId('muscle-panel')).toBeNull();
   });
+
+  it('leaves no search behind when it closes, so it reopens on the whole library at once', async () => {
+    const { unmount } = library();
+    expect(await screen.findByText('ALL EXERCISES')).toBeTruthy();
+    act(() => {
+      browser().setQuery('chin ups');
+      browser().setMuscle('lats');
+      browser().setEquipment('bodyweight');
+    });
+
+    unmount();
+
+    // Opening on the last search's few rows, then the whole library, could crash the list (seen on the
+    // phone with FlashList 2.0.2, which keeps count of the rows while it renders).
+    expect(browser()).toMatchObject({ query: '', muscle: null, equipment: null });
+  });
 });
 
 describe('the muscle filter', () => {

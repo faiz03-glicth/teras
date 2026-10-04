@@ -52,8 +52,8 @@ export class LocalExerciseRepository implements ExerciseRepository {
   }
 
   async search(owner: ExerciseOwner, query: string): Promise<ExerciseRow[]> {
-    // The library is ~100 rows, so it is filtered in memory: one query, and the matching rules stay in
-    // one pure, tested function rather than being split between SQL and TypeScript.
+    // The library is ~600 rows, so it is searched in memory: one query, and the matching and ranking
+    // rules stay in one pure, tested function rather than being split between SQL and TypeScript.
     return searchExercises(await this.deps.dao.list(owner), query);
   }
 

@@ -17,3 +17,6 @@ docs
 
 # Written by scripts/build-acknowledgements.js
 public/acknowledgements/index.html
+
+# Written by scripts/exercise-dataset/build-curation.js
+src/features/exercises/domain/catalogue.generated.ts
