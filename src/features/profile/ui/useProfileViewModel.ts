@@ -9,6 +9,7 @@ import { useThemePreferencesStore } from '@/theme/state/themePreferencesStore';
 
 import { profileTitle } from '../domain/Profile';
 import { useProfile } from '../hooks/useProfile';
+import { useWeeklyChart } from './useWeeklyChart';
 
 export const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
@@ -22,7 +23,10 @@ export const REDUCE_MOTION_OPTIONS = [
   { value: 'off', label: 'Off' },
 ] as const satisfies readonly { value: ReduceMotionPreference; label: string }[];
 
-/** Profile, for now: the account, the look and feel (theme, motion, sound, haptics), and logging out. */
+/**
+ * Profile, for now: the account, the weekly chart, the look and feel (theme, motion, sound, haptics), and
+ * logging out.
+ */
 export function useProfileViewModel() {
   const user = useAuthStore((s) => s.user);
   const restartOnboarding = useAuthStore((s) => s.restartOnboarding);
@@ -37,6 +41,7 @@ export function useProfileViewModel() {
   const setHaptics = useHapticPreferencesStore((s) => s.setHaptics);
   const { signOut } = useSessionActions();
   const [signingOut, setSigningOut] = useState(false);
+  const chart = useWeeklyChart();
 
   const isGuest = user?.provider === 'guest';
 
@@ -46,6 +51,7 @@ export function useProfileViewModel() {
       email: profile?.email ?? user?.email ?? null,
       provider: user?.provider ?? 'guest',
     }),
+    chart,
     accountLine: isGuest ? 'Guest · your training stays on this phone' : (user?.email ?? 'Signed in'),
     theme,
     themeOptions: THEME_OPTIONS,

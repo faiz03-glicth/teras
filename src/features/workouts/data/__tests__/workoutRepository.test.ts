@@ -352,7 +352,7 @@ describe('the workout feed', () => {
     expect(await repo.history(USER, 10)).toEqual([]);
   });
 
-  it('carries what the feed shows: name, exercises, volume and sets', async () => {
+  it('carries what the feed and the weekly chart show: name, exercises, volume, sets and reps', async () => {
     const { repo } = await setup();
     const started = await repo.start(USER, { date: DATE, bodyweightKg: 70, restSeconds: 90 });
     await logSet(repo, started.id, 'squat-barbell', { weightKg: 100, reps: 5 });
@@ -367,6 +367,7 @@ describe('the workout feed', () => {
       date: DATE,
       volumeKg: 1100,
       sets: 2,
+      reps: 15,
       exercises: [
         { name: 'Squat (Barbell)', sets: 1 },
         { name: 'Bench Press (Barbell)', sets: 1 },
@@ -388,6 +389,20 @@ describe('the workout feed', () => {
 
     expect(entry?.exercises).toEqual([{ name: 'Squat (Barbell)', sets: 1 }]);
     expect(entry?.sets).toBe(1);
+    // The added set was filled with 5 reps, but never ticked.
+    expect(entry?.reps).toBe(5);
+  });
+
+  it('counts no reps for a timed exercise, as it counts no volume', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    await logSet(repo, started.id, 'plank', { seconds: 60, reps: 3 });
+    await logSet(repo, started.id, 'squat-barbell', { weightKg: 100, reps: 5 });
+    await repo.finish(started.id);
+
+    const [entry] = await repo.history(USER, 10);
+
+    expect(entry?.reps).toBe(5);
   });
 
   it("carries the level its day was recorded at: the colour of the day's cell", async () => {

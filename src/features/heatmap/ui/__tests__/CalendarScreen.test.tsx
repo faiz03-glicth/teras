@@ -28,6 +28,7 @@ const workout = (id: string, date: string, over: Partial<WorkoutSummary> = {}): 
   durationSeconds: 62 * 60,
   volumeKg: 4820,
   sets: 14,
+  reps: 112,
   exercises: [],
   dayLevel: 3,
   ...over,

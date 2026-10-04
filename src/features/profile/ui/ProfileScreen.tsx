@@ -1,11 +1,25 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Button, Card, ListRow, Screen, SectionLabel, SegmentedControl, Text } from '@/shared/ui';
+import {
+  BarChart,
+  Button,
+  Card,
+  ErrorState,
+  ListRow,
+  LoadingState,
+  Screen,
+  SectionLabel,
+  SegmentedControl,
+  Text,
+} from '@/shared/ui';
 
 import { useProfileViewModel } from './useProfileViewModel';
 
-/** Profile: the account and how the app looks, moves, sounds and feels. The chart and dashboard come later. */
+/**
+ * Profile: the account, the last twelve weeks of training, and how the app looks, moves, sounds and feels.
+ * The dashboard and the bodyweight card come later.
+ */
 export function ProfileScreen() {
   const vm = useProfileViewModel();
   return (
@@ -21,6 +35,42 @@ export function ProfileScreen() {
         <Text variant="footnote" tone="secondary">
           {vm.accountLine}
         </Text>
+      </Card>
+
+      <Card style={styles.chart} testID="profile-chart">
+        {vm.chart.status === 'loading' && <LoadingState label="Loading your weeks" />}
+        {vm.chart.status === 'error' && (
+          <ErrorState
+            title="Couldn't load your weeks"
+            onRetry={vm.chart.onRetry}
+            testID="profile-chart-error"
+          />
+        )}
+        {vm.chart.status === 'ready' && (
+          <>
+            <View style={styles.thisWeek}>
+              <Text variant="title3" style={styles.number}>
+                {vm.chart.thisWeek}
+              </Text>
+              <Text variant="sub" tone="secondary">
+                this week
+              </Text>
+            </View>
+            <BarChart
+              values={vm.chart.values}
+              labels={vm.chart.labels}
+              labelMode="spread"
+              accessibilityLabel={vm.chart.accessibilityLabel}
+            />
+          </>
+        )}
+        <SegmentedControl
+          options={vm.chart.measureOptions}
+          value={vm.chart.measure}
+          onChange={vm.chart.onMeasureChange}
+          accessibilityLabel="Chart measure"
+          testID="profile-chart-measure"
+        />
       </Card>
 
       <View style={styles.group}>
@@ -90,4 +140,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
   group: { gap: theme.spacing.sm },
+  chart: { gap: theme.spacing.md },
+  thisWeek: { flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.xs },
+  number: { fontVariant: ['tabular-nums'] },
 }));

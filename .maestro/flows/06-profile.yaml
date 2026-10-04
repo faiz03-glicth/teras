@@ -1,4 +1,4 @@
-# Profile renders its settings. Read-only.
+# Profile renders its weekly chart (each measure) and its settings. Read-only.
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
@@ -6,6 +6,17 @@ appId: com.faiz.teras.local
 - assertVisible:
     id: 'profile-screen'
 - assertVisible:
+    id: 'profile-chart'
+- assertVisible: 'Weekly volume, last 12 weeks, .* this week'
+- tapOn: { id: 'profile-chart-measure-duration' }
+- assertVisible: 'Weekly duration, last 12 weeks, [0-9,]+ min this week'
+- tapOn: { id: 'profile-chart-measure-reps' }
+- assertVisible: 'Weekly reps, last 12 weeks, [0-9,]+ reps this week'
+- tapOn: { id: 'profile-chart-measure-volume' }
+- assertVisible:
     id: 'profile-theme'
+# The chart sits above the settings, so the buttons at the end can be below the fold.
+- scrollUntilVisible:
+    element: { id: 'profile-replay' }
 - assertVisible:
     id: 'profile-replay'
