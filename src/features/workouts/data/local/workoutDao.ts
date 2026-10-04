@@ -146,9 +146,10 @@ export interface WorkoutDao {
   lastDoneSets(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<LastSet[]>;
   /**
    * The best weight (lifted at least once), reps and hold of each exercise across the owner's finished
-   * workouts started before `before`. Completed sets only, warm-ups left out: the domain's record rule.
+   * workouts, or only those started before `before` when it is given. Completed sets only, warm-ups left
+   * out: the domain's record rule.
    */
-  bestsBefore(owner: WorkoutOwner, exerciseIds: readonly string[], before: string): Promise<ExerciseBests[]>;
+  bests(owner: WorkoutOwner, exerciseIds: readonly string[], before?: string): Promise<ExerciseBests[]>;
 
   /**
    * Every completed set of one exercise across the owner's finished workouts, the latest workout first
@@ -450,7 +451,7 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
         .map(({ exerciseId, weightKg, reps, seconds }) => ({ exerciseId, weightKg, reps, seconds }));
     },
 
-    async bestsBefore(owner, exerciseIds, before) {
+    async bests(owner, exerciseIds, before) {
       if (exerciseIds.length === 0) return [];
       return db
         .select({
@@ -470,7 +471,7 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
             ownedBy(owner),
             isNotNull(workouts.endedAt),
             live,
-            lt(workouts.startedAt, before),
+            before === undefined ? undefined : lt(workouts.startedAt, before),
             eq(workoutSets.status, 'done'),
             ne(workoutSets.setType, 'warmup'),
             inArray(workoutExercises.exerciseId, [...exerciseIds]),

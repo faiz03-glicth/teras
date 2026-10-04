@@ -846,3 +846,33 @@ describe('the history of one exercise', () => {
     expect(await repo.exerciseHistory(USER, BENCH)).toEqual([]);
   });
 });
+
+describe("each exercise's records as they stand", () => {
+  it('takes the best of every finished workout, the latest included', async () => {
+    const { repo } = await setup();
+    await logged(repo, [[BENCH, [{ weightKg: 60, reps: 10 }]]]);
+    await logged(repo, [[BENCH, [{ weightKg: 65, reps: 5 }]]]);
+
+    expect(await repo.bests(USER, [BENCH, SQUAT])).toEqual({
+      [BENCH]: { weightKg: 65, reps: 10, seconds: null },
+    });
+  });
+
+  it('leaves out the workout still in progress', async () => {
+    const { repo } = await setup();
+    await logged(repo, [[BENCH, [{ weightKg: 60, reps: 8 }]]]);
+    const running = await startEmpty(repo);
+    await logSet(repo, running.id, BENCH, { weightKg: 100, reps: 1 });
+
+    expect(await repo.bests(USER, [BENCH])).toMatchObject({ [BENCH]: { weightKg: 60 } });
+  });
+
+  it("is the person's own: a guest's workouts on the same phone do not count", async () => {
+    const { repo } = await setup();
+    await logged(repo, [[BENCH, [{ weightKg: 100, reps: 5 }]]], null);
+    await logged(repo, [[BENCH, [{ weightKg: 60, reps: 8 }]]]);
+
+    expect(await repo.bests(USER, [BENCH])).toMatchObject({ [BENCH]: { weightKg: 60 } });
+    expect(await repo.bests(null, [BENCH])).toMatchObject({ [BENCH]: { weightKg: 100 } });
+  });
+});

@@ -2,7 +2,7 @@ import type { ExerciseType } from '@/core/db/schema';
 import { startOfWeek } from '@/shared/lib/date/calendar';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 
-import { recordValue, setBests, type RecordSet } from './records';
+import { valueOf, type RecordSet } from './records';
 
 /** One finished workout an exercise was completed in, with that exercise's completed sets. */
 export interface ExerciseSession {
@@ -21,9 +21,6 @@ export function e1rm(weightKg: number, reps: number): number {
   return weightKg * (1 + reps / 30);
 }
 
-/** The best a session reached, by the exercise's record measure. */
-const sessionValue = (type: ExerciseType, sets: readonly RecordSet[]) => recordValue(type, setBests(sets));
-
 export interface ExerciseSummary {
   /** The record: heaviest weight, most reps or longest hold. 0 before anything is logged. */
   best: number;
@@ -36,7 +33,7 @@ export interface ExerciseSummary {
 
 /** PURE: an exercise's record, best estimated max and session count, from its whole history. */
 export function exerciseSummary(type: ExerciseType, sessions: readonly ExerciseSession[]): ExerciseSummary {
-  const best = Math.max(0, ...sessions.map((session) => sessionValue(type, session.sets)));
+  const best = Math.max(0, ...sessions.map((session) => valueOf(type, session.sets)));
   const lifts = sessions
     .flatMap((session) => session.sets)
     .filter((set) => set.status === 'done' && set.setType !== 'warmup' && (set.reps ?? 0) > 0)
@@ -48,7 +45,7 @@ export function exerciseSummary(type: ExerciseType, sessions: readonly ExerciseS
     recordIds:
       best > 0
         ? sessions
-            .filter((session) => sessionValue(type, session.sets) === best)
+            .filter((session) => valueOf(type, session.sets) === best)
             .map((session) => session.workoutId)
         : [],
   };
@@ -66,7 +63,7 @@ export function weeklyBests(
   const byWeek = new Map<ISODate, number>();
   for (const session of sessions) {
     const week = startOfWeek(session.date, 'mon');
-    byWeek.set(week, Math.max(byWeek.get(week) ?? 0, sessionValue(type, session.sets)));
+    byWeek.set(week, Math.max(byWeek.get(week) ?? 0, valueOf(type, session.sets)));
   }
   return [...byWeek.entries()]
     .sort(([a], [b]) => a.localeCompare(b))

@@ -127,6 +127,14 @@ describe('a logged workout', () => {
     expect(screen.queryByText('Bicep Curl (Dumbbell)')).toBeNull();
   });
 
+  it('opens an exercise from its heading', async () => {
+    session('w1');
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Bench Press (Barbell), 2 sets' }));
+
+    expect(actions.openExercise).toHaveBeenCalledWith('bench-press-barbell');
+  });
+
   it('shows weights in the unit the person chose', async () => {
     act(() => useTrainingPreferencesStore.setState({ unit: 'lb' }));
     session('w1');
@@ -150,6 +158,50 @@ describe('a logged workout', () => {
     fireEvent.press(await screen.findByLabelText('Back'));
 
     expect(actions.goBack).toHaveBeenCalled();
+  });
+});
+
+describe('personal records', () => {
+  const benchBest = (weightKg: number) => ({
+    'bench-press-barbell': { weightKg, reps: 8, seconds: null },
+  });
+
+  it('marks the set that holds the exercise record', async () => {
+    const { repositories } = session('w1', {
+      prepare: (fakes) => void fakes.workouts.bests.mockResolvedValue(benchBest(62.5)),
+    });
+
+    expect(await screen.findByLabelText('Set 2, 62.5 kg × 6, completed, personal record')).toBeTruthy();
+    expect(screen.getByLabelText('Set 1, 60 kg × 8, completed')).toBeTruthy();
+    expect(screen.getAllByText('PR')).toHaveLength(1);
+    // Only what was completed is looked up, for the signed-in person.
+    expect(repositories.workouts.bests).toHaveBeenCalledWith('user-1', ['bench-press-barbell']);
+  });
+
+  it('marks nothing once a later workout has beaten it', async () => {
+    session('w1', { prepare: (fakes) => void fakes.workouts.bests.mockResolvedValue(benchBest(70)) });
+
+    expect(await screen.findByText('Push Day')).toBeTruthy();
+    expect(screen.queryByText('PR')).toBeNull();
+  });
+
+  it('says briefly when the records could not be read, and tries again', async () => {
+    session('w1', {
+      prepare: (fakes) =>
+        void fakes.workouts.bests.mockRejectedValueOnce(new Error('disk')).mockResolvedValue(benchBest(62.5)),
+    });
+
+    expect(await screen.findByText("Couldn't load this workout")).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(await screen.findByText('PR')).toBeTruthy();
+  });
+
+  it('looks nothing up for a workout still running', async () => {
+    const { repositories } = session('w1', { workout: logged({ endedAt: null }) });
+
+    await waitFor(() => expect(actions.openActiveWorkout).toHaveBeenCalled());
+    expect(repositories.workouts.bests).not.toHaveBeenCalled();
   });
 });
 

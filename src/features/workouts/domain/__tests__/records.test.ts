@@ -1,6 +1,6 @@
 import type { SetType } from '@/core/db/schema';
 
-import { newRecords, recordLine, setBests, type RecordSet } from '../records';
+import { newRecords, recordLine, recordSetIds, setBests, type RecordSet } from '../records';
 
 const done = (
   values: Partial<Pick<RecordSet, 'weightKg' | 'reps' | 'seconds'>>,
@@ -95,6 +95,85 @@ describe('newRecords', () => {
     );
 
     expect(records).toEqual([expect.objectContaining({ exerciseId: 'bench', value: 65 })]);
+  });
+});
+
+describe('recordSetIds', () => {
+  const withId = (id: string, set: RecordSet) => ({ ...set, id });
+  const benchOf = (sets: (RecordSet & { id: string })[]) => ({
+    exerciseId: 'bench',
+    type: 'weighted' as const,
+    sets,
+  });
+  const benchBest = (weightKg: number) => ({ bench: { weightKg, reps: 8, seconds: null } });
+
+  it('marks the set that holds the record', () => {
+    const exercises = [
+      benchOf([withId('s1', done({ weightKg: 60, reps: 8 })), withId('s2', done({ weightKg: 65, reps: 5 }))]),
+    ];
+
+    expect(recordSetIds(exercises, benchBest(65))).toEqual(new Set(['s2']));
+  });
+
+  it('marks nothing once the record has been beaten by a later workout', () => {
+    const exercises = [benchOf([withId('s1', done({ weightKg: 65, reps: 5 }))])];
+
+    expect(recordSetIds(exercises, benchBest(70))).toEqual(new Set());
+  });
+
+  it('marks only the first set to reach it: an equal set after it only matched it', () => {
+    const exercises = [
+      benchOf([withId('s1', done({ weightKg: 65, reps: 5 })), withId('s2', done({ weightKg: 65, reps: 3 }))]),
+    ];
+
+    expect(recordSetIds(exercises, benchBest(65))).toEqual(new Set(['s1']));
+  });
+
+  it('never marks a warm-up, an unticked set or a weight that was not lifted', () => {
+    const exercises = [
+      benchOf([
+        withId('warm', done({ weightKg: 65, reps: 5 }, 'warmup')),
+        withId('open', pending({ weightKg: 65, reps: 5 })),
+        withId('zero', done({ weightKg: 65, reps: 0 })),
+        withId('real', done({ weightKg: 65, reps: 2 })),
+      ]),
+    ];
+
+    expect(recordSetIds(exercises, benchBest(65))).toEqual(new Set(['real']));
+  });
+
+  it('measures each exercise by its type, as its record is', () => {
+    const exercises = [
+      {
+        exerciseId: 'pull-up',
+        type: 'bodyweight' as const,
+        sets: [withId('p1', done({ weightKg: 20, reps: 12 }))],
+      },
+      { exerciseId: 'plank', type: 'timed' as const, sets: [withId('k1', done({ seconds: 75 }))] },
+    ];
+
+    expect(
+      recordSetIds(exercises, {
+        // A heavier added weight is not the bodyweight record: reps are.
+        'pull-up': { weightKg: 30, reps: 12, seconds: null },
+        plank: { weightKg: null, reps: null, seconds: 75 },
+      }),
+    ).toEqual(new Set(['p1', 'k1']));
+  });
+
+  it('marks one set for an exercise added twice to one workout', () => {
+    const exercises = [
+      benchOf([withId('a1', done({ weightKg: 60, reps: 5 }))]),
+      benchOf([withId('b1', done({ weightKg: 65, reps: 5 })), withId('b2', done({ weightKg: 65, reps: 5 }))]),
+    ];
+
+    expect(recordSetIds(exercises, benchBest(65))).toEqual(new Set(['b1']));
+  });
+
+  it('marks nothing for an exercise with no record yet', () => {
+    const exercises = [benchOf([withId('s1', pending({ weightKg: 65, reps: 5 }))])];
+
+    expect(recordSetIds(exercises, {})).toEqual(new Set());
   });
 });
 

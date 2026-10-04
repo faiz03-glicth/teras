@@ -13,5 +13,5 @@ appId: com.faiz.teras.local
 - back
 - tapOn: { id: 'session-.*', optional: true }
 - assertVisible: { id: 'session-screen', optional: true }
-- tapOn: { id: 'session-exercise-.*', optional: true }
+- tapOn: { id: 'session-exercise-open-.*', optional: true }
 - assertVisible: { id: 'exercise-detail-screen', optional: true }

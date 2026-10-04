@@ -12,7 +12,7 @@ export interface RecordSet {
 
 /**
  * The best of each measure across some sets. Only completed sets that are not warm-ups count, and a
- * weight counts only when it was lifted at least once. The DAO's `bestsBefore` applies the same rule
+ * weight counts only when it was lifted at least once. The DAO's `bests` applies the same rule
  * in SQL, over a whole history at once.
  */
 export interface SetBests {
@@ -85,6 +85,45 @@ export function newRecords(
     const before = recordValue(type, earlier[exerciseId] ?? NO_BESTS);
     return value > 0 && value > before ? [{ exerciseId, name, type, value }] : [];
   });
+}
+
+/**
+ * PURE: what some sets are worth by the exercise's record measure (heaviest weight lifted, most reps or
+ * longest hold), counting only the sets the record rule counts. 0 for none.
+ */
+export function valueOf(type: ExerciseType, sets: readonly RecordSet[]): number {
+  return recordValue(type, setBests(sets));
+}
+
+/**
+ * PURE: a workout's sets that hold an exercise's record (`bests`: each exercise's best across every
+ * finished workout), the rule Exercise detail marks its history with. One set per exercise: the first,
+ * in workout order, to reach the record; a later equal set only matched it. A record beaten since is no
+ * longer marked, as Exercise detail no longer marks that workout.
+ */
+export function recordSetIds(
+  exercises: readonly {
+    exerciseId: string;
+    type: ExerciseType;
+    sets: readonly (RecordSet & { id: string })[];
+  }[],
+  bests: Readonly<Partial<Record<string, SetBests>>>,
+): Set<string> {
+  // An exercise added twice is one exercise here too: its sets in workout order, across both entries.
+  const byExercise = new Map<string, { type: ExerciseType; sets: (RecordSet & { id: string })[] }>();
+  for (const { exerciseId, type, sets } of exercises) {
+    const seen = byExercise.get(exerciseId);
+    if (seen) seen.sets.push(...sets);
+    else byExercise.set(exerciseId, { type, sets: [...sets] });
+  }
+
+  const ids = new Set<string>();
+  for (const [exerciseId, { type, sets }] of byExercise) {
+    const best = recordValue(type, bests[exerciseId] ?? NO_BESTS);
+    const holder = best > 0 ? sets.find((set) => valueOf(type, [set]) >= best) : undefined;
+    if (holder) ids.add(holder.id);
+  }
+  return ids;
 }
 
 /** PURE: "102.5 kg · heaviest weight", "12 reps · most reps" or "1 min 15 s · longest hold". */

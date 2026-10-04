@@ -132,6 +132,11 @@ export interface WorkoutRepository {
    */
   newRecords(owner: WorkoutOwner, workoutId: string): Promise<PersonalRecord[]>;
   /**
+   * Each exercise's best across every finished workout of the owner: its records as they stand now. An
+   * exercise never completed has no entry.
+   */
+  bests(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<Partial<Record<string, SetBests>>>;
+  /**
    * Every finished workout an exercise was completed in, the latest first, with its completed sets: what
    * an exercise's records, chart and history are worked out from.
    */
@@ -290,10 +295,22 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     if (!workout) return [];
     const ids = [...new Set(workout.exercises.map((exercise) => exercise.exerciseId))];
     // Only the workouts started before this one: a record is what it beat, not what came after.
-    const bests = await this.deps.dao.bestsBefore(owner, ids, workout.startedAt);
-    const earlier: Partial<Record<string, SetBests>> = {};
-    for (const { exerciseId, ...best } of bests) earlier[exerciseId] = best;
-    return newRecords(workout.exercises, earlier);
+    return newRecords(workout.exercises, await this.bestsOf(owner, ids, workout.startedAt));
+  }
+
+  bests(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<Partial<Record<string, SetBests>>> {
+    return this.bestsOf(owner, exerciseIds);
+  }
+
+  private async bestsOf(
+    owner: WorkoutOwner,
+    exerciseIds: readonly string[],
+    before?: string,
+  ): Promise<Partial<Record<string, SetBests>>> {
+    const rows = await this.deps.dao.bests(owner, exerciseIds, before);
+    const bests: Partial<Record<string, SetBests>> = {};
+    for (const { exerciseId, ...best } of rows) bests[exerciseId] = best;
+    return bests;
   }
 
   async exerciseHistory(owner: WorkoutOwner, exerciseId: string): Promise<ExerciseSession[]> {

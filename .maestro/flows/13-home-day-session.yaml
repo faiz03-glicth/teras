@@ -1,4 +1,5 @@
-# Home → tap today on the wave → Day sheet → open a workout → Session. Read-only.
+# Home → tap today on the wave → Day sheet → open a workout → Session → an exercise's heading →
+# Exercise detail. Read-only.
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
@@ -10,5 +11,10 @@ appId: com.faiz.teras.local
 - assertVisible: { id: 'session-screen', optional: true }
 - back
 - tapOn: { id: 'feed-.*', index: 0 }
+- assertVisible: { id: 'session-screen' }
+# A feed entry always has a completed set, so its first exercise is there to open.
+- tapOn: { id: 'session-exercise-open-.*', index: 0 }
+- assertVisible: { id: 'exercise-detail-screen' }
+- back
 - assertVisible: { id: 'session-screen' }
 - back

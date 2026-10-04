@@ -9,6 +9,8 @@ import {
   LevelChip,
   LoadingState,
   NavBar,
+  Pill,
+  PressableScale,
   Screen,
   Text,
 } from '@/shared/ui';
@@ -17,7 +19,8 @@ import { useSessionViewModel } from './useSessionViewModel';
 
 /**
  * A logged workout as it was recorded: name and level, when, its three numbers, then every exercise with
- * the sets that were completed. Read-only: history is never edited from here.
+ * the sets that were completed, the set holding an exercise's record marked PR. An exercise's heading opens
+ * that exercise. Read-only: history is never edited from here.
  */
 export function SessionScreen({ id }: { id: string | null }) {
   const vm = useSessionViewModel(id);
@@ -74,20 +77,29 @@ export function SessionScreen({ id }: { id: string | null }) {
 
           {vm.exercises.map((exercise) => (
             <Card key={exercise.id} testID={`session-exercise-${exercise.id}`} style={styles.exercise}>
-              <View style={styles.exerciseHead}>
+              <PressableScale
+                style={styles.exerciseHead}
+                onPress={() => vm.onOpenExercise(exercise.exerciseId)}
+                accessibilityRole="button"
+                accessibilityLabel={`${exercise.name}, ${exercise.count}`}
+                accessibilityHint="Opens the exercise"
+                testID={`session-exercise-open-${exercise.id}`}
+              >
                 <Text variant="headline" style={styles.grow}>
                   {exercise.name}
                 </Text>
                 <Text variant="footnote" tone="secondary">
                   {exercise.count}
                 </Text>
-              </View>
+                <Icon name="chevron-right" size={18} color={theme.colors.text3} />
+              </PressableScale>
               {exercise.sets.map((set) => (
                 <View
                   key={set.id}
                   style={styles.set}
                   accessible
-                  accessibilityLabel={`Set ${set.number}, ${set.label}, completed`}
+                  accessibilityLabel={`Set ${set.number}, ${set.label}, completed${set.record ? ', personal record' : ''}`}
+                  testID={set.record ? `session-record-${set.id}` : undefined}
                 >
                   <Text variant="sub" weight="semibold" tone="tertiary" style={styles.setNumber}>
                     {set.number}
@@ -95,6 +107,12 @@ export function SessionScreen({ id }: { id: string | null }) {
                   <Text variant="sub" style={[styles.grow, styles.number]}>
                     {set.label}
                   </Text>
+                  {set.record && (
+                    // Pill aligns itself to the top; held here, it centres on the row like the rest.
+                    <View>
+                      <Pill label="PR" icon="trophy" tone="accent" />
+                    </View>
+                  )}
                   <Icon name="check" size={16} color={theme.colors.accentText} />
                 </View>
               ))}
@@ -115,7 +133,8 @@ const styles = StyleSheet.create((theme) => ({
   stat: { flex: 1, gap: 2 },
   number: { fontVariant: ['tabular-nums'] },
   exercise: { gap: theme.spacing.sm },
-  exerciseHead: { flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.sm },
+  // The whole heading is the target, at least 44 pt tall like every other control.
+  exerciseHead: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, minHeight: 44 },
   grow: { flex: 1 },
   set: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, minHeight: 28 },
   // A fixed column, so every set's numbers line up.

@@ -148,6 +148,21 @@ export function usePreviousSets(owner: WorkoutOwner, exerciseIds: readonly strin
   });
 }
 
+/**
+ * Each exercise's records as they stand now, across every finished workout. Kept under the history key,
+ * so finishing a workout that beats one refreshes it.
+ */
+export function useExerciseBests(owner: WorkoutOwner, exerciseIds: readonly string[], enabled = true) {
+  const { workouts } = useRepositories();
+  const ids = [...new Set(exerciseIds)].sort();
+  return useQuery({
+    queryKey: [...workoutKeys.history, owner, 'bests', ids],
+    queryFn: () => workouts.bests(owner, ids),
+    enabled: enabled && ids.length > 0,
+    networkMode: 'always',
+  });
+}
+
 /** The personal records a finished workout set, for its Saved screen. */
 export function useNewRecords(owner: WorkoutOwner, id: string | null) {
   const { workouts } = useRepositories();
