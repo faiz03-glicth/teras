@@ -1,0 +1,33 @@
+# Profile's dashboard: Records (then a record → Exercise detail), Exercises and Calendar, each and back.
+# Read-only.
+appId: com.faiz.teras.local
+---
+- runFlow: ../subflows/open-app.yaml
+- tapOn: { id: 'tab-profile' }
+- assertVisible: { id: 'profile-screen' }
+- scrollUntilVisible:
+    element: { id: 'profile-records' }
+- tapOn: { id: 'profile-records' }
+- assertVisible: { id: 'records-screen' }
+# A phone with no finished workout has no record to open.
+- runFlow:
+    when:
+      visible: { id: 'record-.*' }
+    commands:
+      - tapOn: { id: 'record-.*', index: 0 }
+      - assertVisible: { id: 'exercise-detail-screen' }
+      - back
+      - assertVisible: { id: 'records-screen' }
+- back
+- assertVisible: { id: 'profile-screen' }
+- scrollUntilVisible:
+    element: { id: 'profile-exercises' }
+- tapOn: { id: 'profile-exercises' }
+- assertVisible: { id: 'exercise-library-screen' }
+- back
+- scrollUntilVisible:
+    element: { id: 'profile-calendar' }
+- tapOn: { id: 'profile-calendar' }
+- assertVisible: { id: 'calendar-screen' }
+- back
+- assertVisible: { id: 'profile-screen' }

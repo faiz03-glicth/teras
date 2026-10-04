@@ -10,7 +10,7 @@ import { testUser } from '@test/fakes/fakeRepositories';
 import { renderWithApp } from '@test/providers';
 import { SCHEMES } from '@test/render';
 
-import { EDIT_HOLD_MS, HOLD_REPEAT_MS } from '../components/StepperRow';
+import { EDIT_HOLD_MS, HOLD_REPEAT_MS } from '@/shared/ui/StepperRow';
 import { OnboardingScreen } from '../OnboardingScreen';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));

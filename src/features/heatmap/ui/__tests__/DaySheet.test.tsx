@@ -41,6 +41,7 @@ const push: WorkoutSummary = {
   durationSeconds: 62 * 60,
   volumeKg: 4820,
   sets: 14,
+  reps: 112,
   exercises: [{ name: 'Bench Press (Barbell)', sets: 4 }],
   dayLevel: 3,
 };

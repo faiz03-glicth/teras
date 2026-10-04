@@ -3,10 +3,9 @@ import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import type { StepDirection, ValueField, WeightUnit } from '@/features/training/domain/preferences';
-import { Card, SectionLabel, SegmentedControl, type SegmentOption } from '@/shared/ui';
+import { Card, SectionLabel, SegmentedControl, StepperRow, type SegmentOption } from '@/shared/ui';
 
 import { StepHeading } from './StepHeading';
-import { StepperRow } from './StepperRow';
 
 export interface SetupStepProps {
   unit: WeightUnit;

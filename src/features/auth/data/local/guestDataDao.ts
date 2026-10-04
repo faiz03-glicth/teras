@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 
 import {
   appMeta,
+  bodyweightLogs,
   exerciseFavourites,
   exercises,
   profiles,
@@ -40,6 +41,8 @@ export function createGuestDataDao(db: AppDatabase): GuestDataDao {
           .where(isNull(workoutExercises.userId))
           .run();
         tx.update(workoutSets).set({ userId, updatedAt: now }).where(isNull(workoutSets.userId)).run();
+        // Weigh-ins, likewise kept on the device.
+        tx.update(bodyweightLogs).set({ userId, updatedAt: now }).where(isNull(bodyweightLogs.userId)).run();
         // Exercises the guest created. Built-in ones have no owner either, so only custom rows move.
         tx.update(exercises)
           .set({ userId, updatedAt: now })

@@ -6,7 +6,7 @@ import type { ISODate } from '@/shared/lib/date/isoDate';
 
 import { sessionSeconds } from '../domain/duration';
 import type { ExerciseSession } from '../domain/progress';
-import { newRecords, type PersonalRecord, type SetBests } from '../domain/records';
+import { newRecords, recordValue, type PersonalRecord, type SetBests } from '../domain/records';
 import type { PreviousSet } from '../domain/setUnits';
 import { dayTotals } from '../domain/totals';
 import type { WorkoutDao, WorkoutOwner } from './local/workoutDao';
@@ -76,6 +76,8 @@ export interface WorkoutSummary {
   durationSeconds: number;
   volumeKg: number;
   sets: number;
+  /** The reps of its completed sets; a timed set counts none. */
+  reps: number;
   /** The exercises with at least one completed set, in the order they were done. */
   exercises: ExerciseSummary[];
   /**
@@ -136,6 +138,11 @@ export interface WorkoutRepository {
    * exercise never completed has no entry.
    */
   bests(owner: WorkoutOwner, exerciseIds: readonly string[]): Promise<Partial<Record<string, SetBests>>>;
+  /**
+   * Every exercise's record as it stands, across the owner's finished workouts: the Records list, the one
+   * trained most recently first. An exercise with nothing that counts (a weight never lifted) has none.
+   */
+  records(owner: WorkoutOwner): Promise<PersonalRecord[]>;
   /**
    * Every finished workout an exercise was completed in, the latest first, with its completed sets: what
    * an exercise's records, chart and history are worked out from.
@@ -302,6 +309,19 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     return this.bestsOf(owner, exerciseIds);
   }
 
+  async records(owner: WorkoutOwner): Promise<PersonalRecord[]> {
+    const rows = await this.deps.dao.records(owner);
+    return [...rows]
+      .sort((a, b) => b.lastAt.localeCompare(a.lastAt))
+      .map(({ exerciseId, name, type, ...bests }) => ({
+        exerciseId,
+        name,
+        type,
+        value: recordValue(type, bests),
+      }))
+      .filter((record) => record.value > 0);
+  }
+
   private async bestsOf(
     owner: WorkoutOwner,
     exerciseIds: readonly string[],
@@ -445,9 +465,12 @@ export class LocalWorkoutRepository implements WorkoutRepository {
       // The same volume rule as the day summary, over this one session.
       const totals = dayTotals([{ bodyweightKg: row.bodyweightKg, sets: own }]);
       const done = new Map<string, number>();
+      let reps = 0;
       for (const set of own) {
-        if (set.status === 'done')
-          done.set(set.workoutExerciseId, (done.get(set.workoutExerciseId) ?? 0) + 1);
+        if (set.status !== 'done') continue;
+        done.set(set.workoutExerciseId, (done.get(set.workoutExerciseId) ?? 0) + 1);
+        // A timed set is a hold, not reps, as it adds no volume either.
+        if (set.type !== 'timed') reps += set.reps ?? 0;
       }
       return {
         id: row.id,
@@ -457,6 +480,7 @@ export class LocalWorkoutRepository implements WorkoutRepository {
         durationSeconds: sessionSeconds(row.startedAt, row.endedAt),
         volumeKg: totals.volumeKg,
         sets: totals.sets,
+        reps,
         exercises: (exercisesOf.get(row.id) ?? [])
           .map((exercise) => ({ name: exercise.name, sets: done.get(exercise.id) ?? 0 }))
           .filter((exercise) => exercise.sets > 0),

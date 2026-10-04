@@ -39,6 +39,7 @@ export { SelectableTile } from './SelectableTile';
 export { SheetLayout } from './SheetLayout';
 export { SsoButton } from './SsoButton';
 export { StatTile } from './StatTile';
+export { StepperRow, type StepperField } from './StepperRow';
 export { TabBar } from './TabBar';
 export { Text } from './Text';
 export { TextField } from './TextField';

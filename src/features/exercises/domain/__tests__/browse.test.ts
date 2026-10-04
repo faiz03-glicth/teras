@@ -54,7 +54,20 @@ describe('browserSections', () => {
     expect(sections.searching).toBe(true);
     expect(sections.favourites).toEqual([]);
     expect(sections.recent).toEqual([]);
-    expect(sections.matches.map((one) => one.id)).toEqual([BENCH, SQUAT]);
+    // The favourite squat comes before the bench press, which the library lists first.
+    expect(sections.matches.map((one) => one.id)).toEqual([SQUAT, BENCH]);
+  });
+
+  it('ranks the exercises a person favours, then those they did lately, first among equal matches', () => {
+    // "bb" finds the bench press and the squat alike (barbell), so only history tells them apart.
+    const ids = (favouriteIds: string[], recentIds: string[]) =>
+      browserSections(LIBRARY, { query: 'bb', favouriteIds, recentIds }).matches.map((one) => one.id);
+
+    expect(ids([], [])).toEqual([BENCH, SQUAT]);
+    expect(ids([SQUAT], [])).toEqual([SQUAT, BENCH]);
+    expect(ids([], [SQUAT])).toEqual([SQUAT, BENCH]);
+    // A favourite before a recent one, whatever the recent one's place.
+    expect(ids([SQUAT], [BENCH])).toEqual([SQUAT, BENCH]);
   });
 
   it('passes over a favourite or recent exercise that is no longer in the library', () => {

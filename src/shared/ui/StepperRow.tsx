@@ -2,9 +2,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import type { ValueField } from '@/features/training/domain/preferences';
 import { haptics } from '@/shared/lib/haptics';
-import { IconButton, PressableScale, Text } from '@/shared/ui';
+
+import { IconButton } from './IconButton';
+import { PressableScale } from './PressableScale';
+import { Text } from './Text';
+
+/**
+ * One number of a value being typed, laid out the way the value reads: "5 ft 7 in" is two fields, "5"
+ * then "7", each followed by its unit. `maxLength` is the most digits that number ever needs.
+ */
+export interface StepperField {
+  text: string;
+  suffix: string;
+  maxLength: number;
+}
 
 export interface StepperRowProps {
   label: string;
@@ -13,7 +25,7 @@ export interface StepperRowProps {
   decreaseLabel: string;
   increaseLabel: string;
   /** The value as fields to type into, opened by a short hold on it. Without it the value only steps. */
-  input?: readonly ValueField[];
+  input?: readonly StepperField[];
   /** The fields take a decimal point (bodyweight); otherwise whole numbers only. */
   decimal?: boolean;
   /**

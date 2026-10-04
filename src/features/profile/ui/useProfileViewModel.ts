@@ -1,6 +1,10 @@
 import { useState } from 'react';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
+import { BMI_CATEGORY_LABELS, bmiOf, formatIndex } from '@/features/training/domain/body';
+import { weightNumber } from '@/features/training/domain/preferences';
+import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { openCalendar, openExerciseLibrary, openFfmi, openLogWeight, openRecords } from '@/shared/actions';
 import { useSessionActions } from '@/shared/actions/session';
 import { useHapticPreferencesStore } from '@/shared/state/hapticPreferencesStore';
 import { useSoundPreferencesStore } from '@/shared/state/soundPreferencesStore';
@@ -9,6 +13,7 @@ import { useThemePreferencesStore } from '@/theme/state/themePreferencesStore';
 
 import { profileTitle } from '../domain/Profile';
 import { useProfile } from '../hooks/useProfile';
+import { useWeeklyChart } from './useWeeklyChart';
 
 export const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
@@ -22,7 +27,10 @@ export const REDUCE_MOTION_OPTIONS = [
   { value: 'off', label: 'Off' },
 ] as const satisfies readonly { value: ReduceMotionPreference; label: string }[];
 
-/** Profile, for now: the account, the look and feel (theme, motion, sound, haptics), and logging out. */
+/**
+ * Profile, for now: the account, the weekly chart, the dashboard, the look and feel (theme, motion, sound, haptics), and
+ * logging out.
+ */
 export function useProfileViewModel() {
   const user = useAuthStore((s) => s.user);
   const restartOnboarding = useAuthStore((s) => s.restartOnboarding);
@@ -37,6 +45,11 @@ export function useProfileViewModel() {
   const setHaptics = useHapticPreferencesStore((s) => s.setHaptics);
   const { signOut } = useSessionActions();
   const [signingOut, setSigningOut] = useState(false);
+  const chart = useWeeklyChart();
+  const unit = useTrainingPreferencesStore((s) => s.unit);
+  const bodyweightKg = useTrainingPreferencesStore((s) => s.bodyweightKg);
+  const heightCm = useTrainingPreferencesStore((s) => s.heightCm);
+  const bmi = bmiOf(bodyweightKg, heightCm);
 
   const isGuest = user?.provider === 'guest';
 
@@ -46,6 +59,17 @@ export function useProfileViewModel() {
       email: profile?.email ?? user?.email ?? null,
       provider: user?.provider ?? 'guest',
     }),
+    chart,
+    body: {
+      weight: weightNumber(bodyweightKg, unit),
+      unit,
+      bmi: formatIndex(bmi.value),
+      category: bmi.category,
+      categoryLabel: BMI_CATEGORY_LABELS[bmi.category],
+      position: bmi.position,
+      onLogWeight: openLogWeight,
+      onFfmi: openFfmi,
+    },
     accountLine: isGuest ? 'Guest · your training stays on this phone' : (user?.email ?? 'Signed in'),
     theme,
     themeOptions: THEME_OPTIONS,
@@ -54,6 +78,13 @@ export function useProfileViewModel() {
     soundEffects,
     haptics: hapticsOn,
     signingOut,
+
+    // The dashboard: the prototype's Streak link waits for the cross-app contract to be decided.
+    dashboard: [
+      { label: 'Records', icon: 'trophy', onPress: openRecords, testID: 'profile-records' },
+      { label: 'Exercises', icon: 'dumbbell', onPress: openExerciseLibrary, testID: 'profile-exercises' },
+      { label: 'Calendar', icon: 'calendar', onPress: openCalendar, testID: 'profile-calendar' },
+    ] as const,
 
     onThemeChange: setTheme,
     onReduceMotionChange: setReduceMotion,

@@ -58,10 +58,15 @@ export function stepRestSeconds(seconds: number, direction: StepDirection): numb
   return clamp(seconds + direction * REST_SECONDS.step, REST_SECONDS.min, REST_SECONDS.max);
 }
 
+/** PURE: a weight in the unit shown, without the unit: "70", "70.5", "154.3". Rounds only for display. */
+export function weightNumber(kg: number, unit: WeightUnit): string {
+  const shown = unit === 'kg' ? kg : kg * LB_PER_KG;
+  return String(Math.round(shown * WEIGHT_TICKS_PER_UNIT) / WEIGHT_TICKS_PER_UNIT);
+}
+
 /** PURE: "70 kg", "70.5 kg" or "154.3 lb". Rounds only for display. */
 export function formatWeight(kg: number, unit: WeightUnit): string {
-  const shown = unit === 'kg' ? kg : kg * LB_PER_KG;
-  return `${Math.round(shown * WEIGHT_TICKS_PER_UNIT) / WEIGHT_TICKS_PER_UNIT} ${unit}`;
+  return `${weightNumber(kg, unit)} ${unit}`;
 }
 
 /**
