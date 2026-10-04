@@ -3,9 +3,6 @@ import { MUSCLES, type Equipment, type ExerciseRow, type Muscle } from '@/core/d
 import { MUSCLE_LABELS } from './labels';
 import { searchExercises } from './search';
 
-/** How many exercises the full list shows at a time; "Show more" adds as many again. */
-export const BROWSER_PAGE = 40;
-
 export interface BrowserSections {
   /** Favourites and recent lead the list, but only before anything is searched for. */
   favourites: ExerciseRow[];

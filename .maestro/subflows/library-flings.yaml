@@ -1,0 +1,12 @@
+# Flings the open exercise library down and back up. Used by flow 17 and by frame measurements.
+appId: com.faiz.teras.local
+---
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: UP, duration: 300 }
+- swipe: { direction: DOWN, duration: 300 }
+- swipe: { direction: DOWN, duration: 300 }
+- swipe: { direction: DOWN, duration: 300 }
