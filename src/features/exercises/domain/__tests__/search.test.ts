@@ -205,3 +205,50 @@ describe('searchExercises', () => {
     expect(ids(searchExercises(ALL, 'bicep'))).toEqual(['bicep-curl-dumbbell', 'bent-over-row-barbell']);
   });
 });
+
+describe("searchExercises with a person's own history", () => {
+  const PRESSES = [BENCH, OHP, DUMBBELL_PRESS];
+
+  it('puts the exercises they use first among matches that are otherwise equal', () => {
+    expect(ids(searchExercises(PRESSES, 'press'))).toEqual([
+      'bench-press-barbell',
+      'overhead-press-barbell',
+      'shoulder-press-dumbbell',
+    ]);
+    expect(ids(searchExercises(PRESSES, 'press', ['shoulder-press-dumbbell']))).toEqual([
+      'shoulder-press-dumbbell',
+      'bench-press-barbell',
+      'overhead-press-barbell',
+    ]);
+  });
+
+  it('keeps the order they were given in: the first listed is the one they use most', () => {
+    expect(
+      ids(searchExercises(PRESSES, 'press', ['shoulder-press-dumbbell', 'overhead-press-barbell'])),
+    ).toEqual(['shoulder-press-dumbbell', 'overhead-press-barbell', 'bench-press-barbell']);
+  });
+
+  it('never lets history outrank a better match', () => {
+    // The row works biceps only as a secondary muscle: a weaker match than the curl, used or not.
+    expect(ids(searchExercises(ALL, 'bicep', ['bent-over-row-barbell']))).toEqual([
+      'bicep-curl-dumbbell',
+      'bent-over-row-barbell',
+    ]);
+  });
+
+  it('never lets history outrank the equipment asked for', () => {
+    expect(ids(searchExercises(PRESSES, 'dumbbell press', ['bench-press-barbell']))[0]).toBe(
+      'shoulder-press-dumbbell',
+    );
+  });
+
+  it('leaves a blank search in library order', () => {
+    expect(ids(searchExercises(ALL, '', ['bicep-curl-dumbbell']))).toEqual(ids(searchExercises(ALL, '')));
+  });
+
+  it('ignores an exercise they used that is not among the matches', () => {
+    expect(ids(searchExercises(PRESSES, 'press', ['not-in-the-library']))).toEqual(
+      ids(searchExercises(PRESSES, 'press')),
+    );
+  });
+});

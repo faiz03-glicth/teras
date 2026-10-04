@@ -199,6 +199,8 @@ interface Hit {
   /** How many of the query's how-words it lacks. */
   readonly missing: number;
   readonly quality: number;
+  /** Where the person's own history puts it (0 is the one they use most); after the listed ones when unused. */
+  readonly used: number;
   readonly rank: number;
 }
 
@@ -207,6 +209,7 @@ const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 
 const compareHits = (a: Hit, b: Hit): number =>
   a.missing - b.missing ||
   a.quality - b.quality ||
+  a.used - b.used ||
   a.rank - b.rank ||
   a.row.name.length - b.row.name.length ||
   compareText(a.row.name, b.row.name);
@@ -228,15 +231,21 @@ export function byRank(rows: readonly ExerciseRow[]): ExerciseRow[] {
  * "seated"), which only puts the exercises that have it first. Then the exercise that is what was asked
  * for comes first (its name or another name for it is the query), then the query as a phrase of its names
  * or main muscle (whole words before word starts), then every word matched, then a match only through a
- * muscle it works secondarily. Ties go to the library's order. Deterministic: no history, no randomness.
- * A blank query is the library order.
+ * muscle it works secondarily. Among equals, the exercises the person uses come first (`usedIds`, the one
+ * they use most first), then the library's order. History only breaks ties: it never lifts a weaker match
+ * over a stronger one. Deterministic: no randomness. A blank query is the library order.
  */
-export function searchExercises(rows: readonly ExerciseRow[], query: string): ExerciseRow[] {
+export function searchExercises(
+  rows: readonly ExerciseRow[],
+  query: string,
+  usedIds: readonly string[] = [],
+): ExerciseRow[] {
   const terms = queryTerms(query);
   if (terms.length === 0) return byRank(rows);
   const onlyHow = terms.every((term) => HOW_WORDS.has(term.word));
   const core = onlyHow ? terms : terms.filter((term) => !HOW_WORDS.has(term.word));
   const preferred = onlyHow ? [] : terms.filter((term) => HOW_WORDS.has(term.word));
+  const used = new Map(usedIds.map((id, place) => [id, place]));
   const hits: Hit[] = [];
   for (const row of rows) {
     const index = indexOf(row);
@@ -245,6 +254,7 @@ export function searchExercises(rows: readonly ExerciseRow[], query: string): Ex
       row,
       missing: preferred.filter((term) => !findsAny(term, index.how)).length,
       quality: quality(index, core),
+      used: used.get(row.id) ?? usedIds.length,
       rank: index.rank,
     });
   }

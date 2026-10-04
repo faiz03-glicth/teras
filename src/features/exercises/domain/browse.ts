@@ -31,15 +31,22 @@ export interface BrowserFilters {
  * PURE: the exercises working a muscle that match the query: those it works most (its primary) first,
  * then the rest, each part best match (or library order) first.
  */
-function working(rows: readonly ExerciseRow[], muscle: Muscle, query: string): ExerciseRow[] {
+function working(
+  rows: readonly ExerciseRow[],
+  muscle: Muscle,
+  query: string,
+  usedIds: readonly string[],
+): ExerciseRow[] {
   return [
     ...searchExercises(
       rows.filter((row) => row.primaryMuscle === muscle),
       query,
+      usedIds,
     ),
     ...searchExercises(
       rows.filter((row) => row.primaryMuscle !== muscle && row.secondaryMuscles.includes(muscle)),
       query,
+      usedIds,
     ),
   ];
 }
@@ -64,10 +71,15 @@ export function browserSections(
           const row = byId.get(id);
           return row ? [row] : [];
         });
+  // What the person uses, the most wanted first: favourites, then what they did lately.
+  const usedIds = [...new Set([...favouriteIds, ...recentIds])];
   return {
     favourites: pick(favouriteIds),
     recent: pick(recentIds),
-    matches: muscle === null ? searchExercises(ofEquipment, query) : working(ofEquipment, muscle, query),
+    matches:
+      muscle === null
+        ? searchExercises(ofEquipment, query, usedIds)
+        : working(ofEquipment, muscle, query, usedIds),
     filtered,
     searching,
   };
