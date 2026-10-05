@@ -1,4 +1,4 @@
-import { onlineManager, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -6,6 +6,7 @@ import { useRepositories } from '@/core/DiProvider';
 import { useTrainingDays } from '@/features/heatmap/hooks/useTrainingDays';
 import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
 import { goBack, openActiveWorkout, openExercise } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
@@ -130,15 +131,8 @@ export function useSessionViewModel(id: string | null) {
         query.queryKey.length !== own.length || query.queryKey.some((part, index) => part !== own[index]),
     });
     void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
-    // The rewritten day reaches the server (and Streak) now, not at the next time the app is opened. A
-    // failed push leaves the day marked to be sent, and usePushPendingWorkoutDays tries again.
-    if (owner && onlineManager.isOnline()) {
-      workoutDays.pushPending(owner).catch((cause: unknown) => {
-        console.error(
-          `[workoutDays] Could not push the day (${cause instanceof Error ? cause.name : 'unknown'})`,
-        ); // TODO(Sentry)
-      });
-    }
+    // The rewritten day reaches the server (and Streak) now, not at the next time the app is opened.
+    pushDaysNow(workoutDays, owner);
     haptics.success();
     goBack();
   }, [deleting, owner, queryClient, workout, workoutDays, workouts]);
