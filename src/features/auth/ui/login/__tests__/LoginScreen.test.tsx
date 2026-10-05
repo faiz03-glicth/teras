@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { goBack, openLegal } from '@/shared/actions';
 import { renderWithApp } from '@test/providers';
-import { SCHEMES } from '@test/render';
+import { SCHEMES, styleOf } from '@test/render';
 
 import { LoginScreen } from '../LoginScreen';
 
@@ -41,6 +41,18 @@ describe.each(SCHEMES)('LoginScreen in %s', (scheme) => {
     await screen.findByRole('button', { name: 'Sign in with Apple' });
     expect(screen.getByRole('header', { name: 'Welcome back' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip for now' })).toBeNull();
+  });
+
+  it('every way in is a key of one height: email stands as tall as Google', async () => {
+    const { theme } = renderWithApp(<LoginScreen intent="new" />, { scheme });
+    await screen.findByRole('button', { name: 'Sign in with Apple' });
+    const google = styleOf(screen.getByRole('button', { name: 'Continue with Google' }));
+    const email = styleOf(screen.getByRole('button', { name: 'Continue with email' }));
+    expect(email.height).toBe(google.height);
+    expect(email).toMatchObject({
+      backgroundColor: theme.material.raised.background,
+      boxShadow: theme.material.raised.shadow,
+    });
   });
 });
 

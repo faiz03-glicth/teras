@@ -60,7 +60,7 @@ export function ActiveWorkoutScreen() {
             </Text>
             <IconButton
               icon="trash"
-              plain
+              tone="danger"
               onPress={() => vm.onRemoveExercise(exercise.id)}
               accessibilityLabel={`Remove ${exercise.name}`}
               testID={`remove-${exercise.id}`}

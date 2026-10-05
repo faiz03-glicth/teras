@@ -33,6 +33,7 @@ export function EditRoutineScreen({ routineId }: { routineId: string | null }) {
             <Button
               label="Save"
               variant="quiet"
+              size="sm"
               onPress={vm.onSave}
               loading={vm.saving}
               loadingLabel="Saving"

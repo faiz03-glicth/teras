@@ -3,7 +3,7 @@ import { toast } from 'sonner-native';
 
 import { TAB_ITEMS } from '@/shared/config/tabs';
 import { setTestTheme } from '@test/mocks/unistyles';
-import { renderInScheme, SCHEMES } from '@test/render';
+import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
 import { Screen } from '../Screen';
 import { SegmentedControl } from '../SegmentedControl';
@@ -36,6 +36,20 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
     expect(screen.getByRole('tab', { name: 'Home' }).props.accessibilityState).toEqual({ selected: false });
     fireEvent.press(screen.getByRole('tab', { name: 'Workout' }));
     expect(onTabPress).toHaveBeenCalledWith('workout');
+  });
+
+  it('TabBar sets the active tab, icon and label, in a well pressed into the bar', () => {
+    const { theme } = renderInScheme(
+      <TabBar items={TAB_ITEMS} active="workout" onTabPress={jest.fn()} />,
+      scheme,
+    );
+    expect(styleOf(screen.getByTestId('tab-workout-well'))).toMatchObject({
+      backgroundColor: theme.material.inset.background,
+      boxShadow: theme.material.inset.shadow,
+    });
+    const idle = styleOf(screen.getByTestId('tab-home-well'));
+    expect(idle.backgroundColor).toBe('transparent');
+    expect(idle.boxShadow).toBeUndefined();
   });
 });
 

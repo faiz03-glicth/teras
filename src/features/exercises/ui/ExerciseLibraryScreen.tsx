@@ -22,6 +22,7 @@ export function ExerciseLibraryScreen() {
                   label="Create"
                   icon="plus"
                   variant="quiet"
+                  size="sm"
                   onPress={vm.browser.onCreate}
                   testID="exercise-create"
                 />

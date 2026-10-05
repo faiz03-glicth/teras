@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+import { AppleAuthenticationButton } from 'expo-apple-authentication';
 import { Platform } from 'react-native';
 
 import { renderInScheme, SCHEMES, styleOf } from '@test/render';
@@ -20,6 +21,20 @@ describe.each(SCHEMES)('SsoButton in %s', (scheme) => {
     const button = screen.getByRole('button', { name: 'Continue with Google' });
     expect(styleOf(button).backgroundColor).toBe(theme.brand.google.background);
     expect(styleOf(screen.getByText('Continue with Google')).fontFamily).toBe('Roboto_500Medium');
+  });
+
+  it("is a rounded key like the app's own buttons, not a pill, for every provider", () => {
+    const { theme } = renderInScheme(
+      <>
+        <SsoButton provider="apple" onPress={jest.fn()} />
+        <SsoButton provider="google" onPress={jest.fn()} />
+      </>,
+      scheme,
+    );
+    expect(styleOf(screen.getByRole('button', { name: 'Continue with Google' })).borderRadius).toBe(
+      theme.radii.control,
+    );
+    expect(screen.UNSAFE_getByType(AppleAuthenticationButton).props.cornerRadius).toBe(theme.radii.control);
   });
 
   it.each(['apple', 'google'] as const)('%s shows "Connecting…" while busy', (provider) => {

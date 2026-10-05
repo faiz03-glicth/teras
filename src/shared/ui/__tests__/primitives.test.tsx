@@ -8,6 +8,7 @@ import { BarChart } from '../BarChart';
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { EmptyState } from '../EmptyState';
+import { Icon } from '../Icon';
 import { IconButton } from '../IconButton';
 import { NavBar } from '../NavBar';
 import { OrDivider } from '../OrDivider';
@@ -52,17 +53,86 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
-  it('IconButton exposes its label and a 44pt touch target', () => {
-    renderInScheme(<IconButton icon="chevron-left" onPress={jest.fn()} accessibilityLabel="Back" />, scheme);
+  it.each(['ghost', 'quiet'] as const)('a %s Button is a small raised key, not bare text', (variant) => {
+    const { theme } = renderInScheme(
+      <Button label="Add set" variant={variant} size="sm" onPress={jest.fn()} />,
+      scheme,
+    );
+    expect(styleOf(screen.getByRole('button', { name: 'Add set' }))).toMatchObject({
+      height: 36,
+      borderRadius: theme.radii.control,
+      backgroundColor: theme.material.raisedSm.background,
+      boxShadow: theme.material.raisedSm.shadow,
+    });
+    // Under a finger the lift gives way to a shallow press, as on every other key.
+    fireEvent(screen.getByRole('button', { name: 'Add set' }), 'pressIn');
+    expect(styleOf(screen.getByRole('button', { name: 'Add set' })).boxShadow).toBe(
+      theme.material.pressed.shadow,
+    );
+  });
+
+  it('a small Button still reaches a 44pt touch target', () => {
+    renderInScheme(<Button label="Skip" variant="ghost" size="sm" onPress={jest.fn()} />, scheme);
+    expect(screen.getByRole('button', { name: 'Skip' }).props.hitSlop).toBe(4);
+  });
+
+  it('a large Button stands as tall as the sign-in buttons', () => {
+    renderInScheme(
+      <Button label="Continue with email" variant="secondary" size="lg" onPress={jest.fn()} />,
+      scheme,
+    );
+    expect(styleOf(screen.getByRole('button', { name: 'Continue with email' })).height).toBe(52);
+  });
+
+  it('IconButton is a raised square key with a 44pt touch target', () => {
+    const { theme } = renderInScheme(
+      <IconButton icon="chevron-left" onPress={jest.fn()} accessibilityLabel="Back" />,
+      scheme,
+    );
     const button = screen.getByRole('button', { name: 'Back' });
+    expect(styleOf(button)).toMatchObject({
+      width: 40,
+      height: 40,
+      borderRadius: theme.radii.key,
+      backgroundColor: theme.material.raisedSm.background,
+      boxShadow: theme.material.raisedSm.shadow,
+    });
+    expect(button.props.hitSlop).toBe(2);
+    fireEvent(button, 'pressIn');
+    expect(styleOf(screen.getByRole('button', { name: 'Back' })).boxShadow).toBe(
+      theme.material.pressed.shadow,
+    );
+  });
+
+  it('a plain IconButton is an icon printed on the surface, still a 44pt target', () => {
+    renderInScheme(<IconButton icon="pencil" plain onPress={jest.fn()} accessibilityLabel="Edit" />, scheme);
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(styleOf(button).backgroundColor).toBe('transparent');
+    expect(styleOf(button).boxShadow).toBeUndefined();
     expect(button.props.hitSlop).toBe(5);
   });
 
-  it('NavBar shows a header title and back button', () => {
+  it('a danger IconButton keeps its key and draws the icon in the danger colour', () => {
+    const { theme } = renderInScheme(
+      <IconButton icon="trash" tone="danger" onPress={jest.fn()} accessibilityLabel="Remove Squat" />,
+      scheme,
+    );
+    expect(styleOf(screen.getByRole('button', { name: 'Remove Squat' })).backgroundColor).toBe(
+      theme.material.raisedSm.background,
+    );
+    expect(screen.UNSAFE_getByType(Icon).props.color).toBe(theme.colors.danger);
+  });
+
+  it('NavBar shows a header title and a raised back key', () => {
     const onBack = jest.fn();
-    renderInScheme(<NavBar title="Settings" onBack={onBack} right={<Text>Skip</Text>} />, scheme);
+    const { theme } = renderInScheme(
+      <NavBar title="Settings" onBack={onBack} right={<Text>Skip</Text>} />,
+      scheme,
+    );
     expect(screen.getByRole('header', { name: 'Settings' })).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    expect(styleOf(back).backgroundColor).toBe(theme.material.raisedSm.background);
+    fireEvent.press(back);
     expect(onBack).toHaveBeenCalled();
     expect(screen.getByText('Skip')).toBeTruthy();
   });

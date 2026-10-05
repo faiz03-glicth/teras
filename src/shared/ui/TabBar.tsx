@@ -16,10 +16,13 @@ export interface TabBarProps {
 }
 
 const TAB_ICON = 24;
+/** The active tab's well: wide enough for the longest label, its corners those of a large key. */
+const WELL_WIDTH = 92;
+const WELL_RADIUS = 16;
 
 /**
  * The app's one navigation bar: sections only, in the same place on every tab screen. The active tab is
- * marked by its filled pill and bolder label as well as its colour, so colour is never the only signal.
+ * marked by its well and bolder label as well as its colour, so colour is never the only signal.
  * Only a real change of tab is felt (a selection tick); tapping the tab you are on is silent.
  */
 export function TabBar({ items, active, onTabPress }: TabBarProps) {
@@ -42,16 +45,16 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
             style={styles.tab}
             testID={`tab-${item.id}`}
           >
-            <View style={styles.pill(on)}>
+            <View style={styles.well(on)} testID={`tab-${item.id}-well`}>
               <Icon
                 name={item.icon}
                 size={TAB_ICON}
                 color={on ? theme.colors.accentText : theme.colors.text2}
               />
+              <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
+                {item.label}
+              </Text>
             </View>
-            <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
-              {item.label}
-            </Text>
           </PressableScale>
         );
       })}
@@ -70,16 +73,20 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.material.bar.background,
     boxShadow: theme.material.bar.shadow,
   },
-  tab: { flex: 1, alignItems: 'center', gap: theme.spacing.xs, minHeight: 48 },
-  pill: (on: boolean) => ({
-    width: 64,
-    height: 32,
-    borderRadius: theme.radii.pill,
+  tab: { flex: 1, alignItems: 'center' },
+  well: (on: boolean) => ({
+    width: WELL_WIDTH,
+    maxWidth: '100%' as const,
+    minHeight: 56,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: 6,
+    borderRadius: WELL_RADIUS,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    // The tab you are on is pressed into the bar, gold-tinted; with its gold icon and bolder label it
-    // reads as chosen even where inset shadows do not draw.
-    backgroundColor: on ? theme.colors.accentSoft : 'transparent',
-    boxShadow: on ? theme.material.pressed.shadow : undefined,
+    gap: theme.spacing.xs,
+    // The tab you are on sits in a well pressed into the bar, icon and label together. Its darker fill,
+    // gold icon and bolder label mark it even where inset shadows do not draw.
+    backgroundColor: on ? theme.material.inset.background : 'transparent',
+    boxShadow: on ? theme.material.inset.shadow : undefined,
   }),
 }));

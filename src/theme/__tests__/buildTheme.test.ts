@@ -44,15 +44,16 @@ describe('buildTheme', () => {
     const light = buildTheme('light', 'amber');
     const dark = buildTheme('dark', 'amber');
 
-    // Parchment and Walnut.
+    // Parchment, and Walnut A (lifted): a ground light enough for both the highlight and the shade to show.
     expect(light.colors.canvas).toBe('#F6E7B6');
-    expect(dark.colors.canvas).toBe('#16110C');
+    expect(dark.colors.canvas).toBe('#2A2119');
+    expect(dark.material.raised.background).toBe('#2F261D');
     // The brand gold and its ink, identical in both schemes.
     expect(light.colors.accent).toBe('#FFD179');
     expect(dark.colors.accent).toBe('#FFD179');
     expect(dark.colors.onAccent).toBe('#2B1D0B');
     expect(light.heat).toEqual(['#EBDBA6', '#FBE3A0', '#F2C14E', '#C98A1E', '#7A4A12']);
-    expect(dark.heat).toEqual(['#2A2119', '#4A3719', '#8A6420', '#D19A3A', '#FFD179']);
+    expect(dark.heat).toEqual(['#382D23', '#5A4320', '#946B22', '#D9A040', '#FFD179']);
   });
 
   it('is pure: identical inputs give equal themes', () => {

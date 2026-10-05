@@ -88,7 +88,7 @@ export const TrainingWave = memo(function TrainingWave({
   );
 });
 
-const KEY = 34;
+const KEY = 36;
 
 const styles = StyleSheet.create((theme) => ({
   panel: { gap: theme.spacing.md },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create((theme) => ({
   key: {
     width: KEY,
     height: KEY,
-    borderRadius: KEY / 2,
+    borderRadius: theme.radii.key,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.material.raisedSm.background,

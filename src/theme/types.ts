@@ -14,7 +14,7 @@ export type HeatSteps = readonly [string, string, string, string, string];
 export interface SemanticColors {
   canvas: string;
   surface: string;
-  /** Floating chrome above cards (tab bar); in dark mode a lighter tone stands in for the shadow. */
+  /** Floating chrome above cards (the tab bar). */
   surfaceRaised: string;
   subtle: string;
   border: string;
@@ -74,6 +74,8 @@ export interface Radii {
   cell: number;
   controlSm: number;
   control: number;
+  /** Square keys (icon buttons, the chips): softer than a control's corner on their smaller body. */
+  key: number;
   card: number;
   sheet: number;
   pill: number;

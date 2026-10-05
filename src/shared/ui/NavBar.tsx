@@ -24,7 +24,6 @@ export function NavBar({ title, onBack, backDisabled = false, backLabel = 'Back'
           {onBack && (
             <IconButton
               icon="chevron-left"
-              plain
               onPress={onBack}
               disabled={backDisabled}
               accessibilityLabel={backLabel}
@@ -48,9 +47,10 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: -6,
   },
-  side: { minWidth: 34, flexDirection: 'row', alignItems: 'center' },
+  // As wide as the back key, so a title stays centred whichever side holds a control. Keys sit on the
+  // screen's gutter, edge to edge with the cards below.
+  side: { minWidth: 40, flexDirection: 'row', alignItems: 'center' },
   right: { justifyContent: 'flex-end' },
   title: { flex: 1, textAlign: 'center', marginHorizontal: theme.spacing.sm },
 }));
