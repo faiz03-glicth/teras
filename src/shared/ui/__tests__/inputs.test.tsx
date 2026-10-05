@@ -1,8 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 
-import { renderInScheme, SCHEMES } from '@test/render';
+import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
+import { ChipRow } from '../Chip';
 import { OtpInput } from '../OtpInput';
 import { TextField } from '../TextField';
 
@@ -44,5 +45,35 @@ describe.each(SCHEMES)('inputs in %s', (scheme) => {
   it('OtpInput shows its error', () => {
     renderInScheme(<OtpInput value="" onChangeText={jest.fn()} error="That code didn't work." />, scheme);
     expect(screen.getByRole('alert')).toHaveTextContent("That code didn't work.");
+  });
+
+  it('ChipRow: raised keys, the chosen one pressed in with a gold label', () => {
+    const onChange = jest.fn();
+    const { theme } = renderInScheme(
+      <ChipRow
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'chest', label: 'Chest' },
+        ]}
+        value="all"
+        onChange={onChange}
+        accessibilityLabel="Muscle"
+      />,
+      scheme,
+    );
+    expect(styleOf(screen.getByRole('radio', { name: 'All' }))).toMatchObject({
+      borderRadius: theme.radii.key,
+      backgroundColor: theme.material.inset.background,
+      boxShadow: theme.material.inset.shadow,
+    });
+    expect(styleOf(screen.getByText('All')).color).toBe(theme.colors.accentText);
+    expect(styleOf(screen.getByRole('radio', { name: 'Chest' }))).toMatchObject({
+      borderRadius: theme.radii.key,
+      backgroundColor: theme.material.raisedSm.background,
+      boxShadow: theme.material.raisedSm.shadow,
+    });
+    expect(styleOf(screen.getByText('Chest')).color).toBe(theme.colors.text);
+    fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));
+    expect(onChange).toHaveBeenCalledWith('chest');
   });
 });

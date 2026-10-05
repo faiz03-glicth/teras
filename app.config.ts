@@ -135,7 +135,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         resizeMode: 'contain',
         // The light and dark canvas colours, so the splash fades into the first screen without a shift.
         backgroundColor: '#F6E7B6',
-        dark: { image: './assets/splash-icon-dark.png', backgroundColor: '#16110C' },
+        dark: { image: './assets/splash-icon-dark.png', backgroundColor: '#2A2119' },
       },
     ],
     'expo-font',

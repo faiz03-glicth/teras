@@ -13,17 +13,21 @@ export interface IconButtonProps {
   onLongPress?: () => void;
   onPressOut?: () => void;
   accessibilityLabel: string;
-  /** No background circle (nav bars). */
+  /** No key: an icon printed on the surface, for rows that carry several (a routine's edit and reorder). */
   plain?: boolean;
+  /** 'danger' draws the icon in the danger colour, for a key that removes something. */
+  tone?: 'primary' | 'danger';
   /** On: the icon turns accent and fills (a favourite's heart). Its label should say what a press does. */
   active?: boolean;
   disabled?: boolean;
   testID?: string;
 }
 
-const SIZE = 34;
-/** Extends the 34pt circle to a 44pt touch target. */
-const HIT_SLOP = (44 - SIZE) / 2;
+/** A square key, and the smaller footprint of a plain icon; each extended to a 44pt touch target. */
+const KEY_SIZE = 40;
+const PLAIN_SIZE = 34;
+const KEY_HIT_SLOP = (44 - KEY_SIZE) / 2;
+const PLAIN_HIT_SLOP = (44 - PLAIN_SIZE) / 2;
 
 export function IconButton({
   icon,
@@ -32,6 +36,7 @@ export function IconButton({
   onPressOut,
   accessibilityLabel,
   plain = false,
+  tone = 'primary',
   active = false,
   disabled = false,
   testID,
@@ -39,6 +44,7 @@ export function IconButton({
   const { theme } = useUnistyles();
   // Disabled eases in and out like every other control (e.g. Back while a sign-in connects).
   const fade = useStateTransition('opacity');
+  const ink = tone === 'danger' ? theme.colors.danger : theme.colors.text;
   return (
     <PressableScale
       testID={testID}
@@ -46,7 +52,7 @@ export function IconButton({
       onLongPress={onLongPress}
       onPressOut={onPressOut}
       disabled={disabled}
-      hitSlop={HIT_SLOP}
+      hitSlop={plain ? PLAIN_HIT_SLOP : KEY_HIT_SLOP}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
@@ -56,7 +62,7 @@ export function IconButton({
       <Icon
         name={icon}
         size={plain ? 24 : 20}
-        color={active ? theme.colors.accentText : theme.colors.text}
+        color={active ? theme.colors.accentText : ink}
         fill={active ? theme.colors.accentText : 'none'}
       />
     </PressableScale>
@@ -65,12 +71,13 @@ export function IconButton({
 
 const styles = StyleSheet.create((theme) => ({
   base: (plain: boolean) => ({
-    width: SIZE,
-    height: SIZE,
-    borderRadius: SIZE / 2,
+    width: plain ? PLAIN_SIZE : KEY_SIZE,
+    height: plain ? PLAIN_SIZE : KEY_SIZE,
+    // A small raised key with softened corners, like the app's buttons; `plain` stays flat, an icon
+    // printed on the surface.
+    borderRadius: plain ? PLAIN_SIZE / 2 : theme.radii.key,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    // A small raised key; `plain` (nav bars) stays flat, like an icon printed on the surface.
     backgroundColor: plain ? 'transparent' : theme.material.raisedSm.background,
     boxShadow: plain ? undefined : theme.material.raisedSm.shadow,
   }),

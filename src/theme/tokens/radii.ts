@@ -4,6 +4,7 @@ export const radii: Radii = {
   cell: 4,
   controlSm: 10,
   control: 14,
+  key: 12,
   card: 20,
   sheet: 28,
   pill: 999,

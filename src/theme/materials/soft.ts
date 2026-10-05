@@ -2,6 +2,9 @@ import type { ColorScheme, SoftMaterial } from '../types';
 import { BRAND_GOLD } from '../tokens/brand';
 import { semanticColors } from '../tokens/colors';
 
+/** Walnut's lift, shared by cards, keys and the gold: every raised thing is the same flat stuff. */
+const WALNUT_LIFT = '-5px -5px 12px rgba(255,236,200,0.085), 6px 6px 14px rgba(0,0,0,0.50)';
+
 /**
  * Teras's material: one physical stuff — parchment by day, walnut by night — that controls are raised out
  * of or pressed into. Light falls from the upper left, so a raised surface carries a highlight up-left and a
@@ -47,26 +50,28 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
   },
   dark: {
     ground: semanticColors.dark.canvas,
-    raised: {
-      background: '#241C15',
-      shadow: '-4px -4px 10px rgba(255,236,200,0.05), 5px 5px 14px rgba(0,0,0,0.60)',
-    },
+    raised: { background: semanticColors.dark.surface, shadow: WALNUT_LIFT },
     raisedSm: {
-      background: '#241C15',
-      shadow: '-2px -2px 6px rgba(255,236,200,0.045), 3px 3px 8px rgba(0,0,0,0.55)',
+      background: semanticColors.dark.surface,
+      shadow: '-3px -3px 7px rgba(255,236,200,0.08), 3px 3px 8px rgba(0,0,0,0.48)',
     },
     inset: {
-      background: '#1A140E',
-      shadow: 'inset 3px 3px 7px rgba(0,0,0,0.65), inset -2px -2px 5px rgba(255,236,200,0.05)',
+      background: '#221A13',
+      shadow: 'inset 3px 3px 7px rgba(0,0,0,0.50), inset -3px -3px 6px rgba(255,236,200,0.07)',
     },
     pressed: {
-      shadow: 'inset 2px 2px 6px rgba(0,0,0,0.6), inset -1px -1px 4px rgba(255,236,200,0.04)',
+      shadow: 'inset 3px 3px 6px rgba(0,0,0,0.50), inset -2px -2px 5px rgba(255,236,200,0.07)',
     },
-    bar: { background: '#1E1812', shadow: '0px -4px 12px rgba(0,0,0,0.50)' },
+    // Its top edge catches the light, and it casts upward onto the content scrolling beneath it.
+    bar: {
+      background: semanticColors.dark.surface,
+      shadow: 'inset 0px 1px 0px rgba(255,236,200,0.07), 0px -6px 14px rgba(0,0,0,0.32)',
+    },
     accent: {
       background: BRAND_GOLD,
-      shadow: '-3px -3px 8px rgba(255,236,200,0.06), 4px 4px 12px rgba(0,0,0,0.65)',
-      pressedShadow: 'inset 2px 2px 6px rgba(122,74,18,0.55), inset -1px -1px 4px rgba(255,240,200,0.35)',
+      // One flat gold, lifted exactly like every other key: no gradient, no glow.
+      shadow: WALNUT_LIFT,
+      pressedShadow: 'inset 3px 3px 6px rgba(122,74,18,0.50), inset -2px -2px 4px rgba(255,240,200,0.35)',
       // Gold on walnut stands out by itself; an edge here would only add noise.
       edge: null,
     },

@@ -40,7 +40,8 @@ export function ProviderButtons({
       <OrDivider />
       <Button
         label="Continue with email"
-        variant="ghost"
+        variant="secondary"
+        size="lg"
         icon="mail"
         onPress={onEmail}
         disabled={busy}

@@ -10,7 +10,7 @@ import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'quiet' | 'danger';
-export type ButtonSize = 'md' | 'sm';
+export type ButtonSize = 'lg' | 'md' | 'sm';
 
 export interface ButtonProps {
   label: string;
@@ -26,6 +26,11 @@ export interface ButtonProps {
   testID?: string;
 }
 
+/** `lg` stands level with the sign-in provider buttons, so a Button can share their stack. */
+const HEIGHT: Record<ButtonSize, number> = { lg: 52, md: 50, sm: 36 };
+/** Extends a small key to a 44pt touch target. */
+const SMALL_HIT_SLOP = (44 - HEIGHT.sm) / 2;
+
 const foreground = (theme: Theme, variant: ButtonVariant): string =>
   ({
     primary: theme.colors.onAccent,
@@ -36,10 +41,10 @@ const foreground = (theme: Theme, variant: ButtonVariant): string =>
   })[variant];
 
 /**
- * Every button shares one behaviour: the press preset, a dimmed disabled state that eases in and out, and
- * a content cross-fade when the label or the loading state changes (the button itself never moves or
- * resizes). Text-only variants (ghost, quiet) are 40pt tall with hit slop so the touch target still
- * reaches 44pt.
+ * Every button is a key raised out of the material, and every key shares one behaviour: the press preset,
+ * a dimmed disabled state that eases in and out, and a content cross-fade when the label or the loading
+ * state changes (the button itself never moves or resizes). Ghost and quiet keys sit lower than the
+ * action and say how much they matter through their label: gold, or muted.
  */
 export function Button({
   label,
@@ -57,7 +62,6 @@ export function Button({
   const { theme } = useUnistyles();
   const color = foreground(theme, variant);
   const inactive = disabled || loading;
-  const textOnly = variant === 'ghost' || variant === 'quiet';
   const fade = useStateTransition('opacity');
   const shownLabel = loading ? (loadingLabel ?? label) : label;
 
@@ -66,7 +70,7 @@ export function Button({
       testID={testID}
       onPress={onPress}
       disabled={inactive}
-      hitSlop={textOnly ? 2 : undefined}
+      hitSlop={size === 'sm' ? SMALL_HIT_SLOP : undefined}
       accessibilityRole="button"
       accessibilityLabel={loading ? shownLabel : (accessibilityLabel ?? label)}
       accessibilityHint={accessibilityHint}
@@ -95,8 +99,7 @@ export function Button({
 
 const styles = StyleSheet.create((theme) => ({
   base: (variant: ButtonVariant, size: ButtonSize) => ({
-    height: size === 'sm' ? 36 : variant === 'ghost' || variant === 'quiet' ? 40 : 50,
-    minHeight: size === 'sm' ? 36 : 40,
+    height: HEIGHT[size],
     paddingHorizontal: size === 'sm' ? theme.spacing.md + 2 : theme.spacing.lg,
     alignSelf: size === 'sm' ? ('flex-start' as const) : ('stretch' as const),
     // A key on a console, not a pill: controlled corners read as a physical object.
@@ -105,30 +108,26 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: {
       primary: theme.material.accent.background,
       secondary: theme.material.raised.background,
-      ghost: 'transparent',
-      quiet: 'transparent',
+      ghost: theme.material.raisedSm.background,
+      quiet: theme.material.raisedSm.background,
       danger: theme.colors.dangerSoft,
     }[variant],
-    // Raised out of the material; text-only buttons stay flat, so they never compete with the action.
+    // Raised out of the material; the lesser keys take the shallower lift, so they never compete with the
+    // action.
     boxShadow: {
       primary: theme.material.accent.shadow,
       secondary: theme.material.raised.shadow,
-      ghost: undefined,
-      quiet: undefined,
+      ghost: theme.material.raisedSm.shadow,
+      quiet: theme.material.raisedSm.shadow,
       danger: theme.material.raisedSm.shadow,
     }[variant],
     // The gold keeps its dark edge only where the material says gold alone would not separate.
     borderWidth: variant === 'primary' && theme.material.accent.edge ? 1 : 0,
     borderColor: theme.material.accent.edge ?? 'transparent',
   }),
-  /** Under a finger: the lift gives way to a shallow press. Text-only buttons have no lift to lose. */
+  /** Under a finger: the lift gives way to a shallow press (the gold sinks with its own warm shade). */
   pressed: (variant: ButtonVariant) => ({
-    boxShadow:
-      variant === 'primary'
-        ? theme.material.accent.pressedShadow
-        : variant === 'ghost' || variant === 'quiet'
-          ? undefined
-          : theme.material.pressed.shadow,
+    boxShadow: variant === 'primary' ? theme.material.accent.pressedShadow : theme.material.pressed.shadow,
   }),
   content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
 }));

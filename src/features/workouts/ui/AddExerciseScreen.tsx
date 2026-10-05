@@ -23,6 +23,7 @@ export function AddExerciseScreen({ target = 'workout' }: { target?: AddExercise
                   label="Create"
                   icon="plus"
                   variant="quiet"
+                  size="sm"
                   onPress={vm.browser.onCreate}
                   testID="exercise-create"
                 />

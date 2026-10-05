@@ -101,4 +101,8 @@ describe('the gold primary action', () => {
     expect(softMaterials.dark.accent.edge).toBeNull();
     expect(contrastRatio(BRAND_GOLD, softMaterials.dark.raised.background)).toBeGreaterThan(7);
   });
+
+  it('on walnut, is one flat gold lifted exactly like every other key', () => {
+    expect(softMaterials.dark.accent.shadow).toBe(softMaterials.dark.raised.shadow);
+  });
 });

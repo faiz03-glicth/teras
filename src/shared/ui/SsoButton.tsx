@@ -29,9 +29,12 @@ const BUSY_LABEL = 'Connecting…';
  * Apple renders the native AppleAuthenticationButton (black in light, white in dark); Google uses the
  * official "G" and Roboto Medium.
  *
- * Every provider connects the same way: a same-size "Connecting…" pill in the provider's own colours fades
- * in over the button (the button stays underneath, so the pill never dips or shifts), and fades back out if
- * the sign-in doesn't complete. Another provider connecting dims the button and makes it inert.
+ * Both take the app's key corners rather than a pill (each brand allows a rounded rectangle), so they stand
+ * square with the email key beneath them.
+ *
+ * Every provider connects the same way: a same-size "Connecting…" face in the provider's own colours fades
+ * in over the button (the button stays underneath, so the face never dips or shifts), and fades back out
+ * if the sign-in doesn't complete. Another provider connecting dims the button and makes it inert.
  */
 export function SsoButton({
   provider,
@@ -64,7 +67,7 @@ export function SsoButton({
               ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
               : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
           }
-          cornerRadius={HEIGHT / 2}
+          cornerRadius={theme.radii.control}
           style={styles.native}
           onPress={onPress}
         />
@@ -77,7 +80,7 @@ export function SsoButton({
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ disabled }}
-        style={[styles.pill(colors.background, border), { opacity: disabled ? 0.45 : 1 }, fade]}
+        style={[styles.face(colors.background, border), { opacity: disabled ? 0.45 : 1 }, fade]}
       >
         <GoogleLogo size={20} />
         <RNText style={styles.label('google', colors.foreground)}>{label}</RNText>
@@ -94,7 +97,7 @@ export function SsoButton({
       </View>
       <Animated.View
         pointerEvents={busy ? 'auto' : 'none'}
-        style={[styles.pill(colors.background, border), styles.over, { opacity: busy ? 1 : 0 }, fade]}
+        style={[styles.face(colors.background, border), styles.over, { opacity: busy ? 1 : 0 }, fade]}
         accessible={busy}
         importantForAccessibility={busy ? 'auto' : 'no-hide-descendants'}
         accessibilityElementsHidden={!busy}
@@ -110,9 +113,9 @@ export function SsoButton({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  pill: (background: string, border: string | null) => ({
+  face: (background: string, border: string | null) => ({
     height: HEIGHT,
-    borderRadius: HEIGHT / 2,
+    borderRadius: theme.radii.control,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
