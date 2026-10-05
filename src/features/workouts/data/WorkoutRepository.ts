@@ -165,6 +165,13 @@ export interface WorkoutRepository {
   finish(workoutId: string): Promise<WorkoutDay>;
   /** Throws it away, exercises and sets included. */
   discard(workoutId: string): Promise<void>;
+  /**
+   * Deletes a workout that was finished, exercises and sets included, and rewrites the day it belonged to
+   * from the workouts that remain. A day left with none is stored as no workout (0 sets, level 0), never
+   * removed, so the change still reaches Streak. Throws for a workout that is not the owner's or is still
+   * running (that one is discarded); nothing is deleted if the day cannot be written.
+   */
+  deleteLogged(owner: WorkoutOwner, workoutId: string): Promise<WorkoutDay>;
 }
 
 export interface LocalWorkoutDeps {
@@ -419,17 +426,11 @@ export class LocalWorkoutRepository implements WorkoutRepository {
 
     // The day is the unit Streak sees, so it is recomputed from every workout of that date, not just
     // this one (which `workoutsOn` includes while it is still running). A second session simply adds to it.
-    const sessions = await dao.workoutsOn(row.userId, row.date);
-    const forVolume = await Promise.all(
-      sessions.map(async (session) => ({
-        bodyweightKg: session.bodyweightKg,
-        sets: await dao.setsWithTypeFor(session.id),
-      })),
-    );
+    const totals = await this.totalsOn(row.userId, row.date);
 
     // The day is written before the workout is closed: if writing it fails, the workout is still
     // running and Finish can be pressed again, instead of a closed workout whose day never arrives.
-    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, dayTotals(forVolume));
+    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals);
     const timestamp = now();
     await dao.finishWorkout(workoutId, timestamp, timestamp);
     return day;
@@ -437,6 +438,34 @@ export class LocalWorkoutRepository implements WorkoutRepository {
 
   async discard(workoutId: string): Promise<void> {
     await this.deps.dao.deleteWorkout(workoutId);
+  }
+
+  async deleteLogged(owner: WorkoutOwner, workoutId: string): Promise<WorkoutDay> {
+    const { dao, workoutDays } = this.deps;
+    const row = await dao.getWorkout(workoutId);
+    // A link can name any workout on the phone; only the owner's own (a guest's, for a guest) can go.
+    if (!row || row.deletedAt || row.userId !== owner) throw new Error(`No logged workout ${workoutId}`);
+    if (!row.endedAt) throw new Error(`Workout ${workoutId} is still running: discard it instead`);
+
+    // As in finish, the day is written first, from the workouts that stay: if that fails nothing has been
+    // deleted and deleting can be tried again; if only the delete fails, trying again writes the same day.
+    const totals = await this.totalsOn(row.userId, row.date, workoutId);
+    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals);
+    await dao.deleteWorkout(workoutId);
+    return day;
+  }
+
+  /** What a day's workouts add up to, leaving out `without` (a workout about to be deleted). */
+  private async totalsOn(owner: WorkoutOwner, date: string, without?: string) {
+    const { dao } = this.deps;
+    const sessions = (await dao.workoutsOn(owner, date)).filter((session) => session.id !== without);
+    const forVolume = await Promise.all(
+      sessions.map(async (session) => ({
+        bodyweightKg: session.bodyweightKg,
+        sets: await dao.setsWithTypeFor(session.id),
+      })),
+    );
+    return dayTotals(forVolume);
   }
 
   /**

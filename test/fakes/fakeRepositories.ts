@@ -141,6 +141,13 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
       level: 0,
     })),
     discard: mockFn<Workouts['discard']>(async () => undefined),
+    deleteLogged: mockFn<Workouts['deleteLogged']>(async (): Promise<WorkoutDay> => ({
+      date,
+      volumeKg: 0,
+      sets: 0,
+      workouts: 0,
+      level: 0,
+    })),
   };
 }
 

@@ -22,6 +22,7 @@ const USER = 'user-1';
 async function setup(): Promise<{
   repo: WorkoutRepository;
   days: WorkoutDayRepository;
+  api: jest.Mocked<WorkoutDayApi>;
   db: AppDatabase;
 }> {
   const db = await createTestDatabase();
@@ -40,7 +41,7 @@ async function setup(): Promise<{
     now,
   });
   const repo = new LocalWorkoutRepository({ dao: createWorkoutDao(db), workoutDays: days, uuid, now });
-  return { repo, days, db };
+  return { repo, days, api, db };
 }
 
 /** Logs one completed set of an exercise in the workout in progress. */
@@ -269,6 +270,114 @@ describe('finishing a workout', () => {
     await repo.finish(started.id);
 
     await expect(repo.finish(started.id)).rejects.toThrow();
+  });
+});
+
+describe('deleting a logged workout', () => {
+  /** A finished workout with one completed set. */
+  async function logWorkout(repo: WorkoutRepository, exerciseId: string, weightKg: number, reps: number) {
+    const started = await startEmpty(repo);
+    await logSet(repo, started.id, exerciseId, { weightKg, reps });
+    await repo.finish(started.id);
+    return started.id;
+  }
+
+  it('removes the workout, its exercises and its sets from every list and from the records', async () => {
+    const { repo } = await setup();
+    const id = await logWorkout(repo, 'squat-barbell', 100, 5);
+    expect(await repo.bests(USER, ['squat-barbell'])).not.toEqual({});
+
+    await repo.deleteLogged(USER, id);
+
+    expect(await repo.logged(USER, id)).toBeNull();
+    expect(await repo.get(id)).toBeNull();
+    expect(await repo.history(USER, 10)).toEqual([]);
+    expect(await repo.historyBetween(USER, DATE, DATE)).toEqual([]);
+    expect(await repo.exerciseHistory(USER, 'squat-barbell')).toEqual([]);
+    expect(await repo.bests(USER, ['squat-barbell'])).toEqual({});
+    expect(await repo.records(USER)).toEqual([]);
+  });
+
+  it('records a day left with no workout as no workout, and sends it, so Streak stops showing it', async () => {
+    const { repo, days, api } = await setup();
+    const id = await logWorkout(repo, 'squat-barbell', 100, 5);
+    await days.pushPending(USER);
+    api.upsert.mockClear();
+
+    const day = await repo.deleteLogged(USER, id);
+
+    expect(day).toMatchObject({ date: DATE, volumeKg: 0, sets: 0, workouts: 0, level: 0 });
+    // The row stays (there is no delete on the server): it is the change that reaches Streak.
+    expect(await days.list(USER, DATE, DATE)).toHaveLength(1);
+    expect(await days.pushPending(USER)).toBe(1);
+    expect(api.upsert).toHaveBeenCalledWith(USER, [
+      { date: DATE, volume_kg: 0, sets: 0, workouts: 0, level: 0 },
+    ]);
+  });
+
+  it("rewrites the day from the day's other workouts when one of them is deleted", async () => {
+    const { repo } = await setup();
+    const morning = await logWorkout(repo, 'squat-barbell', 100, 5);
+    await logWorkout(repo, 'bench-press-barbell', 60, 10);
+
+    const day = await repo.deleteLogged(USER, morning);
+
+    expect(day).toMatchObject({ date: DATE, volumeKg: 600, sets: 1, workouts: 1 });
+    expect(await repo.historyBetween(USER, DATE, DATE)).toHaveLength(1);
+  });
+
+  it('leaves the other days as they were recorded', async () => {
+    const { repo, days } = await setup();
+    const first = await logWorkout(repo, 'squat-barbell', 100, 5);
+    const later = await repo.start(USER, {
+      date: '2026-10-02' as ISODate,
+      bodyweightKg: 70,
+      restSeconds: 90,
+    });
+    await logSet(repo, later.id, 'bench-press-barbell', { weightKg: 60, reps: 10 });
+    await repo.finish(later.id);
+    const before = await days.list(USER, '2026-10-02' as ISODate, '2026-10-02' as ISODate);
+
+    await repo.deleteLogged(USER, first);
+
+    expect(await days.list(USER, '2026-10-02' as ISODate, '2026-10-02' as ISODate)).toEqual(before);
+  });
+
+  it('refuses a workout that is still running, which is discarded instead', async () => {
+    const { repo } = await setup();
+    const running = await startEmpty(repo);
+
+    await expect(repo.deleteLogged(USER, running.id)).rejects.toThrow();
+
+    expect(await repo.active(USER)).toMatchObject({ id: running.id });
+  });
+
+  it("refuses anyone else's workout, a guest's included, and an id that was never logged", async () => {
+    const { repo } = await setup();
+    const id = await logWorkout(repo, 'squat-barbell', 100, 5);
+
+    await expect(repo.deleteLogged('user-2', id)).rejects.toThrow();
+    await expect(repo.deleteLogged(null, id)).rejects.toThrow();
+    await expect(repo.deleteLogged(USER, 'no-such-workout')).rejects.toThrow();
+
+    expect(await repo.logged(USER, id)).not.toBeNull();
+  });
+
+  it('keeps the workout when its day cannot be written, so deleting can be tried again', async () => {
+    const { repo, days, db } = await setup();
+    const id = await logWorkout(repo, 'squat-barbell', 100, 5);
+    const failing = new LocalWorkoutRepository({
+      dao: createWorkoutDao(db),
+      workoutDays: { ...days, recordDay: async () => Promise.reject(new Error('disk full')) },
+      uuid: () => 'unused',
+      now: () => new Date().toISOString(),
+    });
+
+    await expect(failing.deleteLogged(USER, id)).rejects.toThrow('disk full');
+
+    expect(await repo.logged(USER, id)).not.toBeNull();
+    expect(await repo.deleteLogged(USER, id)).toMatchObject({ sets: 0, level: 0 });
+    expect(await repo.logged(USER, id)).toBeNull();
   });
 });
 

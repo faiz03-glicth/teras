@@ -1,4 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { Alert, type AlertButton } from 'react-native';
+import { toast } from 'sonner-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
@@ -158,6 +160,110 @@ describe('a logged workout', () => {
     fireEvent.press(await screen.findByLabelText('Back'));
 
     expect(actions.goBack).toHaveBeenCalled();
+  });
+});
+
+describe('deleting a workout', () => {
+  /** Presses the alert button labelled `label` on the last alert shown. */
+  function answerAlert(label: string) {
+    const buttons = jest.mocked(Alert.alert).mock.calls.at(-1)?.[2] as AlertButton[] | undefined;
+    const button = buttons?.find((one) => one.text === label);
+    if (!button?.onPress) throw new Error(`No "${label}" button`);
+    act(() => button.onPress?.());
+  }
+
+  beforeEach(() => {
+    jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+  });
+
+  it('asks first, naming what would be lost, and deletes nothing until it is confirmed', async () => {
+    const { repositories } = session('w1');
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete workout?',
+      "Its 2 completed sets will be deleted. This can't be undone.",
+      expect.any(Array),
+    );
+    // Keep is the cancel button: it does nothing, so the workout is still there.
+    const buttons = jest.mocked(Alert.alert).mock.calls.at(-1)?.[2] as AlertButton[];
+    expect(buttons.find((one) => one.text === 'Keep')?.style).toBe('cancel');
+    expect(repositories.workouts.deleteLogged).not.toHaveBeenCalled();
+    expect(actions.goBack).not.toHaveBeenCalled();
+  });
+
+  it('deletes it for the signed-in person, sends the rewritten day, and goes back', async () => {
+    const { repositories } = session('w1');
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+
+    answerAlert('Delete');
+
+    await waitFor(() => expect(repositories.workouts.deleteLogged).toHaveBeenCalledWith('user-1', 'w1'));
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    // The day reaches the server (and Streak) now, not at the next foreground.
+    expect(repositories.workoutDays.pushPending).toHaveBeenCalledWith('user-1');
+  });
+
+  it('never says the workout was not found while the screen slides away', async () => {
+    const { repositories } = session('w1');
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+    // Whatever the screen reads from now on, the workout is gone.
+    repositories.workouts.logged.mockResolvedValue(null);
+
+    answerAlert('Delete');
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByText('Workout not found')).toBeNull();
+    expect(screen.getByText('Push Day')).toBeTruthy();
+  });
+
+  it('sends nothing for a guest, whose days have no server to go to', async () => {
+    act(() => {
+      useAuthStore.setState({ ...initialAuth, status: 'guest', user: null }, true);
+    });
+    const { repositories } = session('w1');
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+
+    answerAlert('Delete');
+
+    await waitFor(() => expect(repositories.workouts.deleteLogged).toHaveBeenCalledWith(null, 'w1'));
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
+  });
+
+  it('stays on the workout and says so when it could not be deleted, so it can be tried again', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { repositories } = session('w1');
+    repositories.workouts.deleteLogged.mockRejectedValueOnce(new Error('disk full'));
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+
+    answerAlert('Delete');
+
+    await waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith(
+        "Couldn't delete",
+        expect.objectContaining({ description: 'Try again.' }),
+      ),
+    );
+    expect(actions.goBack).not.toHaveBeenCalled();
+    expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Delete workout' }));
+    answerAlert('Delete');
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    expect(repositories.workouts.deleteLogged).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
+  it('is not offered while the workout is missing', async () => {
+    session('w1', { workout: null });
+
+    expect(await screen.findByText('Workout not found')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Delete workout' })).toBeNull();
   });
 });
 
