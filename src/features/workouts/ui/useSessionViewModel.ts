@@ -1,19 +1,31 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 
+import { useRepositories } from '@/core/DiProvider';
 import { useTrainingDays } from '@/features/heatmap/hooks/useTrainingDays';
 import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
 import { goBack, openActiveWorkout, openExercise } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, shortDay } from '@/shared/lib/format/dates';
+import { haptics } from '@/shared/lib/haptics';
+import { showInfo } from '@/shared/ui/toast';
 
 import { formatMinutes, sessionSeconds } from '../domain/duration';
 import { countSets } from '../domain/labels';
 import { recordSetIds } from '../domain/records';
 import { loggedExercises, setLabel } from '../domain/session';
 import { workoutTotals } from '../domain/totals';
-import { useExerciseBests, useLoggedWorkout, useWorkoutOwner } from '../hooks/useWorkoutQueries';
+import {
+  loggedWorkoutKey,
+  useExerciseBests,
+  useLoggedWorkout,
+  useWorkoutOwner,
+  workoutKeys,
+} from '../hooks/useWorkoutQueries';
 
 /** One exercise of a logged workout, its completed sets already worded. */
 export interface SessionExerciseView {
@@ -29,12 +41,15 @@ export interface SessionExerciseView {
 
 /**
  * A logged workout, exactly as it was recorded: one screen whether it was opened from the feed, the
- * Calendar or a day's sheet. It only reads — nothing here can change a past workout. Its volume uses the
- * very rule its day was recorded with, and its level is that day's frozen one, read back. A set is marked
- * PR while it holds the exercise's record, the rule Exercise detail marks its history with, so the two
- * screens never disagree about the same workout.
+ * Calendar or a day's sheet. Nothing here edits a past workout; the one change is deleting it, which
+ * rewrites its day from the workouts that remain. Its volume uses the very rule its day was recorded
+ * with, and its level is that day's frozen one, read back. A set is marked PR while it holds the
+ * exercise's record, the rule Exercise detail marks its history with, so the two screens never disagree
+ * about the same workout.
  */
 export function useSessionViewModel(id: string | null) {
+  const { workouts, workoutDays } = useRepositories();
+  const queryClient = useQueryClient();
   const owner = useWorkoutOwner();
   const today = useToday();
   const unit = useTrainingPreferencesStore((state) => state.unit);
@@ -82,6 +97,61 @@ export function useSessionViewModel(id: string | null) {
     void refetchBests();
   }, [refetch, refetchDay, refetchBests]);
 
+  const [deleting, setDeleting] = useState(false);
+  // Set once the workout is gone. This screen's own copy of it is dropped when the screen closes, not
+  // before, so it never says "Workout not found" while it slides away.
+  const deleted = useRef(false);
+  useEffect(
+    () => () => {
+      if (deleted.current) queryClient.removeQueries({ queryKey: loggedWorkoutKey(owner, id), exact: true });
+    },
+    [id, owner, queryClient],
+  );
+
+  const remove = useCallback(async () => {
+    if (!workout || deleting) return;
+    setDeleting(true);
+    try {
+      await workouts.deleteLogged(owner, workout.id);
+    } catch (cause) {
+      console.error(
+        `[workouts] Could not delete a workout (${cause instanceof Error ? cause.name : 'unknown'})`,
+      ); // TODO(Sentry)
+      showInfo({ title: "Couldn't delete", sub: 'Try again.' });
+      setDeleting(false);
+      return;
+    }
+    deleted.current = true;
+    // The feed, the Calendar, the records and the heatmap all read this workout or its day. This screen's
+    // own copy is left alone until it closes (see `deleted`).
+    const own = loggedWorkoutKey(owner, workout.id);
+    void queryClient.invalidateQueries({
+      queryKey: workoutKeys.history,
+      predicate: (query) =>
+        query.queryKey.length !== own.length || query.queryKey.some((part, index) => part !== own[index]),
+    });
+    void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
+    // The rewritten day reaches the server (and Streak) now, not at the next time the app is opened.
+    pushDaysNow(workoutDays, owner);
+    haptics.success();
+    goBack();
+  }, [deleting, owner, queryClient, workout, workoutDays, workouts]);
+
+  const onDelete = useCallback(() => {
+    if (!workout) return;
+    const { sets } = workoutTotals(workout);
+    Alert.alert(
+      'Delete workout?',
+      sets > 0
+        ? `Its ${sets} completed ${sets === 1 ? 'set' : 'sets'} will be deleted. This can't be undone.`
+        : "This can't be undone.",
+      [
+        { text: 'Keep', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => void remove() },
+      ],
+    );
+  }, [remove, workout]);
+
   // The level and the records are shown only once read back: never a stand-in "No workout" meanwhile,
   // and no PR label appearing under someone already reading the sets.
   const status =
@@ -112,6 +182,8 @@ export function useSessionViewModel(id: string | null) {
         ]
       : [],
     exercises,
+    deleting,
+    onDelete,
     onRetry,
     onOpenExercise: openExercise,
     onBack: () => goBack(),

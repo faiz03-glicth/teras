@@ -325,4 +325,52 @@ describe('finishing', () => {
     await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalled());
     expect(useRestTimerStore.getState().endsAt).toBeNull();
   });
+
+  it('sends the day it lit to the server straight away, not at the next time the app is opened', async () => {
+    const { repositories } = log(running([bench([set('s1', 'done')])]));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(repositories.workoutDays.pushPending).toHaveBeenCalledWith('user-1'));
+    // After the day was written, never before.
+    const finished = repositories.workouts.finish.mock.invocationCallOrder[0] ?? 0;
+    const pushed = repositories.workoutDays.pushPending.mock.invocationCallOrder[0] ?? 0;
+    expect(pushed).toBeGreaterThan(finished);
+  });
+
+  it('still shows what was saved when the day could not be sent: it is sent next time', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { repositories } = log(running([bench([set('s1', 'done')])]));
+    repositories.workoutDays.pushPending.mockRejectedValueOnce(new Error('offline'));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalledWith('w1'));
+    await waitFor(() =>
+      expect(error).toHaveBeenCalledWith(expect.stringContaining('Could not push the day')),
+    );
+    error.mockRestore();
+  });
+
+  it('sends nothing for a guest', async () => {
+    act(() => {
+      useAuthStore.setState({ ...initialAuth, status: 'guest', user: null }, true);
+    });
+    const { repositories } = log(running([bench([set('s1', 'done')])]));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalledWith('w1'));
+    expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing when nothing was completed and the workout is thrown away', async () => {
+    const { repositories } = log(running([bench([set('s1', 'pending')])]));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    answerAlert('Discard');
+
+    await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));
+    expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
+  });
 });

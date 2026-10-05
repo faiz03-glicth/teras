@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import {
+  Button,
   Card,
   EmptyState,
   ErrorState,
@@ -20,7 +21,7 @@ import { useSessionViewModel } from './useSessionViewModel';
 /**
  * A logged workout as it was recorded: name and level, when, its three numbers, then every exercise with
  * the sets that were completed, the set holding an exercise's record marked PR. An exercise's heading opens
- * that exercise. Read-only: history is never edited from here.
+ * that exercise. History is never edited from here; the one change is Delete workout, after a confirmation.
  */
 export function SessionScreen({ id }: { id: string | null }) {
   const vm = useSessionViewModel(id);
@@ -118,6 +119,16 @@ export function SessionScreen({ id }: { id: string | null }) {
               ))}
             </Card>
           ))}
+
+          <Button
+            label="Delete workout"
+            variant="danger"
+            size="sm"
+            onPress={vm.onDelete}
+            loading={vm.deleting}
+            loadingLabel="Deleting"
+            testID="delete-workout"
+          />
         </>
       )}
     </Screen>

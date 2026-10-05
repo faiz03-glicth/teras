@@ -5,6 +5,7 @@ import { Alert } from 'react-native';
 import { useRepositories } from '@/core/DiProvider';
 import { formatVolume, REST_SECONDS } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
 import { goBack, openAddExercise, openWorkoutSaved } from '@/shared/actions';
 import { haptics } from '@/shared/lib/haptics';
 import { showInfo } from '@/shared/ui/toast';
@@ -74,7 +75,7 @@ function useRest(workoutId: string | undefined) {
  * after a newer one and put an older value back on screen.
  */
 export function useActiveWorkoutViewModel() {
-  const { workouts } = useRepositories();
+  const { workouts, workoutDays } = useRepositories();
   const owner = useWorkoutOwner();
   const unit = useTrainingPreferencesStore((state) => state.unit);
   const { data: workout, isPending } = useActiveWorkout(owner);
@@ -180,6 +181,8 @@ export function useActiveWorkoutViewModel() {
       // Home lists this workout and lights its day: both were read before it existed.
       void queryClient.invalidateQueries({ queryKey: workoutKeys.history });
       void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
+      // The day it lit reaches the server (and Streak) now, not at the next time the app is opened.
+      pushDaysNow(workoutDays, owner);
       leaving.current = true;
       haptics.success();
       openWorkoutSaved(workout.id);
@@ -188,7 +191,7 @@ export function useActiveWorkoutViewModel() {
     } finally {
       setFinishing(false);
     }
-  }, [cacheWorkout, finishing, queryClient, report, stopRest, workout, workouts]);
+  }, [cacheWorkout, finishing, owner, queryClient, report, stopRest, workout, workoutDays, workouts]);
 
   const { done, unticked } = setCounts(workout);
 

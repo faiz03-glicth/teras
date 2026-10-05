@@ -117,6 +117,10 @@ export function useWorkoutsBetween(owner: WorkoutOwner, from: ISODate, to: ISODa
   });
 }
 
+/** Where one logged workout is cached, under the history key. */
+export const loggedWorkoutKey = (owner: WorkoutOwner, id: string | null) =>
+  [...workoutKeys.history, owner, 'workout', id] as const;
+
 /**
  * One workout as it was logged, for its detail screen. Kept under the history key, so finishing a
  * workout refreshes it along with every list it appears in.
@@ -124,7 +128,7 @@ export function useWorkoutsBetween(owner: WorkoutOwner, from: ISODate, to: ISODa
 export function useLoggedWorkout(owner: WorkoutOwner, id: string | null) {
   const { workouts } = useRepositories();
   return useQuery({
-    queryKey: [...workoutKeys.history, owner, 'workout', id],
+    queryKey: loggedWorkoutKey(owner, id),
     queryFn: () => (id ? workouts.logged(owner, id) : null),
     enabled: id !== null,
     networkMode: 'always',
