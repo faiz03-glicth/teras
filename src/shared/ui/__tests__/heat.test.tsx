@@ -29,6 +29,33 @@ describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
     expect(style.backgroundColor).toBe('transparent');
   });
 
+  it('HeatCell carves an empty day into the card, in place of its outline', () => {
+    const { theme, toJSON, rerender } = renderInScheme(<HeatCell level={0} size={14} outlined />, scheme);
+    let style = styleOf(toJSON());
+    expect(style.backgroundColor).toBe(theme.material.carved.background);
+    expect(style.boxShadow).toBe(theme.material.carved.shadow);
+    expect(style.borderWidth).toBe(0);
+
+    // Today with no workout yet is still a dent, ringed like any today.
+    rerender(<HeatCell level={0} size={14} state="today" />);
+    style = styleOf(toJSON());
+    expect(style.boxShadow).toBe(theme.material.carved.shadow);
+    expect(style.outlineWidth).toBe(1.5);
+
+    // A day still to come is not carved: it hasn't happened yet.
+    rerender(<HeatCell level={0} size={14} state="future" />);
+    style = styleOf(toJSON());
+    expect(style.boxShadow).toBeUndefined();
+    expect(style.backgroundColor).toBe('transparent');
+  });
+
+  it('HeatCell keeps a day you trained flat, in its own colour', () => {
+    const { theme, toJSON } = renderInScheme(<HeatCell level={2} size={14} outlined />, scheme);
+    const style = styleOf(toJSON());
+    expect(style.boxShadow).toBeUndefined();
+    expect(style.backgroundColor).toBe(theme.heat[2]);
+  });
+
   it('the animated variant (pulse) keeps the same look as a static cell', () => {
     const { theme, toJSON } = renderInScheme(<HeatCell level={4} size={20} pulse />, scheme);
     expect(styleOf(toJSON())).toMatchObject({ backgroundColor: theme.heat[4], width: 20, height: 20 });

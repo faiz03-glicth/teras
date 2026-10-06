@@ -18,7 +18,10 @@ export interface HeatCellProps {
    * resolved against Reduce Motion, so a grid of cells doesn't each subscribe to the setting).
    */
   appear?: HeatmapRevealStyle | null;
-  /** Hairline outline so a very pale swatch (level 0) still reads as a cell on a light card. */
+  /**
+   * Hairline outline so a very pale swatch still reads as a cell on a light card. An empty day that has
+   * happened (level 0) is carved into the card instead, and the dent takes the outline's place.
+   */
   outlined?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -42,9 +45,11 @@ export const HeatCell = memo(function HeatCell({
   onPress,
   accessibilityLabel,
 }: HeatCellProps) {
+  // A day that has happened with no workout is carved into the card; the dent replaces the outline.
+  const carved = level === 0 && state !== 'future' && state !== 'blank';
   const style = [
-    styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state),
-    outlined && styles.outline,
+    styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state, carved),
+    outlined && !carved && styles.outline,
   ];
   const cell = appear ? (
     <Animated.View style={[style, appear]} />
@@ -68,11 +73,18 @@ export const HeatCell = memo(function HeatCell({
 });
 
 const styles = StyleSheet.create((theme) => ({
-  cell: (level: HeatLevel, size: number, radius: number, state: HeatCellState) => ({
+  cell: (level: HeatLevel, size: number, radius: number, state: HeatCellState, carved: boolean) => ({
     width: size,
     height: size,
     borderRadius: radius,
-    backgroundColor: state === 'future' || state === 'blank' ? 'transparent' : theme.heat[level],
+    backgroundColor:
+      state === 'future' || state === 'blank'
+        ? 'transparent'
+        : carved
+          ? theme.material.carved.background
+          : theme.heat[level],
+    // The darker fill marks the dent on its own; the inner shadow (Android 10+) gives it depth.
+    boxShadow: carved ? theme.material.carved.shadow : undefined,
     borderWidth: state === 'future' ? 1 : 0,
     borderColor: theme.colors.border,
     // A day still to come is a faint outline: set apart from an outlined empty day that has happened.

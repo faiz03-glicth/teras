@@ -15,7 +15,8 @@ const WALNUT_LIFT = '-5px -5px 12px rgba(255,236,200,0.085), 6px 6px 14px rgba(0
  *
  * Three rules hold the material honest:
  * - **Small and soft.** Offsets stay within 6px and blurs within 16px: a pressed-out object, not a floating
- *   bubble. Heatmap cells and list rows stay flat — depth is spent on containers and controls.
+ *   bubble. List rows and the days you trained stay flat; depth is spent on containers and controls, and on
+ *   the one exception, an empty heatmap day, carved into its card as a small dent (`carved`).
  * - **Colour carries the state too.** An inset surface is also a darker fill, because inset shadows need
  *   Android 10+, and because no state may be readable only from its shadow.
  * - **The palette is the brand's.** Parchment and walnut come from the semantic colours; the gold is
@@ -40,6 +41,10 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
     pressed: {
       shadow: 'inset 2px 2px 5px rgba(122,86,30,0.24), inset -2px -2px 5px rgba(255,251,235,0.75)',
     },
+    carved: {
+      background: '#ECD9A0',
+      shadow: 'inset 1.5px 1.5px 2.5px rgba(122,86,30,0.32), inset -1.5px -1.5px 2.5px rgba(255,251,235,0.9)',
+    },
     bar: { background: '#FAEDC2', shadow: '0px -4px 12px rgba(122,86,30,0.16)' },
     accent: {
       background: BRAND_GOLD,
@@ -61,6 +66,10 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
     },
     pressed: {
       shadow: 'inset 3px 3px 6px rgba(0,0,0,0.50), inset -2px -2px 5px rgba(255,236,200,0.07)',
+    },
+    carved: {
+      background: '#221A13',
+      shadow: 'inset 1.5px 1.5px 2.5px rgba(0,0,0,0.55), inset -1.5px -1.5px 2px rgba(255,236,200,0.08)',
     },
     // Its top edge catches the light, and it casts upward onto the content scrolling beneath it.
     bar: {
