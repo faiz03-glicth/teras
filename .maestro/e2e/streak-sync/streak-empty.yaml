@@ -1,10 +1,18 @@
 # Read-only (Streak): once the Teras workout on ${DAY} is deleted, its check-in leaves Streak too.
 appId: ${STREAK_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Streak is starting is lost.
 - launchApp:
     appId: ${STREAK_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'home-screen' }
+    timeout: 30000
 - openLink: ${STREAK_SCHEME}://day/${DAY}
 - extendedWaitUntil:
-    visible: 'No check-ins on this day'
+    visible: { id: 'day-sheet' }
+    timeout: 20000
+- scrollUntilVisible:
+    element: 'No check-ins on this day'
+    direction: DOWN
     timeout: 45000

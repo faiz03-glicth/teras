@@ -13,7 +13,10 @@
 //
 // Defaults: SandBoxTeras (the EAS preview build) and the installed Streak. Needs both signed in to the same
 // account, Streak's Sync switched on, and `.env.e2e` (git-ignored) with SUPABASE_SERVICE_ROLE_KEY and
-// E2E_EMAIL. The key only goes to this project's Supabase URL and is never printed. Teras's own SQLite is
+// E2E_EMAIL. The key only goes to this project's Supabase URL and is never printed. It is used once: to
+// sign in as that account without an email (an admin one-time link), so every read after that goes
+// through the account's own row level security, the RPC Teras calls included. That session is signed
+// out at the end. Teras's own SQLite is
 // read only from a debug build (Teras Local); a release build's is private, and its screen says the same.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -61,6 +64,7 @@ function readEnv(file) {
 const env = { ...readEnv(join(ROOT, '.env')), ...readEnv(join(ROOT, '.env.e2e')) };
 const SUPABASE_URL = env.EXPO_PUBLIC_SUPABASE_URL;
 const KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+const ANON = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const EMAIL = env.E2E_EMAIL;
 
 // ── Output ──
@@ -80,14 +84,54 @@ const daysBack = (n) => {
   return isoDay(d);
 };
 
-// ── Live database (service role, read only) ──
-async function rest(path) {
-  const headers = { apikey: KEY };
-  // Legacy service_role keys are JWTs and go in Authorization too; new secret keys go in apikey only.
-  if (KEY.startsWith('eyJ')) headers.Authorization = `Bearer ${KEY}`;
-  const response = await fetch(`${SUPABASE_URL}${path}`, { headers });
+// ── Live database ──
+/** The signed-in account's token, once `signIn` has run. */
+let session = null;
+
+async function call(path, { method = 'GET', body, as = 'user' } = {}) {
+  const headers = { 'content-type': 'application/json' };
+  if (as === 'admin') {
+    headers.apikey = KEY;
+    // Legacy service_role keys are JWTs and go in Authorization too; new secret keys go in apikey only.
+    if (KEY.startsWith('eyJ')) headers.Authorization = `Bearer ${KEY}`;
+  } else {
+    headers.apikey = ANON;
+    if (as === 'user') headers.Authorization = `Bearer ${session.token}`;
+  }
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (!response.ok) throw new Error(`${path.split('?')[0]} answered HTTP ${response.status}`);
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+const rest = (path) => call(path);
+
+/** Signs in as the account without sending an email: an admin one-time link, redeemed straight away. */
+async function signIn(email) {
+  const link = await call('/auth/v1/admin/generate_link', {
+    method: 'POST',
+    body: { type: 'magiclink', email },
+    as: 'admin',
+  });
+  const tokenHash = link?.hashed_token ?? link?.properties?.hashed_token;
+  if (!tokenHash) throw new Error('the admin link came back without a token');
+  const verified = await call('/auth/v1/verify', {
+    method: 'POST',
+    body: { type: 'email', token_hash: tokenHash },
+    as: 'anon',
+  });
+  if (!verified?.access_token || !verified.user?.id) throw new Error('signing in with the admin link failed');
+  session = { token: verified.access_token, userId: verified.user.id };
+  return session.userId;
+}
+
+async function signOut() {
+  if (!session) return;
+  await call('/auth/v1/logout?scope=local', { method: 'POST' }).catch(() => undefined);
+  session = null;
 }
 
 /** The id the server gives the check-in it makes from a Teras day (0005: md5 of account and date). */
@@ -96,27 +140,30 @@ function terasCheckInId(userId, day) {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-async function findUserId(email) {
-  const { users } = await rest('/auth/v1/admin/users?page=1&per_page=1000');
-  const user = users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-  return user?.id ?? null;
-}
+/** A minute before the run started: the RPC is asked only for dates changed since then. */
+const STARTED = new Date(Date.now() - 60_000).toISOString();
 
+/**
+ * The day as the account sees it: its live Workout check-ins (Streak's, and the one the server made from
+ * Teras), Teras's sets, any reminder, and what `streak_workout_dates` (what Teras pulls) says about it.
+ */
 async function serverDay(userId, day) {
-  const [checkIns, days, reminders] = await Promise.all([
+  const [checkIns, days, reminders, changed] = await Promise.all([
     rest(
       `/rest/v1/check_ins?select=id,source,deleted_at&user_id=eq.${userId}&date=eq.${day}&activity_id=eq.workout`,
     ),
     rest(`/rest/v1/workout_days?select=sets&user_id=eq.${userId}&date=eq.${day}`),
     rest(`/rest/v1/workout_reminders?select=date&user_id=eq.${userId}&date=eq.${day}`),
+    call('/rest/v1/rpc/streak_workout_dates', { method: 'POST', body: { since: STARTED } }),
   ]);
-  const terasId = terasCheckInId(userId, day);
-  const teras = checkIns.find((c) => c.id === terasId);
+  const live = checkIns.filter((c) => c.deleted_at === null);
+  const pulled = changed.find((row) => row.date === day);
   return {
-    streak: checkIns.filter((c) => c.source === null).map((c) => ({ deleted: c.deleted_at !== null })),
-    teras: teras ? { source: teras.source, deleted: teras.deleted_at !== null } : null,
+    streakLive: live.filter((c) => c.source === null).length,
+    terasLive: live.some((c) => c.id === terasCheckInId(userId, day) && c.source === 'teras'),
     sets: days[0]?.sets ?? 0,
     reminders: reminders.length,
+    rpc: pulled ? pulled.checked_in : 'unchanged',
   };
 }
 
@@ -188,8 +235,13 @@ async function waitFor(read, expected) {
   const deadline = Date.now() + WAIT_MS;
   let seen;
   for (;;) {
-    seen = await read();
-    if (expected(seen)) return { ok: true, seen };
+    try {
+      seen = await read();
+    } catch (error) {
+      // A dropped connection is retried until the deadline; it says nothing about the sync.
+      seen = { error: error instanceof Error ? error.message : String(error) };
+    }
+    if (!seen?.error && expected(seen)) return { ok: true, seen };
     if (Date.now() > deadline) return { ok: false, seen };
     await new Promise((done) => setTimeout(done, POLL_MS));
   }
@@ -200,8 +252,8 @@ const STEPS = [
     name: 'Streak: check in a Workout',
     flow: 'streak-check-in.yaml',
     server: [
-      'one Streak check-in, live; no reminder for an old day',
-      (s) => s.streak.length === 1 && !s.streak[0].deleted && s.reminders === 0,
+      'one live Streak check-in, the RPC saying it is checked in, and no reminder for an old day',
+      (s) => s.streakLive === 1 && s.rpc === true && s.reminders === 0,
     ],
   },
   {
@@ -212,22 +264,22 @@ const STEPS = [
   {
     name: 'Teras: "Log this workout" starts a workout on that day (not finished)',
     flow: 'teras-start.yaml',
-    server: ['nothing sent while the workout runs', (s) => s.sets === 0],
+    server: ['nothing sent while the workout runs', (s) => s.sets === 0 && !s.terasLive],
   },
   {
     name: 'Streak: deletes its check-in',
     flow: 'streak-delete.yaml',
     server: [
-      'the Streak check-in soft-deleted',
-      (s) => s.streak.length > 0 && s.streak.every((c) => c.deleted),
+      'no live Streak check-in, and the RPC saying it is no longer checked in',
+      (s) => s.streakLive === 0 && s.rpc === false,
     ],
   },
   {
     name: 'Teras: finishes; the server makes a Teras check-in',
     flow: 'teras-finish.yaml',
     server: [
-      'workout_days has sets; a live check-in from Teras',
-      (s) => s.sets > 0 && s.teras?.source === 'teras' && !s.teras.deleted,
+      'workout_days with sets, a live check-in from Teras, and the RPC not echoing it back to Teras',
+      (s) => s.sets > 0 && s.terasLive && s.streakLive === 0 && s.rpc === false,
     ],
     device: ['the deleted day gone from streak_days', (d) => !d.hasDay],
   },
@@ -235,10 +287,7 @@ const STEPS = [
   {
     name: 'Teras: deletes the workout; the server withdraws its check-in',
     flow: 'teras-delete.yaml',
-    server: [
-      'workout_days back to 0 sets; the Teras check-in soft-deleted',
-      (s) => s.sets === 0 && s.teras?.deleted === true,
-    ],
+    server: ['workout_days back to 0 sets and no live Teras check-in', (s) => s.sets === 0 && !s.terasLive],
   },
   { name: 'Streak: the day is empty again', flow: 'streak-empty.yaml' },
 ];
@@ -267,6 +316,7 @@ async function runStep(step, userId, day) {
 async function preflight() {
   if (!SUPABASE_URL) stop('EXPO_PUBLIC_SUPABASE_URL is missing from .env');
   if (!KEY || !EMAIL) stop('.env.e2e needs SUPABASE_SERVICE_ROLE_KEY=… and E2E_EMAIL=… (it is git-ignored)');
+  if (!ANON) stop('EXPO_PUBLIC_SUPABASE_ANON_KEY is missing from .env');
   const devices = spawnSync(ADB, ['devices'], { encoding: 'utf8' }).stdout ?? '';
   if (!/\tdevice\b/.test(devices)) stop('no phone connected over adb');
   const packages = spawnSync(ADB, ['shell', 'pm', 'list', 'packages'], { encoding: 'utf8' }).stdout ?? '';
@@ -279,9 +329,7 @@ async function preflight() {
     if (!metro.includes('packager-status:running')) stop('Metro is not running on 8081 (npm start)');
     spawnSync(ADB, ['reverse', 'tcp:8081', 'tcp:8081']);
   }
-  const userId = await findUserId(EMAIL);
-  if (!userId) stop('no account with the email in E2E_EMAIL');
-  return userId;
+  return signIn(EMAIL);
 }
 
 async function cleanup(userId, day) {
@@ -292,7 +340,7 @@ async function cleanup(userId, day) {
   }
   const settled = await waitFor(
     () => serverDay(userId, day),
-    (s) => s.sets === 0 && s.streak.every((c) => c.deleted) && (!s.teras || s.teras.deleted),
+    (s) => s.sets === 0 && s.streakLive === 0 && !s.terasLive,
   );
   log(settled.ok ? 'OK' : 'WARN', `database for ${day}: ${JSON.stringify(settled.seen)}`);
 }
@@ -304,7 +352,7 @@ async function main() {
   if (cleanupOnly) return cleanup(userId, day);
 
   const before = await serverDay(userId, day);
-  if (before.sets > 0 || before.streak.some((c) => !c.deleted) || (before.teras && !before.teras.deleted)) {
+  if (before.sets > 0 || before.streakLive > 0 || before.terasLive) {
     stop(`${day} already has a workout or a check-in; pick an empty day`, before);
   }
   log('', `testing on ${day} with ${terasApp} and ${streakApp}; everything it adds is removed again`);
@@ -317,7 +365,9 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  if (!(error instanceof Stop)) log('FAIL', error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+main()
+  .catch((error) => {
+    if (!(error instanceof Stop)) log('FAIL', error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  })
+  .finally(signOut);

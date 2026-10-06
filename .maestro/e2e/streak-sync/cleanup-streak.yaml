@@ -1,13 +1,21 @@
 # WRITES DATA (Streak), best effort after a failed run: deletes every Workout check-in on ${DAY}.
 appId: ${STREAK_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Streak is starting is lost.
 - launchApp:
     appId: ${STREAK_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'home-screen' }
+    timeout: 30000
 - openLink: ${STREAK_SCHEME}://day/${DAY}
 - extendedWaitUntil:
     visible: { id: 'day-sheet' }
     timeout: 20000
+- scrollUntilVisible:
+    element: 'Options for Workout at .*'
+    direction: DOWN
+    timeout: 10000
     optional: true
 - repeat:
     times: 3

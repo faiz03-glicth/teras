@@ -1,16 +1,25 @@
 # WRITES DATA (Streak): deletes the Workout check-in on ${DAY}. Left open so the deletion uploads.
 appId: ${STREAK_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Streak is starting is lost.
 - launchApp:
     appId: ${STREAK_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'home-screen' }
+    timeout: 30000
 - openLink: ${STREAK_SCHEME}://day/${DAY}
 - extendedWaitUntil:
-    visible: 'Options for Workout at .*'
+    visible: { id: 'day-sheet' }
+    timeout: 20000
+- scrollUntilVisible:
+    element: 'Options for Workout at .*'
+    direction: DOWN
     timeout: 20000
 - tapOn: 'Options for Workout at .*'
 # The confirmation's button; its title ("Delete this check-in?") is not a full match.
 - tapOn: '(?i)delete'
-- extendedWaitUntil:
-    visible: 'No check-ins on this day'
-    timeout: 10000
+- scrollUntilVisible:
+    element: 'No check-ins on this day'
+    direction: DOWN
+    timeout: 15000

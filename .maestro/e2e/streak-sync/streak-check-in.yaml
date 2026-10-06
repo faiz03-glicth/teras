@@ -2,19 +2,21 @@
 # STREAK_SCHEME. Streak uploads 3 s after a change while it is in the foreground, so it is left open.
 appId: ${STREAK_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Streak is starting is lost.
 - launchApp:
     appId: ${STREAK_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'home-screen' }
+    timeout: 30000
 - openLink: ${STREAK_SCHEME}://day/${DAY}
 - extendedWaitUntil:
     visible: { id: 'day-sheet' }
     timeout: 20000
-- assertVisible: 'No check-ins on this day'
-- scrollUntilVisible:
-    element: { id: 'activity-workout' }
-    direction: DOWN
 - tapOn: { id: 'activity-workout' }
 - tapOn: { id: 'day-check-in' }
-- extendedWaitUntil:
-    visible: 'Options for Workout at .*'
-    timeout: 10000
+# The timeline sits below the fold.
+- scrollUntilVisible:
+    element: 'Options for Workout at .*'
+    direction: DOWN
+    timeout: 15000

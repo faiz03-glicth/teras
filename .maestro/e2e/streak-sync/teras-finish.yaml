@@ -1,9 +1,13 @@
 # WRITES DATA (Teras): finishes the workout running on ${DAY}. Finishing sends the day to the server.
 appId: ${TERAS_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Teras is starting is lost.
 - launchApp:
     appId: ${TERAS_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'tab-home' }
+    timeout: 60000
 - openLink: ${TERAS_SCHEME}://day/${DAY}
 - extendedWaitUntil:
     visible: { id: 'day-in-progress' }
@@ -14,7 +18,10 @@ appId: ${TERAS_APP}
     visible: { id: 'active-workout-screen' }
     timeout: 15000
 - tapOn: { id: 'finish-workout' }
-- tapOn: '(?i)finish'
+# Asked only when some sets are not ticked; with every set done it saves straight away.
+- tapOn:
+    text: '(?i)finish'
+    optional: true
 - extendedWaitUntil:
     visible: { id: 'workout-saved-screen' }
     timeout: 15000

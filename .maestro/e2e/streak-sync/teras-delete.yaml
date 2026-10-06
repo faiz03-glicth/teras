@@ -1,9 +1,13 @@
 # WRITES DATA (Teras): deletes the workout logged on ${DAY}. Deleting sends the rewritten day.
 appId: ${TERAS_APP}
 ---
+# A cold start, then the link once Home is up: a link that arrives while Teras is starting is lost.
 - launchApp:
     appId: ${TERAS_APP}
-    stopApp: false
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'tab-home' }
+    timeout: 60000
 - openLink: ${TERAS_SCHEME}://day/${DAY}
 - extendedWaitUntil:
     visible: { id: 'day-level' }
