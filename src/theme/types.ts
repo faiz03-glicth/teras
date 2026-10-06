@@ -104,6 +104,8 @@ export interface SoftMaterial {
   inset: { background: string; shadow: string };
   /** A raised control while held: its lift replaced by a shallow press. */
   pressed: { shadow: string };
+  /** An empty heatmap day: a small dent carved into the card, a darker fill AND a fine inner shadow. */
+  carved: { background: string; shadow: string };
   /** The tab bar: the material's top layer over scrolling content, casting a soft shadow upward. */
   bar: { background: string; shadow: string };
   /** The gold primary action. `edge` is its outline where gold alone would not separate from the ground. */

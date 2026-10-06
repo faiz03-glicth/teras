@@ -65,9 +65,14 @@ describe.each(['light', 'dark'] as const)('the %s soft material', (scheme) => {
     for (const part of parts) expect(part.blur).toBeGreaterThan(0);
   });
 
+  it('carves an empty heatmap day darker than the card it sits in, by colour alone too', () => {
+    expect(luminance(material.carved.background)).toBeLessThan(luminance(material.raised.background));
+  });
+
   it.each([
     ['inset', material.inset.shadow],
     ['pressed', material.pressed.shadow],
+    ['carved', material.carved.shadow],
   ])('presses a %s surface into the ground with inner shadows only', (_name, shadow) => {
     const parts = shadowsOf(shadow);
     expect(parts.length).toBeGreaterThan(0);
@@ -80,6 +85,7 @@ describe.each(['light', 'dark'] as const)('the %s soft material', (scheme) => {
       material.raisedSm.shadow,
       material.inset.shadow,
       material.pressed.shadow,
+      material.carved.shadow,
       material.accent.shadow,
     ].flatMap(shadowsOf);
     for (const shadow of all) {
