@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useRepositories } from '@/core/DiProvider';
+import { useStreakDays } from '@/features/streakDays/hooks/useStreakDays';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { dayStanding } from '@/features/workoutDays/domain/heatLevel';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
@@ -7,6 +9,7 @@ import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countSets } from '@/features/workouts/domain/labels';
 import {
   useActiveWorkoutSummary,
+  useSetActiveWorkout,
   useWorkoutOwner,
   useWorkoutsBetween,
 } from '@/features/workouts/hooks/useWorkoutQueries';
@@ -15,6 +18,8 @@ import { addDays } from '@/shared/lib/date/calendar';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, shortDay } from '@/shared/lib/format/dates';
+import { haptics } from '@/shared/lib/haptics';
+import { showInfo } from '@/shared/ui/toast';
 
 import { standingLine } from '../domain/standing';
 import { useDayWindow, useTrainingDays } from '../hooks/useTrainingDays';
@@ -31,13 +36,19 @@ export interface DayWorkoutRow {
 /**
  * One day of the wave, as a sheet over it: the level the day was recorded at, what it was judged
  * against, and the workouts that made it. A bad or future link opens today. While the sheet is up its day
- * stays ringed on the wave underneath, so it is plain which cell was opened.
+ * stays ringed on the wave underneath, so it is plain which cell was opened. A day checked in on Streak
+ * but not logged here says so, and offers to log it: a workout started on that day.
  */
 export function useDaySheetViewModel(date: ISODate | null) {
   const today = useToday();
   const day = date && date <= today ? date : today;
   const owner = useWorkoutOwner();
+  const { workouts: workoutRepository } = useRepositories();
   const unit = useTrainingPreferencesStore((state) => state.unit);
+  const bodyweightKg = useTrainingPreferencesStore((state) => state.bodyweightKg);
+  const restSeconds = useTrainingPreferencesStore((state) => state.restSeconds);
+  const cacheWorkout = useSetActiveWorkout(owner);
+  const [starting, setStarting] = useState(false);
   const select = useSelectedDayStore((state) => state.select);
   const release = useSelectedDayStore((state) => state.release);
 
@@ -50,6 +61,7 @@ export function useDaySheetViewModel(date: ISODate | null) {
   const window = useDayWindow(owner, day);
   const workouts = useWorkoutsBetween(owner, day, day);
   const active = useActiveWorkoutSummary(owner);
+  const streakDays = useStreakDays(owner, day, day);
 
   const row = record.data?.[0] ?? null;
   const level = row?.level ?? 0;
@@ -66,8 +78,18 @@ export function useDaySheetViewModel(date: ISODate | null) {
     [workouts.data],
   );
 
+  // Streak only speaks for a day Teras has nothing for: once a workout is logged here, that is the day.
+  const loggedHere = (row?.sets ?? 0) > 0 || rows.length > 0 || running !== null;
+  const onStreak = !loggedHere && (streakDays.data ?? []).includes(day);
+  const elsewhere = active.data ?? null;
+
+  // A failed read of the Streak copy only leaves the Streak line out; it never fails the day.
   const failed = record.isError || window.isError || workouts.isError;
-  const pending = record.isPending || window.isPending || workouts.isPending;
+  const pending =
+    record.isPending ||
+    window.isPending ||
+    workouts.isPending ||
+    (streakDays.isPending && !streakDays.isError);
   const { refetch: refetchRecord } = record;
   const { refetch: refetchWindow } = window;
   const { refetch: refetchWorkouts } = workouts;
@@ -80,6 +102,28 @@ export function useDaySheetViewModel(date: ISODate | null) {
   // A workout opened from here takes the sheet's place: Back returns to the wave, as in the prototype.
   const onOpenWorkout = useCallback((id: string) => openSession(id, { replace: true }), []);
   const onResume = useCallback(() => openActiveWorkout({ replace: true }), []);
+
+  const logStreakDay = useCallback(async () => {
+    // One workout at a time: the one already running is finished first.
+    if (elsewhere) {
+      openActiveWorkout({ replace: true });
+      return;
+    }
+    if (starting) return;
+    setStarting(true);
+    try {
+      const workout = await workoutRepository.start(owner, { date: day, bodyweightKg, restSeconds });
+      cacheWorkout(workout);
+      haptics.success();
+      openActiveWorkout({ replace: true });
+    } catch (cause) {
+      console.error(`[workouts] Could not start (${cause instanceof Error ? cause.name : 'unknown'})`); // TODO(Sentry)
+      showInfo({ title: "Couldn't start", sub: 'Try again.' });
+    } finally {
+      setStarting(false);
+    }
+  }, [bodyweightKg, cacheWorkout, day, elsewhere, owner, restSeconds, starting, workoutRepository]);
+  const onLogStreakDay = useCallback(() => void logStreakDay(), [logStreakDay]);
 
   const levelName = LEVEL_NAMES[level];
   const line = standingLine(standing, unit, { today: day === today, running: running !== null });
@@ -98,8 +142,17 @@ export function useDaySheetViewModel(date: ISODate | null) {
     inProgress: running
       ? { title: running.name, meta: `In progress · started ${clockTime(running.startedAt)}` }
       : null,
+    streak: onStreak
+      ? {
+          title: 'Checked in on Streak',
+          body: 'No workout details yet',
+          action: elsewhere ? 'Finish the workout in progress first' : 'Log this workout',
+          starting,
+        }
+      : null,
 
     onOpenWorkout,
+    onLogStreakDay,
     onResume,
     onRetry,
     onClose: () => goBack(),

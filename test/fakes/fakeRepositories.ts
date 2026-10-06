@@ -6,6 +6,7 @@ import type { Profile } from '@/features/profile/domain/Profile';
 import type { ExerciseRepository } from '@/features/exercises/data/ExerciseRepository';
 import type { RoutineRepository } from '@/features/routines/data/RoutineRepository';
 import type { BodyweightRepository } from '@/features/training/data/BodyweightRepository';
+import type { StreakDayRepository } from '@/features/streakDays/data/StreakDayRepository';
 import type { WorkoutDayRepository } from '@/features/workoutDays/data/WorkoutDayRepository';
 import type { Workout, WorkoutRepository } from '@/features/workouts/data/WorkoutRepository';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
@@ -81,6 +82,17 @@ export function createFakeWorkoutDayRepository(): FakeWorkoutDayRepository {
     list: mockFn<Days['list']>(async () => []),
     windowBefore: mockFn<Days['windowBefore']>(async () => []),
     pushPending: mockFn<Days['pushPending']>(async () => 0),
+  };
+}
+
+type Streak = StreakDayRepository;
+export type FakeStreakDayRepository = { [K in keyof Streak]: jest.Mock };
+
+/** Streak has nothing new and no days checked in. */
+export function createFakeStreakDayRepository(): FakeStreakDayRepository {
+  return {
+    pull: mockFn<Streak['pull']>(async () => 0),
+    list: mockFn<Streak['list']>(async () => []),
   };
 }
 
@@ -174,6 +186,7 @@ export function createFakeRepositories(): Repositories & {
   auth: FakeAuthRepository;
   profile: FakeProfileRepository;
   workoutDays: FakeWorkoutDayRepository;
+  streakDays: FakeStreakDayRepository;
   exercises: FakeExerciseRepository;
   workouts: FakeWorkoutRepository;
   routines: FakeRoutineRepository;
@@ -183,6 +196,7 @@ export function createFakeRepositories(): Repositories & {
     auth: createFakeAuthRepository(),
     profile: createFakeProfileRepository(),
     workoutDays: createFakeWorkoutDayRepository(),
+    streakDays: createFakeStreakDayRepository(),
     exercises: createFakeExerciseRepository(),
     workouts: createFakeWorkoutRepository(),
     routines: createFakeRoutineRepository(),

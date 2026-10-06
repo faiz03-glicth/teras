@@ -171,6 +171,50 @@ describe('today, with a workout running', () => {
   });
 });
 
+describe('a day checked in on Streak but not logged here', () => {
+  const STREAK_DAY = '2026-09-29' as ISODate;
+  const onStreak = (repositories: Repositories) =>
+    void repositories.streakDays.list.mockResolvedValue([STREAK_DAY]);
+
+  it('says it was checked in on Streak with no details yet, rather than calling it a rest day', async () => {
+    const { repositories } = open(STREAK_DAY, { days: [], workouts: [], prepare: onStreak });
+
+    expect(await screen.findByText('Checked in on Streak')).toBeTruthy();
+    expect(screen.getByText('No workout details yet')).toBeTruthy();
+    expect(screen.queryByText('Rest day')).toBeNull();
+    expect(repositories.streakDays.list).toHaveBeenCalledWith('user-1', STREAK_DAY, STREAK_DAY);
+  });
+
+  it('logs the workout on that day, in place of the sheet', async () => {
+    const { repositories } = open(STREAK_DAY, { days: [], workouts: [], prepare: onStreak });
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Log this workout' }));
+
+    await act(async () => undefined);
+    expect(repositories.workouts.start).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ date: STREAK_DAY }),
+    );
+    expect(actions.openActiveWorkout).toHaveBeenCalledWith({ replace: true });
+  });
+
+  it('goes to the workout in progress instead of starting a second one', async () => {
+    const { repositories } = open(STREAK_DAY, { days: [], workouts: [], active: running, prepare: onStreak });
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish the workout in progress first' }));
+
+    expect(repositories.workouts.start).not.toHaveBeenCalled();
+    expect(actions.openActiveWorkout).toHaveBeenCalledWith({ replace: true });
+  });
+
+  it('says nothing about Streak once the day is logged here', async () => {
+    open(DAY, { prepare: (fakes) => void fakes.streakDays.list.mockResolvedValue([DAY]) });
+
+    expect(await screen.findByText('Strong')).toBeTruthy();
+    expect(screen.queryByText('Checked in on Streak')).toBeNull();
+  });
+});
+
 describe('the sheet itself', () => {
   it('opens today for a link that is not a day', async () => {
     const { repositories } = open(null, { days: [], workouts: [] });

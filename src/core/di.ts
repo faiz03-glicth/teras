@@ -21,6 +21,12 @@ import { createBodyweightDao } from '@/features/training/data/local/bodyweightDa
 import { LocalFirstProfileRepository } from '@/features/profile/data/LocalFirstProfileRepository';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
 import { createProfileApi } from '@/features/profile/data/remote/profileApi';
+import { createStreakDayDao } from '@/features/streakDays/data/local/streakDayDao';
+import { createStreakApi } from '@/features/streakDays/data/remote/streakApi';
+import {
+  LocalStreakDayRepository,
+  type StreakDayRepository,
+} from '@/features/streakDays/data/StreakDayRepository';
 import { createWorkoutDayDao } from '@/features/workoutDays/data/local/workoutDayDao';
 import { createWorkoutDayApi } from '@/features/workoutDays/data/remote/workoutDayApi';
 import {
@@ -44,6 +50,7 @@ export interface Repositories {
   auth: AuthRepository;
   profile: ProfileRepository;
   workoutDays: WorkoutDayRepository;
+  streakDays: StreakDayRepository;
   exercises: ExerciseRepository;
   workouts: WorkoutRepository;
   routines: RoutineRepository;
@@ -86,6 +93,12 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
+  const streakDays = new LocalStreakDayRepository({
+    dao: createStreakDayDao(db),
+    api: createStreakApi(supabase),
+    now: nowIso,
+  });
+
   const exercises = new LocalExerciseRepository({
     dao: createExerciseDao(db),
     uuid: expoCryptoService.uuid,
@@ -111,5 +124,5 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
-  return { auth, profile, workoutDays, exercises, workouts, routines, bodyweight };
+  return { auth, profile, workoutDays, streakDays, exercises, workouts, routines, bodyweight };
 }
