@@ -49,6 +49,25 @@ describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
     expect(style.backgroundColor).toBe('transparent');
   });
 
+  it('HeatCell marks a day checked in on Streak with a small bead in the dent', () => {
+    const { theme, toJSON } = renderInScheme(<HeatCell level={0} size={20} marked />, scheme);
+    const node = toJSON();
+    const [dot] = childrenOf(node);
+    expect(dot && typeof dot !== 'string' ? styleOf(dot).backgroundColor : undefined).toBe(
+      theme.colors.accentText,
+    );
+  });
+
+  it('never marks a cell that is not carved, whatever `marked` says', () => {
+    // A trained day: Streak and a logged workout never claim the same cell.
+    const { toJSON: trained } = renderInScheme(<HeatCell level={2} size={20} marked />, scheme);
+    expect(childrenOf(trained())).toHaveLength(0);
+
+    // A day still to come: nothing has happened there yet to be checked in on.
+    const { toJSON: future } = renderInScheme(<HeatCell level={0} size={20} state="future" marked />, scheme);
+    expect(childrenOf(future())).toHaveLength(0);
+  });
+
   it('HeatCell keeps a day you trained flat, in its own colour', () => {
     const { theme, toJSON } = renderInScheme(<HeatCell level={2} size={14} outlined />, scheme);
     const style = styleOf(toJSON());

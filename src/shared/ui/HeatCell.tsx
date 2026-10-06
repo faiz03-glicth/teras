@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
@@ -23,14 +23,19 @@ export interface HeatCellProps {
    * happened (level 0) is carved into the card instead, and the dent takes the outline's place.
    */
   outlined?: boolean;
+  /**
+   * Checked in on Streak, nothing logged here: a small gold mark sits in the dent. Only ever drawn on a
+   * carved cell (level 0, happened, not blank) — a trained fill never carries it.
+   */
+  marked?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
 }
 
 /** Only cells that pulse subscribe to the motion system. */
-function PulsingCell({ style }: { style: StyleProp<ViewStyle> }) {
+function PulsingCell({ style, children }: { style: StyleProp<ViewStyle>; children?: ReactNode }) {
   const { pulse } = useMotion();
-  return <Animated.View style={[style, pulse(true)]} />;
+  return <Animated.View style={[style, pulse(true)]}>{children}</Animated.View>;
 }
 
 /** One day on the heatmap. Knows how a level looks, not which counts produce it. */
@@ -42,6 +47,7 @@ export const HeatCell = memo(function HeatCell({
   pulse = false,
   appear,
   outlined = false,
+  marked = false,
   onPress,
   accessibilityLabel,
 }: HeatCellProps) {
@@ -51,12 +57,14 @@ export const HeatCell = memo(function HeatCell({
     styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state, carved),
     outlined && !carved && styles.outline,
   ];
+  // Decorative: the cell's own accessibilityLabel already says "Checked in on Streak" for a marked day.
+  const dot = carved && marked ? <View style={styles.dot(size)} /> : null;
   const cell = appear ? (
-    <Animated.View style={[style, appear]} />
+    <Animated.View style={[style, appear]}>{dot}</Animated.View>
   ) : pulse ? (
-    <PulsingCell style={style} />
+    <PulsingCell style={style}>{dot}</PulsingCell>
   ) : (
-    <View style={style} />
+    <View style={style}>{dot}</View>
   );
 
   if (!onPress) return cell;
@@ -94,4 +102,18 @@ const styles = StyleSheet.create((theme) => ({
     outlineColor: state === 'selected' ? theme.colors.accentText : theme.colors.text,
   }),
   outline: { borderWidth: 1, borderColor: theme.colors.border },
+  // A small bead resting in the dent: it reads at any cell size and never collides with a trained fill
+  // (marked is only ever true on a carved, level-0 cell).
+  dot: (size: number) => {
+    const diameter = Math.max(3, Math.round(size * 0.36));
+    return {
+      position: 'absolute' as const,
+      width: diameter,
+      height: diameter,
+      borderRadius: diameter / 2,
+      backgroundColor: theme.colors.accentText,
+      top: (size - diameter) / 2,
+      left: (size - diameter) / 2,
+    };
+  },
 }));

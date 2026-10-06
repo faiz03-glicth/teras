@@ -5,6 +5,7 @@ import { useTrainingPreferencesStore } from '@/features/training/state/trainingP
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
 import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countWorkouts } from '@/features/workouts/domain/labels';
+import { useStreakDays } from '@/features/streakDays/hooks/useStreakDays';
 import { useWorkoutOwner, useWorkoutsBetween } from '@/features/workouts/hooks/useWorkoutQueries';
 import { goBack, openDay, openSession } from '@/shared/actions';
 import { minDay, monthLong, monthOf, weekdayLetters } from '@/shared/lib/date/calendar';
@@ -54,8 +55,10 @@ export function useCalendarViewModel() {
 
   const days = useTrainingDays(owner, BEGINNING, today);
   const workouts = useWorkoutsBetween(owner, BEGINNING, today);
+  const streakDays = useStreakDays(owner, BEGINNING, today);
 
   const levels = useMemo(() => new Map((days.data ?? []).map((day) => [day.date, day.level])), [days.data]);
+  const streakSet = useMemo(() => new Set(streakDays.data ?? []), [streakDays.data]);
   // Days come oldest first and workouts newest first: the earliest of either is where the wave begins.
   const firstDay = days.data?.[0]?.date ?? null;
   const firstWorkout = workouts.data?.at(-1)?.date ?? null;
@@ -69,12 +72,13 @@ export function useCalendarViewModel() {
           label: monthLabel(month, today),
           grid: buildMonthGrid(month, {
             levelOn: (day) => levels.get(day) ?? 0,
+            streakOn: (day) => streakSet.has(day),
             today,
             weekStart: WEEK_START,
           }),
         })),
       ),
-    [earliest, levels, today],
+    [earliest, levels, streakSet, today],
   );
 
   const months = useMemo<CalendarMonth[]>(() => {

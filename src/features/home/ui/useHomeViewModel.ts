@@ -10,6 +10,7 @@ import {
 } from '@/features/heatmap/domain/trainingWave';
 import { useTrainingDays } from '@/features/heatmap/hooks/useTrainingDays';
 import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
+import { useStreakDays } from '@/features/streakDays/hooks/useStreakDays';
 import { formatVolume, type WeightUnit } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
@@ -105,18 +106,25 @@ export function useHomeViewModel() {
   // Exactly the days the wave draws, so Home never reads a year to colour three months.
   const from = firstOfMonth(months[0] ?? monthOf(today));
   const days = useTrainingDays(owner, from, today);
+  const streakDays = useStreakDays(owner, from, today);
   const feed = useRecentWorkouts(owner, FEED_LIMIT);
   const active = useActiveWorkoutSummary(owner);
 
   const levels = useMemo(() => new Map((days.data ?? []).map((day) => [day.date, day.level])), [days.data]);
+  const streakSet = useMemo(() => new Set(streakDays.data ?? []), [streakDays.data]);
   const wave = useMemo<HeatmapMonth[]>(
     () =>
       months.map((month) => ({
         key: `${month.year}-${month.month}`,
         label: monthLabel(month, today),
-        grid: buildMonthGrid(month, { levelOn: (day) => levels.get(day) ?? 0, today, weekStart: WEEK_START }),
+        grid: buildMonthGrid(month, {
+          levelOn: (day) => levels.get(day) ?? 0,
+          streakOn: (day) => streakSet.has(day),
+          today,
+          weekStart: WEEK_START,
+        }),
       })),
-    [levels, months, today],
+    [levels, months, streakSet, today],
   );
   // Stable, so the memoised wave only redraws when what it shows changes.
   const waveRows = useMemo(() => [wave], [wave]);

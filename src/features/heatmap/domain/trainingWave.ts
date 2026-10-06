@@ -22,6 +22,8 @@ import type { HeatGrid, HeatGridCell, HeatLevel } from './grid';
  */
 export interface WaveOptions {
   levelOn: (day: ISODate) => HeatLevel;
+  /** Checked in on Streak (optional: callers with nothing to say about Streak just leave it out). */
+  streakOn?: (day: ISODate) => boolean;
   today: ISODate;
   weekStart: WeekStart;
 }
@@ -39,13 +41,17 @@ export function dayCell(day: ISODate, options: WaveOptions): HeatGridCell {
   if (day > options.today) return { key: day, level: 0, state: 'future' };
   const level = options.levelOn(day);
   const isToday = day === options.today;
+  // A day Streak has but Teras doesn't: marked only when there is truly nothing logged here, so the
+  // mark and a trained fill never both claim the same cell.
+  const marked = level === 0 && (options.streakOn?.(day) ?? false);
   // The level is named, not just coloured: colour alone is not an accessible way to say "Peak". The
   // ring of the day whose sheet is open is the view's business, so opening one rebuilds no grid.
   return {
     key: day,
     level,
     state: isToday ? 'today' : 'default',
-    label: `${shortDate(day, options.today)}${isToday ? ', today' : ''}: ${LEVEL_NAMES[level]}`,
+    marked,
+    label: `${shortDate(day, options.today)}${isToday ? ', today' : ''}: ${marked ? 'Checked in on Streak' : LEVEL_NAMES[level]}`,
   };
 }
 

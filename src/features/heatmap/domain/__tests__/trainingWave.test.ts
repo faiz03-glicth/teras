@@ -68,6 +68,26 @@ describe('dayCell', () => {
 
     expect(asked).toEqual([]);
   });
+
+  it('marks a day checked in on Streak with nothing logged here, by look and by what is read aloud', () => {
+    const cell = dayCell('2026-09-29' as ISODate, options({ streakOn: () => true }));
+
+    expect(cell).toMatchObject({ level: 0, marked: true });
+    expect(cell.label).toBe('Sep 29: Checked in on Streak');
+  });
+
+  it('never marks a trained day: a logged workout is always the day’s own story', () => {
+    const cell = dayCell('2026-09-29' as ISODate, options({ levelOn: () => 2, streakOn: () => true }));
+
+    expect(cell).toMatchObject({ level: 2, marked: false });
+    expect(cell.label).toBe('Sep 29: Moderate');
+  });
+
+  it('leaves a day unmarked with no streakOn to ask, so every existing caller is unaffected', () => {
+    const cell = dayCell('2026-09-29' as ISODate, options());
+
+    expect(cell.marked).toBe(false);
+  });
 });
 
 describe('monthLabel', () => {

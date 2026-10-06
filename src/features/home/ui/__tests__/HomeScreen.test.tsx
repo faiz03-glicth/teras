@@ -146,6 +146,21 @@ describe('the training wave', () => {
     expect(actions.openDay).toHaveBeenCalledWith('2026-09-30');
   });
 
+  it('marks a day checked in on Streak with nothing logged here', async () => {
+    home({ prepare: (fakes) => void fakes.streakDays.list.mockResolvedValue(['2026-09-28' as ISODate]) });
+
+    expect(await screen.findByRole('button', { name: 'Sep 28: Checked in on Streak' })).toBeTruthy();
+  });
+
+  it('lets a logged workout win over a Streak check-in on the same day', async () => {
+    home({
+      days: [day('2026-09-28', 2)],
+      prepare: (fakes) => void fakes.streakDays.list.mockResolvedValue(['2026-09-28' as ISODate]),
+    });
+
+    expect(await screen.findByRole('button', { name: 'Sep 28: Moderate' })).toBeTruthy();
+  });
+
   it('rings the day whose detail is open', async () => {
     home();
     act(() => useSelectedDayStore.getState().select('2026-09-15' as ISODate));

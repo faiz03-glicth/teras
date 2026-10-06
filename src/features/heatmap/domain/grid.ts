@@ -8,6 +8,9 @@ export interface HeatGridCell {
   key: string;
   level: HeatLevel;
   state: HeatCellState;
+  /** Checked in on Streak, with nothing logged here: the dent carries a small mark. Always `false` on a
+   *  trained day — Streak and a logged workout never both claim the same cell. */
+  marked?: boolean;
   /** Spoken label for interactive cells, e.g. "Sep 24: Strong". */
   label?: string;
   /** The day's check-ins, for real days (the month view prints it on the tile). */

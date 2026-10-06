@@ -137,6 +137,7 @@ const MonthGrid = memo(function MonthGrid({
                 day={day.key}
                 level={day.level}
                 state={day.key === selected ? 'selected' : day.state}
+                marked={day.marked}
                 label={day.label}
                 size={cell}
                 radius={radius}
@@ -156,6 +157,8 @@ interface DayCellProps {
   day: string;
   level: HeatLevel;
   state: HeatCellState;
+  /** Checked in on Streak, nothing logged here (always false on a trained day). */
+  marked?: boolean;
   label?: string;
   size: number;
   radius: number;
@@ -168,6 +171,7 @@ const DayCell = memo(function DayCell({
   day,
   level,
   state,
+  marked,
   label,
   size,
   radius,
@@ -181,6 +185,7 @@ const DayCell = memo(function DayCell({
     <HeatCell
       level={level}
       state={state}
+      marked={marked}
       size={size}
       radius={radius}
       outlined={level === 0 && state !== 'future' && state !== 'blank'}
