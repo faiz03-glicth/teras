@@ -1,0 +1,23 @@
+# WRITES DATA (Teras): deletes the workout logged on ${DAY}. Deleting sends the rewritten day.
+appId: ${TERAS_APP}
+---
+- launchApp:
+    appId: ${TERAS_APP}
+    stopApp: false
+- openLink: ${TERAS_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: { id: 'day-level' }
+    timeout: 20000
+- assertNotVisible: 'Checked in on Streak'
+- tapOn: { id: 'day-workout-.*' }
+- extendedWaitUntil:
+    visible: { id: 'session-screen' }
+    timeout: 15000
+- scrollUntilVisible:
+    element: { id: 'delete-workout' }
+    direction: DOWN
+- tapOn: { id: 'delete-workout' }
+- tapOn: '(?i)delete'
+- extendedWaitUntil:
+    notVisible: { id: 'session-screen' }
+    timeout: 15000

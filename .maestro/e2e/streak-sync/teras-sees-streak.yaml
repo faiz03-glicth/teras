@@ -1,0 +1,16 @@
+# Read-only (Teras): a cold start pulls Streak's days; ${DAY} says it was checked in on Streak.
+appId: ${TERAS_APP}
+---
+# A cold start: Teras pulls Streak's days as it opens.
+- launchApp:
+    appId: ${TERAS_APP}
+    stopApp: true
+- extendedWaitUntil:
+    visible: { id: 'tab-home' }
+    timeout: 60000
+- openLink: ${TERAS_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: 'Checked in on Streak'
+    timeout: 30000
+- assertVisible: 'No workout details yet'
+- assertVisible: 'Log this workout'

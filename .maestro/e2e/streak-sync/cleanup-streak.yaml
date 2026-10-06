@@ -1,0 +1,18 @@
+# WRITES DATA (Streak), best effort after a failed run: deletes every Workout check-in on ${DAY}.
+appId: ${STREAK_APP}
+---
+- launchApp:
+    appId: ${STREAK_APP}
+    stopApp: false
+- openLink: ${STREAK_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: { id: 'day-sheet' }
+    timeout: 20000
+    optional: true
+- repeat:
+    times: 3
+    while:
+      visible: 'Options for Workout at .*'
+    commands:
+      - tapOn: 'Options for Workout at .*'
+      - tapOn: '(?i)delete'

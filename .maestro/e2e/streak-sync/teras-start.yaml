@@ -1,0 +1,36 @@
+# WRITES DATA (Teras): "Log this workout" on ${DAY}, one completed set of Bench Press. Not finished.
+appId: ${TERAS_APP}
+---
+- launchApp:
+    appId: ${TERAS_APP}
+    stopApp: false
+- openLink: ${TERAS_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: 'Log this workout'
+    timeout: 20000
+- tapOn: { id: 'day-streak-log' }
+- extendedWaitUntil:
+    visible: { id: 'active-workout-screen' }
+    timeout: 15000
+- tapOn: { id: 'add-exercise' }
+- extendedWaitUntil:
+    visible: { id: 'all-bench-press-barbell' }
+    timeout: 15000
+- tapOn: { id: 'all-bench-press-barbell' }
+- extendedWaitUntil:
+    visible: 'Bench Press \(Barbell\)'
+    timeout: 10000
+- runFlow:
+    when:
+      notVisible: 'weight, set 1'
+    commands:
+      - tapOn: { id: 'add-set-.*' }
+- tapOn: 'weight, set 1'
+- inputText: '20'
+- tapOn: 'reps, set 1'
+- inputText: '5'
+- hideKeyboard
+- tapOn: 'Set 1 done'
+- assertVisible:
+    text: 'Set 1 done'
+    checked: true

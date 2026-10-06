@@ -1,0 +1,16 @@
+# WRITES DATA (Streak): deletes the Workout check-in on ${DAY}. Left open so the deletion uploads.
+appId: ${STREAK_APP}
+---
+- launchApp:
+    appId: ${STREAK_APP}
+    stopApp: false
+- openLink: ${STREAK_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: 'Options for Workout at .*'
+    timeout: 20000
+- tapOn: 'Options for Workout at .*'
+# The confirmation's button; its title ("Delete this check-in?") is not a full match.
+- tapOn: '(?i)delete'
+- extendedWaitUntil:
+    visible: 'No check-ins on this day'
+    timeout: 10000

@@ -1,0 +1,32 @@
+# WRITES DATA (Teras), best effort after a failed run: discards a workout still running, then deletes
+# any workout logged on ${DAY}.
+appId: ${TERAS_APP}
+---
+- launchApp:
+    appId: ${TERAS_APP}
+    stopApp: false
+- openLink: ${TERAS_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: { id: 'day-sheet' }
+    timeout: 20000
+    optional: true
+- runFlow:
+    when:
+      visible: { id: 'day-in-progress' }
+    commands:
+      - tapOn: { id: 'day-in-progress' }
+      - tapOn: { id: 'discard-workout' }
+      - tapOn: '(?i)discard'
+      - openLink: ${TERAS_SCHEME}://day/${DAY}
+- repeat:
+    times: 3
+    while:
+      visible: { id: 'day-workout-.*' }
+    commands:
+      - tapOn: { id: 'day-workout-.*' }
+      - scrollUntilVisible:
+          element: { id: 'delete-workout' }
+          direction: DOWN
+      - tapOn: { id: 'delete-workout' }
+      - tapOn: '(?i)delete'
+      - openLink: ${TERAS_SCHEME}://day/${DAY}

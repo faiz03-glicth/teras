@@ -1,0 +1,20 @@
+# WRITES DATA (Streak): checks in a Workout on ${DAY}. Run by run.mjs, which passes DAY, STREAK_APP and
+# STREAK_SCHEME. Streak uploads 3 s after a change while it is in the foreground, so it is left open.
+appId: ${STREAK_APP}
+---
+- launchApp:
+    appId: ${STREAK_APP}
+    stopApp: false
+- openLink: ${STREAK_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: { id: 'day-sheet' }
+    timeout: 20000
+- assertVisible: 'No check-ins on this day'
+- scrollUntilVisible:
+    element: { id: 'activity-workout' }
+    direction: DOWN
+- tapOn: { id: 'activity-workout' }
+- tapOn: { id: 'day-check-in' }
+- extendedWaitUntil:
+    visible: 'Options for Workout at .*'
+    timeout: 10000

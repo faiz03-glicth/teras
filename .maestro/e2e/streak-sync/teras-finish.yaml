@@ -1,0 +1,21 @@
+# WRITES DATA (Teras): finishes the workout running on ${DAY}. Finishing sends the day to the server.
+appId: ${TERAS_APP}
+---
+- launchApp:
+    appId: ${TERAS_APP}
+    stopApp: false
+- openLink: ${TERAS_SCHEME}://day/${DAY}
+- extendedWaitUntil:
+    visible: { id: 'day-in-progress' }
+    timeout: 20000
+- assertNotVisible: 'Checked in on Streak'
+- tapOn: { id: 'day-in-progress' }
+- extendedWaitUntil:
+    visible: { id: 'active-workout-screen' }
+    timeout: 15000
+- tapOn: { id: 'finish-workout' }
+- tapOn: '(?i)finish'
+- extendedWaitUntil:
+    visible: { id: 'workout-saved-screen' }
+    timeout: 15000
+- tapOn: { id: 'saved-done' }
