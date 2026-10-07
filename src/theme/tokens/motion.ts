@@ -54,8 +54,16 @@ const FRAME = 17;
  * One shared spring for presses and releases.
  * `ReduceMotion.System` makes Reanimated jump straight to the end value when Reduce Motion is on. The
  * app's own setting decides what "on" means (MotionRuntimeBridge), so it can override the phone.
+ * `energyThreshold` stops the spring once it's within 1% of its travel, instead of Reanimated's default
+ * (~6e-9), which chases sub-pixel motion for a second or two and redraws the whole screen every frame.
  */
-const spring: WithSpringConfig = { damping: 16, stiffness: 220, mass: 1, reduceMotion: ReduceMotion.System };
+const spring: WithSpringConfig = {
+  damping: 16,
+  stiffness: 220,
+  mass: 1,
+  energyThreshold: 1e-4,
+  reduceMotion: ReduceMotion.System,
+};
 
 /** A Reanimated timing on one of the curves (`withTiming(…, motion.timing(…))`). */
 const timing = (duration: number, curve: Curve = 'standard'): WithTimingConfig => ({
@@ -225,16 +233,20 @@ export const motion = {
    * loops: once both springs settle the bar is completely still.
    */
   liquid: {
+    // energyThreshold (1% of travel) on every tab-bar spring: left at Reanimated's default, each one
+    // chases sub-pixel motion for a second or two after it looks still, redrawing the bar every frame.
     head: {
       damping: 22,
       stiffness: 300,
       mass: 0.8,
+      energyThreshold: 1e-4,
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
     tail: {
       damping: 22,
       stiffness: 180,
       mass: 0.9,
+      energyThreshold: 1e-4,
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
     /** While dragging: the head follows the finger closely (smoothed, never teleporting); the tail still lags. */
@@ -242,12 +254,14 @@ export const motion = {
       damping: 24,
       stiffness: 420,
       mass: 0.6,
+      energyThreshold: 1e-4,
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
     dragTail: {
       damping: 22,
       stiffness: 240,
       mass: 0.8,
+      energyThreshold: 1e-4,
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
     /** How a finger on the bar "engages" the liquid (drives magnification while dragging). */
@@ -255,6 +269,7 @@ export const motion = {
       damping: 20,
       stiffness: 220,
       mass: 1,
+      energyThreshold: 1e-4,
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
     /**
@@ -287,12 +302,14 @@ export const motion = {
         damping: 14,
         stiffness: 420,
         mass: 0.6,
+        energyThreshold: 1e-4,
         reduceMotion: ReduceMotion.System,
       } satisfies WithSpringConfig,
       release: {
         damping: 7,
         stiffness: 260,
         mass: 0.7,
+        energyThreshold: 1e-4,
         reduceMotion: ReduceMotion.System,
       } satisfies WithSpringConfig,
     },
