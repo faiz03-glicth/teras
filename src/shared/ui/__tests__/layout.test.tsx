@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { toast } from 'sonner-native';
 
 import { TAB_ITEMS } from '@/shared/config/tabs';
@@ -7,7 +8,7 @@ import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
 import { Screen } from '../Screen';
 import { SegmentedControl } from '../SegmentedControl';
-import { TabBar } from '../TabBar';
+import { tabCenters, TabBar } from '../TabBar';
 import { Text } from '../Text';
 import { dismissAllToasts, showInfo, showSuccess } from '../toast';
 
@@ -38,18 +39,85 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
     expect(onTabPress).toHaveBeenCalledWith('workout');
   });
 
-  it('TabBar sets the active tab, icon and label, in a well pressed into the bar', () => {
-    const { theme } = renderInScheme(
-      <TabBar items={TAB_ITEMS} active="workout" onTabPress={jest.fn()} />,
-      scheme,
-    );
-    expect(styleOf(screen.getByTestId('tab-workout-well'))).toMatchObject({
-      backgroundColor: theme.material.inset.background,
-      boxShadow: theme.material.inset.shadow,
+  it('TabBar colours the active icon and label, apart from the well that now carries the fill', () => {
+    renderInScheme(<TabBar items={TAB_ITEMS} active="workout" onTabPress={jest.fn()} />, scheme);
+    expect(screen.getByRole('tab', { name: 'Workout' }).props.accessibilityState).toEqual({
+      selected: true,
     });
     const idle = styleOf(screen.getByTestId('tab-home-well'));
-    expect(idle.backgroundColor).toBe('transparent');
+    expect(idle.backgroundColor).toBeUndefined();
     expect(idle.boxShadow).toBeUndefined();
+  });
+
+  it('TabBar carries the well as one liquid pill, pressed into the bar under the active tab', () => {
+    jest.useFakeTimers();
+    try {
+      const { theme } = renderInScheme(
+        <TabBar items={TAB_ITEMS} active="home" onTabPress={jest.fn()} />,
+        scheme,
+      );
+      act(() =>
+        fireEvent(screen.getByTestId('tab-bar'), 'layout', {
+          nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 80 } },
+        }),
+      );
+      act(() => jest.advanceTimersByTime(20));
+      const style = getAnimatedStyle(screen.getByTestId('tab-liquid')) as {
+        width: number;
+        transform: { translateX: number }[];
+      };
+      // Home is the first of three equal 100pt segments: centred, the well sits at x = 50 - 92/2 = 4.
+      expect(style.width).toBeCloseTo(92, 0);
+      expect(style.transform[0]?.translateX).toBeCloseTo(4, 0);
+      expect(styleOf(screen.getByTestId('tab-liquid'))).toMatchObject({
+        backgroundColor: theme.material.inset.background,
+        boxShadow: theme.material.inset.shadow,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it("TabBar's liquid pill stretches toward the new tab before gathering back into one width", () => {
+    jest.useFakeTimers();
+    try {
+      const onTabPress = jest.fn();
+      const { rerender } = renderInScheme(
+        <TabBar items={TAB_ITEMS} active="home" onTabPress={onTabPress} />,
+        scheme,
+      );
+      act(() =>
+        fireEvent(screen.getByTestId('tab-bar'), 'layout', {
+          nativeEvent: { layout: { x: 0, y: 0, width: 300, height: 80 } },
+        }),
+      );
+      rerender(<TabBar items={TAB_ITEMS} active="profile" onTabPress={onTabPress} />);
+      act(() => jest.advanceTimersByTime(60));
+      const mid = getAnimatedStyle(screen.getByTestId('tab-liquid')) as { width: number };
+      expect(mid.width).toBeGreaterThan(92);
+
+      act(() => jest.advanceTimersByTime(2000));
+      const settled = getAnimatedStyle(screen.getByTestId('tab-liquid')) as {
+        width: number;
+        transform: { translateX: number }[];
+      };
+      expect(settled.width).toBeCloseTo(92, 0);
+      // Profile is the last of three equal 100pt segments: centred at x = 250 - 92/2 = 204.
+      expect(settled.transform[0]?.translateX).toBeCloseTo(204, 0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe('tabCenters', () => {
+  it('splits the bar into one evenly-sized segment per tab, centred', () => {
+    expect(tabCenters(3, 300)).toEqual([50, 150, 250]);
+  });
+
+  it('has nothing to centre before the bar is measured, or with no tabs', () => {
+    expect(tabCenters(3, 0)).toEqual([]);
+    expect(tabCenters(0, 300)).toEqual([]);
   });
 });
 
