@@ -188,7 +188,7 @@ describe('a day checked in on Streak but not logged here', () => {
   it('logs the workout on that day, in place of the sheet', async () => {
     const { repositories } = open(STREAK_DAY, { days: [], workouts: [], prepare: onStreak });
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Log this workout' }));
+    fireEvent.press(await screen.findByTestId('day-log-empty'));
 
     await act(async () => undefined);
     expect(repositories.workouts.start).toHaveBeenCalledWith(
@@ -201,7 +201,7 @@ describe('a day checked in on Streak but not logged here', () => {
   it('goes to the workout in progress instead of starting a second one', async () => {
     const { repositories } = open(STREAK_DAY, { days: [], workouts: [], active: running, prepare: onStreak });
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish the workout in progress first' }));
+    fireEvent.press(await screen.findByTestId('day-log-blocked'));
 
     expect(repositories.workouts.start).not.toHaveBeenCalled();
     expect(actions.openActiveWorkout).toHaveBeenCalledWith({ replace: true });
@@ -212,6 +212,93 @@ describe('a day checked in on Streak but not logged here', () => {
 
     expect(await screen.findByText('Strong')).toBeTruthy();
     expect(screen.queryByText('Checked in on Streak')).toBeNull();
+  });
+});
+
+describe('logging a workout on the day', () => {
+  const PAST = '2026-09-29' as ISODate;
+  const routinesOf = (repositories: Repositories) =>
+    void repositories.workouts.routines.mockResolvedValue([
+      { id: 'push', name: 'Push Day', exerciseCount: 6, exercises: ['Bench Press (Barbell)'] },
+      { id: 'blank', name: 'Blank', exerciseCount: 0, exercises: [] },
+    ]);
+
+  it('offers the routines with something in them, and an empty workout', async () => {
+    open(PAST, { days: [], workouts: [], prepare: routinesOf });
+
+    expect(await screen.findByText('LOG A WORKOUT')).toBeTruthy();
+    expect(await screen.findByTestId('day-log-push')).toBeTruthy();
+    expect(screen.getByText('6 exercises')).toBeTruthy();
+    expect(screen.getByTestId('day-log-empty')).toBeTruthy();
+    expect(screen.queryByTestId('day-log-blank')).toBeNull();
+  });
+
+  it('starts the routine on that day, in place of the sheet', async () => {
+    const { repositories } = open(PAST, { days: [], workouts: [], prepare: routinesOf });
+
+    fireEvent.press(await screen.findByTestId('day-log-push'));
+
+    await act(async () => undefined);
+    expect(repositories.workouts.start).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ date: PAST, routineId: 'push' }),
+    );
+    expect(actions.openActiveWorkout).toHaveBeenCalledWith({ replace: true });
+  });
+
+  it('starts an empty workout on that day', async () => {
+    const { repositories } = open(PAST, { days: [], workouts: [] });
+
+    fireEvent.press(await screen.findByTestId('day-log-empty'));
+
+    await act(async () => undefined);
+    expect(repositories.workouts.start).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ date: PAST, routineId: undefined }),
+    );
+  });
+
+  it('is "Start a workout" today', async () => {
+    open(TODAY, { days: [], workouts: [] });
+
+    expect(await screen.findByText('START A WORKOUT')).toBeTruthy();
+  });
+
+  it('is not offered while a workout runs on that day', async () => {
+    open(TODAY, { days: [], workouts: [], active: running });
+
+    expect(await screen.findByText('Counts when you finish')).toBeTruthy();
+    expect(screen.queryByText('START A WORKOUT')).toBeNull();
+    expect(screen.queryByTestId('day-log-empty')).toBeNull();
+  });
+
+  it('sends the person to a workout running on another day instead', async () => {
+    const { repositories } = open(PAST, { days: [], workouts: [], active: running });
+
+    fireEvent.press(await screen.findByTestId('day-log-blocked'));
+
+    expect(repositories.workouts.start).not.toHaveBeenCalled();
+    expect(actions.openActiveWorkout).toHaveBeenCalledWith({ replace: true });
+  });
+
+  it('stays on the sheet when the workout could not be started, ready to try again', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { repositories } = open(PAST, {
+      days: [],
+      workouts: [],
+      prepare: (fakes) => void fakes.workouts.start.mockRejectedValueOnce(new Error('disk')),
+    });
+
+    fireEvent.press(await screen.findByTestId('day-log-empty'));
+    await act(async () => undefined);
+
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Could not start'));
+    expect(actions.openActiveWorkout).not.toHaveBeenCalled();
+    expect(screen.getByText('Add exercises as you go')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('day-log-empty'));
+    await act(async () => undefined);
+    expect(repositories.workouts.start).toHaveBeenCalledTimes(2);
+    error.mockRestore();
   });
 });
 

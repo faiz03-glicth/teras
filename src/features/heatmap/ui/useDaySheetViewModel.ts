@@ -9,6 +9,7 @@ import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countSets } from '@/features/workouts/domain/labels';
 import {
   useActiveWorkoutSummary,
+  useRoutines,
   useSetActiveWorkout,
   useWorkoutOwner,
   useWorkoutsBetween,
@@ -36,19 +37,20 @@ export interface DayWorkoutRow {
 /**
  * One day of the wave, as a sheet over it: the level the day was recorded at, what it was judged
  * against, and the workouts that made it. A bad or future link opens today. While the sheet is up its day
- * stays ringed on the wave underneath, so it is plain which cell was opened. A day checked in on Streak
- * but not logged here says so, and offers to log it: a workout started on that day.
+ * stays ringed on the wave underneath, so it is plain which cell was opened. Any day up to today can have
+ * a workout logged on it, from a routine or empty.
  */
 export function useDaySheetViewModel(date: ISODate | null) {
   const today = useToday();
   const day = date && date <= today ? date : today;
   const owner = useWorkoutOwner();
+  const routines = useRoutines(owner);
   const { workouts: workoutRepository } = useRepositories();
   const unit = useTrainingPreferencesStore((state) => state.unit);
   const bodyweightKg = useTrainingPreferencesStore((state) => state.bodyweightKg);
   const restSeconds = useTrainingPreferencesStore((state) => state.restSeconds);
   const cacheWorkout = useSetActiveWorkout(owner);
-  const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
   const select = useSelectedDayStore((state) => state.select);
   const release = useSelectedDayStore((state) => state.release);
 
@@ -103,27 +105,55 @@ export function useDaySheetViewModel(date: ISODate | null) {
   const onOpenWorkout = useCallback((id: string) => openSession(id, { replace: true }), []);
   const onResume = useCallback(() => openActiveWorkout({ replace: true }), []);
 
-  const logStreakDay = useCallback(async () => {
-    // One workout at a time: the one already running is finished first.
-    if (elsewhere) {
-      openActiveWorkout({ replace: true });
-      return;
-    }
-    if (starting) return;
-    setStarting(true);
-    try {
-      const workout = await workoutRepository.start(owner, { date: day, bodyweightKg, restSeconds });
-      cacheWorkout(workout);
-      haptics.success();
-      openActiveWorkout({ replace: true });
-    } catch (cause) {
-      console.error(`[workouts] Could not start (${cause instanceof Error ? cause.name : 'unknown'})`); // TODO(Sentry)
-      showInfo({ title: "Couldn't start", sub: 'Try again.' });
-    } finally {
-      setStarting(false);
-    }
-  }, [bodyweightKg, cacheWorkout, day, elsewhere, owner, restSeconds, starting, workoutRepository]);
-  const onLogStreakDay = useCallback(() => void logStreakDay(), [logStreakDay]);
+  const logWorkout = useCallback(
+    async (key: string) => {
+      // One workout at a time: the one already running is finished first.
+      if (elsewhere) {
+        openActiveWorkout({ replace: true });
+        return;
+      }
+      if (starting) return;
+      setStarting(key);
+      try {
+        const workout = await workoutRepository.start(owner, {
+          date: day,
+          bodyweightKg,
+          restSeconds,
+          routineId: key === 'empty' ? undefined : key,
+        });
+        cacheWorkout(workout);
+        haptics.success();
+        openActiveWorkout({ replace: true });
+      } catch (cause) {
+        console.error(`[workouts] Could not start (${cause instanceof Error ? cause.name : 'unknown'})`); // TODO(Sentry)
+        showInfo({ title: "Couldn't start", sub: 'Try again.' });
+      } finally {
+        setStarting(null);
+      }
+    },
+    [bodyweightKg, cacheWorkout, day, elsewhere, owner, restSeconds, starting, workoutRepository],
+  );
+
+  const logOptions = useMemo(
+    () => [
+      ...(routines.data ?? [])
+        .filter((routine) => routine.exerciseCount > 0)
+        .map((routine) => ({
+          key: routine.id,
+          title: routine.name,
+          description: `${routine.exerciseCount} exercise${routine.exerciseCount === 1 ? '' : 's'}`,
+          starting: starting === routine.id,
+        })),
+      {
+        key: 'empty',
+        title: 'Empty workout',
+        description: 'Add exercises as you go',
+        starting: starting === 'empty',
+      },
+    ],
+    [routines.data, starting],
+  );
+  const onLog = useCallback((key: string) => void logWorkout(key), [logWorkout]);
 
   const levelName = LEVEL_NAMES[level];
   const line = standingLine(standing, unit, { today: day === today, running: running !== null });
@@ -146,14 +176,19 @@ export function useDaySheetViewModel(date: ISODate | null) {
       ? {
           title: 'Checked in on Streak',
           body: 'No workout details yet',
-          action: elsewhere ? 'Finish the workout in progress first' : 'Log this workout',
-          starting,
         }
       : null,
-
-    onOpenWorkout,
-    onLogStreakDay,
+    /** Log a workout on this day, unless one already runs on it (it is listed above). */
+    log: running
+      ? null
+      : {
+          title: day === today ? 'Start a workout' : 'Log a workout',
+          blockedBy: elsewhere ? 'Finish the workout in progress first' : null,
+          options: elsewhere ? [] : logOptions,
+        },
+    onLog,
     onResume,
+    onOpenWorkout,
     onRetry,
     onClose: () => goBack(),
   };
