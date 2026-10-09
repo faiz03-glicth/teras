@@ -137,8 +137,8 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(screen.getByText('Skip')).toBeTruthy();
   });
 
-  it('Card is the material raised, and draws dividers between rows', () => {
-    const { theme, toJSON } = renderInScheme(
+  it('Card draws dividers between rows, over its raised surface', () => {
+    const { toJSON } = renderInScheme(
       <Card divided>
         <Text>One</Text>
         <Text>Two</Text>
@@ -146,10 +146,8 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       </Card>,
       scheme,
     );
-    const root = toJSON();
-    expect(styleOf(root).backgroundColor).toBe(theme.material.raised.background);
-    expect(styleOf(root).boxShadow).toBe(theme.material.raised.shadow);
-    expect(childrenOf(root).length).toBe(5);
+    // The cached raised surface (cachedSurface.test), then three rows with a divider between each.
+    expect(childrenOf(toJSON()).length).toBe(6);
   });
 
   it('Toggle is a labelled switch tinted with the readable gold', () => {

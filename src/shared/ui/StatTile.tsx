@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { CachedSurface } from './CachedSurface';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
 import { Text } from './Text';
@@ -47,6 +48,7 @@ export function StatTile({
       accessible
       accessibilityLabel={accessibilityLabel ?? `${label}, ${value}${suffix ?? ''}`}
     >
+      <CachedSurface style={styles.surface} />
       {icon && <Icon name={icon.name} size={20} color={icon.color} />}
       {labelFirst && caption}
       <Text variant="numeric2" numberOfLines={1}>
@@ -64,10 +66,8 @@ export function StatTile({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  tile: {
-    flex: 1,
-    gap: 6,
-    padding: 14,
+  tile: { flex: 1, gap: 6, padding: 14 },
+  surface: {
     borderRadius: theme.radii.card,
     backgroundColor: theme.material.raised.background,
     boxShadow: theme.material.raised.shadow,

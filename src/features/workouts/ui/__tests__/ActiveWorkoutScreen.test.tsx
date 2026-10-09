@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { Alert, type AlertButton } from 'react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
@@ -201,6 +201,14 @@ describe('the set table', () => {
     log(running([bench([set('s1', 'pending')], { type: 'bodyweight', name: 'Pull Up' })]));
 
     expect(await screen.findByText('+KG', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it("draws each row's wells and tick once into textures, so scrolling the table never re-blurs them", async () => {
+    log(running([bench([set('s1', 'pending')])]));
+
+    expect((await screen.findByTestId('set-s1-weight')).props.renderToHardwareTextureAndroid).toBe(true);
+    expect(screen.getByTestId('set-s1-reps').props.renderToHardwareTextureAndroid).toBe(true);
+    expect(within(screen.getByTestId('set-s1-tick')).getByTestId('cached-surface')).toBeTruthy();
   });
 
   it('locks a completed set: untick it to change it', async () => {

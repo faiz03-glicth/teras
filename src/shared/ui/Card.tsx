@@ -2,6 +2,8 @@ import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { CachedSurface } from './CachedSurface';
+
 export interface CardProps {
   children: ReactNode;
   /** List-style padding (4 vertical, 16 horizontal) for cards of rows. */
@@ -23,7 +25,8 @@ export function Card({
 }: CardProps) {
   const rows = divided ? Children.toArray(children).filter(isValidElement) : null;
   return (
-    <View style={[styles.card(tight, tone), style]} testID={testID}>
+    <View style={[styles.card(tight), style]} testID={testID}>
+      <CachedSurface style={styles.surface(tone)} bleed={tone === 'accentSoft' ? 'none' : 'card'} />
       {rows
         ? rows.map((row, index) => (
             <Fragment key={row.key ?? index}>
@@ -37,12 +40,16 @@ export function Card({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  card: (tight: boolean, tone: 'default' | 'accentSoft') => ({
+  // The radius stays for a card given a fill of its own (the body map's), drawn over the surface.
+  card: (tight: boolean) => ({
     borderRadius: theme.radii.card,
     paddingVertical: tight ? theme.spacing.xs : theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
-    // A card is the material raised. The gold-tinted tone is the opposite, a well pressed into it, for a
-    // panel that reports a state (the rest timer) rather than one that holds content.
+  }),
+  // A card is the material raised. The gold-tinted tone is the opposite, a well pressed into it, for a
+  // panel that reports a state (the rest timer) rather than one that holds content.
+  surface: (tone: 'default' | 'accentSoft') => ({
+    borderRadius: theme.radii.card,
     backgroundColor: tone === 'accentSoft' ? theme.colors.accentSoft : theme.material.raised.background,
     boxShadow: tone === 'accentSoft' ? theme.material.inset.shadow : theme.material.raised.shadow,
   }),

@@ -3,6 +3,7 @@ export { Avatar } from './Avatar';
 export { Banner } from './Banner';
 export { BarChart } from './BarChart';
 export { Button } from './Button';
+export { CachedSurface } from './CachedSurface';
 export { Card } from './Card';
 export { BlurTarget, GlassBlur } from './GlassBlur';
 export { ChipRow, type ChipOption } from './Chip';

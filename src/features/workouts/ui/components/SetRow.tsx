@@ -3,7 +3,7 @@ import { TextInput, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
-import { Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
+import { CachedSurface, Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
 
 import type { SetPatch, WorkoutExercise, WorkoutSet } from '../../data/WorkoutRepository';
 import { parseSetWeight, setWeightText, weightColumn } from '../../domain/setUnits';
@@ -113,6 +113,9 @@ export const SetRow = memo(function SetRow({
       placeholderTextColor={theme.colors.text3}
       accessibilityLabel={`${label}, set ${index + 1}`}
       style={styles.input(done)}
+      // The well (its fill and inset shadow, drawn inside it) is kept as a texture while the table
+      // scrolls; only a field being typed in is redrawn.
+      renderToHardwareTextureAndroid
       testID={`set-${set.id}-${label}`}
     />
   );
@@ -158,9 +161,10 @@ export const SetRow = memo(function SetRow({
           accessibilityLabel={`Set ${index + 1} done`}
           accessibilityActions={DELETE_ACTIONS}
           onAccessibilityAction={(event) => event.nativeEvent.actionName === 'delete' && remove()}
-          style={styles.tick(done)}
+          style={styles.tick}
           testID={`set-${set.id}-tick`}
         >
+          <CachedSurface style={styles.key(done)} bleed="key" />
           <Icon name="check" size={20} color={done ? theme.colors.onAccent : theme.colors.text3} />
         </PressableScale>
       </View>
@@ -197,13 +201,17 @@ const styles = StyleSheet.create((theme) => ({
     textAlign: 'center' as const,
     fontVariant: ['tabular-nums' as const],
   }),
-  // The tick is a raised key; done, it sinks into the card and turns gold with a dark check.
-  tick: (done: boolean) => ({
+  tick: {
     width: TICK_SIZE,
     height: TICK_SIZE,
     borderRadius: theme.radii.control,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // The tick is a raised key; done, it sinks into the card and turns gold with a dark check. Drawn by
+  // CachedSurface, so scrolling the table never re-blurs a row's shadow.
+  key: (done: boolean) => ({
+    borderRadius: theme.radii.control,
     backgroundColor: done ? theme.material.accent.background : theme.material.raisedSm.background,
     boxShadow: done ? theme.material.accent.pressedShadow : theme.material.raisedSm.shadow,
   }),
