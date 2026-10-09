@@ -63,13 +63,13 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
       );
       act(() => jest.advanceTimersByTime(20));
       const style = getAnimatedStyle(screen.getByTestId('tab-liquid')) as {
-        width: number;
-        transform: { translateX: number }[];
+        transform: { translateX?: number; scaleX?: number }[];
       };
       // Home is the first of three equal 100pt segments: centred, the well sits at x = 50 - 92/2 = 4.
-      expect(style.width).toBeCloseTo(92, 0);
       expect(style.transform[0]?.translateX).toBeCloseTo(4, 0);
+      expect(style.transform[1]?.scaleX).toBeCloseTo(1, 1);
       expect(styleOf(screen.getByTestId('tab-liquid'))).toMatchObject({
+        width: 92,
         backgroundColor: theme.material.inset.background,
         boxShadow: theme.material.inset.shadow,
       });
@@ -93,15 +93,16 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
       );
       rerender(<TabBar items={TAB_ITEMS} active="profile" onTabPress={onTabPress} />);
       act(() => jest.advanceTimersByTime(60));
-      const mid = getAnimatedStyle(screen.getByTestId('tab-liquid')) as { width: number };
-      expect(mid.width).toBeGreaterThan(92);
+      const mid = getAnimatedStyle(screen.getByTestId('tab-liquid')) as {
+        transform: { scaleX?: number }[];
+      };
+      expect(mid.transform[1]?.scaleX).toBeGreaterThan(1);
 
       act(() => jest.advanceTimersByTime(2000));
       const settled = getAnimatedStyle(screen.getByTestId('tab-liquid')) as {
-        width: number;
-        transform: { translateX: number }[];
+        transform: { translateX?: number; scaleX?: number }[];
       };
-      expect(settled.width).toBeCloseTo(92, 0);
+      expect(settled.transform[1]?.scaleX).toBeCloseTo(1, 1);
       // Profile is the last of three equal 100pt segments: centred at x = 250 - 92/2 = 204.
       expect(settled.transform[0]?.translateX).toBeCloseTo(204, 0);
     } finally {

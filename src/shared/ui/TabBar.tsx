@@ -68,11 +68,17 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
   }, [activeIndex, barWidth, headX, items.length, placed, tailX]);
 
   const wellWidth = Math.max(0, Math.min(WELL_WIDTH, barWidth / Math.max(1, items.length) - WELL_GUTTER));
+  // The pill's own layout width never changes — only its transform does. A `width` driven every
+  // spring frame forces Android to relayout (not just recomposite) each frame, which is what was
+  // making this stutter; translateX/scaleX stay on the compositor instead.
   const liquidStyle = useAnimatedStyle(() => {
     const half = wellWidth / 2;
     const left = Math.min(headX.get(), tailX.get()) - half;
     const right = Math.max(headX.get(), tailX.get()) + half;
-    return { transform: [{ translateX: left }], width: Math.max(0, right - left) };
+    const center = (left + right) / 2;
+    const span = Math.max(0, right - left);
+    const scaleX = wellWidth > 0 ? span / wellWidth : 0;
+    return { transform: [{ translateX: center - wellWidth / 2 }, { scaleX }] };
   });
 
   return (
@@ -82,7 +88,11 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
       onLayout={(event: LayoutChangeEvent) => setBarWidth(event.nativeEvent.layout.width)}
     >
       {barWidth > 0 && (
-        <Animated.View pointerEvents="none" testID="tab-liquid" style={[styles.liquid, liquidStyle]} />
+        <Animated.View
+          pointerEvents="none"
+          testID="tab-liquid"
+          style={[styles.liquid, { width: wellWidth }, liquidStyle]}
+        />
       )}
       {items.map((item) => {
         const on = item.id === active;
