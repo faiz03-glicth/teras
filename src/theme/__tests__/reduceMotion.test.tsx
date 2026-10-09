@@ -58,7 +58,8 @@ describe('useNavigationMotion', () => {
     expect(result.current).toEqual({
       push: 'fade',
       groupSwitch: 'fade',
-      tabs: 'fade',
+      // Tab pages animate themselves (TabScene): the navigator only swaps them.
+      tabs: 'none',
       fadeMs: motion.navigation.fadeMs,
     });
   });

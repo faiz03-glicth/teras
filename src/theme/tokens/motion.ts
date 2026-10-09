@@ -237,17 +237,30 @@ export const motion = {
    */
   themeTransition: { coverMs: DURATION.quick, holdMs: 2 * FRAME, revealMs: DURATION.normal },
   /**
-   * Screen transitions between routes: pushed screens slide in from the right on both platforms, tabs
-   * cross-fade (calm, no sideways jump), and moving between the onboarding/login flow and the app
-   * cross-fades. With Reduce Motion nothing slides: every route change cross-fades. Tabs keep their
-   * cross-fade on purpose: switching the tab navigator to 'none' at runtime changes its native screen
-   * container (iOS), remounting every tab and blanking pages. `fadeMs` sets iOS cross-fades (whose
+   * Screen transitions between routes: pushed screens slide in from the right on both platforms, and
+   * moving between the onboarding/login flow and the app cross-fades. With Reduce Motion nothing slides:
+   * every route change cross-fades. The tab navigator only swaps its pages ('none', in both modes: a
+   * transition switched at runtime changes its native screen container on iOS, remounting every tab and
+   * blanking pages); the pages animate themselves (`tabSquirt`). `fadeMs` sets iOS cross-fades (whose
    * platform default, 500ms, drags).
    */
   navigation: {
-    full: { push: 'ios_from_right', groupSwitch: 'fade', tabs: 'fade' },
-    reduced: { push: 'fade', groupSwitch: 'fade', tabs: 'fade' },
+    full: { push: 'ios_from_right', groupSwitch: 'fade', tabs: 'none' },
+    reduced: { push: 'fade', groupSwitch: 'fade', tabs: 'none' },
     fadeMs: DURATION.emphasis,
+  },
+  /**
+   * tabSquirt: a chosen tab's page squirts out of its icon in the tab bar: from a speck the icon's size
+   * (`fromScale`) to the whole screen over `durationMs`, on the emphasis curve (a burst, then a soft
+   * landing), opaque by `fadeInAt` of the way. The page it replaces is put away at once, so pages never
+   * stack however fast tabs are tapped. With Reduce Motion the page fades in, in place (`fade`: opacity
+   * only, so always played).
+   */
+  tabSquirt: {
+    durationMs: 380,
+    fromScale: 0.06,
+    fadeInAt: 0.25,
+    fade: { duration: DURATION.fast, reduceMotion: ReduceMotion.Never } satisfies WithTimingConfig,
   },
   /**
    * The liquid tab bar: ONE liquid body with a leading head and a trailing tail. The head springs to the

@@ -16,6 +16,8 @@ export interface TabBarProps {
   items: readonly TabItem[];
   active: TabId;
   onTabPress: (tab: TabId) => void;
+  /** The bar's size once laid out (its tabs share its width evenly; see `tabCenters`, `TAB_ICON_Y`). */
+  onMeasure?: (size: { width: number; height: number }) => void;
 }
 
 const TAB_ICON = 24;
@@ -25,6 +27,11 @@ const WELL_RADIUS = 16;
 const WELL_HEIGHT = 56;
 /** Narrow space either side of the well on a cramped screen, echoing the old per-tab `maxWidth: '100%'`. */
 const WELL_GUTTER = 8;
+/**
+ * How far below the bar's top edge each tab's icon is centred: the bar's top padding (8), the well's (4),
+ * then the icon, label and gap centred in the well (1 to spare), and half the icon.
+ */
+export const TAB_ICON_Y = 8 + 4 + 1 + TAB_ICON / 2;
 
 /** Every tab's centre, evenly dividing the bar's measured width (one segment per tab). */
 export function tabCenters(count: number, width: number): number[] {
@@ -40,7 +47,7 @@ export function tabCenters(count: number, width: number): number[] {
  * which tab that is, so colour is never the only signal. Only a real change of tab is felt (a selection
  * tick); tapping the tab you are on is silent.
  */
-export function TabBar({ items, active, onTabPress }: TabBarProps) {
+export function TabBar({ items, active, onTabPress, onMeasure }: TabBarProps) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState(0);
@@ -85,7 +92,11 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
     <View
       testID="tab-bar"
       style={[styles.bar, { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }]}
-      onLayout={(event: LayoutChangeEvent) => setBarWidth(event.nativeEvent.layout.width)}
+      onLayout={(event: LayoutChangeEvent) => {
+        const { width, height } = event.nativeEvent.layout;
+        setBarWidth(width);
+        onMeasure?.({ width, height });
+      }}
     >
       {barWidth > 0 && (
         <Animated.View
