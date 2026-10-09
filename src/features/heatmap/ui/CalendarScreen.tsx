@@ -112,7 +112,8 @@ const MonthSection = memo(function MonthSection({
 });
 
 const styles = StyleSheet.create((theme) => ({
-  root: { flex: 1, backgroundColor: theme.colors.canvas },
+  // The navigator's scene paints the canvas (see Screen).
+  root: { flex: 1 },
   content: { paddingHorizontal: theme.spacing.gutter, paddingBottom: theme.spacing.xxl },
   header: { gap: theme.spacing.xl, paddingBottom: theme.spacing.xl },
   group: { gap: theme.spacing.md },

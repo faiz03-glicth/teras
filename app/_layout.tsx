@@ -46,7 +46,6 @@ function RootNavigator() {
   usePushPendingProfileEdits();
   usePushPendingWorkoutDays();
   usePullStreakDays();
-  const { theme } = useUnistyles();
   const { canEnterApp, canEnterAuth } = useRouteGuards();
   const transitions = useNavigationMotion();
   return (
@@ -55,7 +54,9 @@ function RootNavigator() {
         headerShown: false,
         animation: transitions.groupSwitch,
         animationDuration: transitions.fadeMs,
-        contentStyle: { backgroundColor: theme.colors.canvas },
+        // The app's root view already paints the canvas behind both groups; the groups' own navigators
+        // paint it under each screen. Another full-screen fill here would only be drawn again every frame.
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Protected guard={canEnterApp}>

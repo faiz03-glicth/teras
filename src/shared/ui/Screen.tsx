@@ -83,7 +83,9 @@ export function Screen({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  root: { flex: 1, backgroundColor: theme.colors.canvas },
+  // No background of its own: every screen sits in a navigator scene that already paints the canvas, and
+  // each extra full-screen fill is drawn again on every frame (GPU overdraw).
+  root: { flex: 1 },
   grow: { flexGrow: 1 },
   content: (inset: 'default' | 'wide', withTabBar: boolean) => ({
     paddingHorizontal: inset === 'wide' ? theme.spacing.xxl : theme.spacing.gutter,
