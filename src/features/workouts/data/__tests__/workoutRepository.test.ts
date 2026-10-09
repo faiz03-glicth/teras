@@ -197,6 +197,28 @@ describe('building up a workout', () => {
 
     expect(workout.exercises).toEqual([]);
   });
+
+  it('removes one set, keeping the others in order', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const squat = first(added.exercises, 'exercise').id;
+    await repo.addSet(squat);
+    const sets = first((await repo.addSet(squat)).exercises, 'exercise').sets;
+
+    const workout = await repo.removeSet(at(sets, 1, 'set').id);
+
+    expect(first(workout.exercises, 'exercise').sets.map((one) => one.id)).toEqual([
+      at(sets, 0, 'set').id,
+      at(sets, 2, 'set').id,
+    ]);
+  });
+
+  it('refuses to remove a set that is not there', async () => {
+    const { repo } = await setup();
+
+    await expect(repo.removeSet('missing')).rejects.toThrow('No set missing');
+  });
 });
 
 describe('finishing a workout', () => {

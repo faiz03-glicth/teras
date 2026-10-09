@@ -137,6 +137,11 @@ export function useActiveWorkoutViewModel() {
     [change, workouts],
   );
 
+  const onRemoveSet = useCallback(
+    (setId: string) => change('Could not delete a set', () => workouts.removeSet(setId)),
+    [change, workouts],
+  );
+
   /** Each exercise's sets, each beside the set of the same number from last time. */
   const exercises = useMemo(
     () =>
@@ -263,6 +268,7 @@ export function useActiveWorkoutViewModel() {
     onSkipRest: stopRest,
     onTickSet,
     onChangeSet,
+    onRemoveSet,
     onAddSet: (workoutExerciseId: string) =>
       change('Could not add a set', () => workouts.addSet(workoutExerciseId)),
     onRemoveExercise: (workoutExerciseId: string) =>

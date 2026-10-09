@@ -124,6 +124,29 @@ export const motion = {
    * scroll on a card or a month doesn't dip it. A quick tap is still a tap (pressed and released at once).
    */
   scroll: { pressDelayMs: DURATION.quick },
+  /**
+   * swipeAction: a row swiped left uncovers its action behind it (a set's Delete key). The row follows the
+   * finger once it has moved `slopPt` sideways (a mostly vertical drag is the list scrolling instead). Let
+   * go past `openAt` of the key's width (`actionWidth`), or flick left, and it rests open on the key; past
+   * `fullAt` of the row's own width, letting go does the action outright and the row slides away
+   * (`goneMs`). A haptic tick marks crossing `fullAt`, so the finger knows before it lets go. Only distance
+   * does the action: a flick (`flickSpeed` pt/s) left at most opens the row, and a flick right closes it.
+   */
+  swipeAction: {
+    actionWidth: 88,
+    openAt: 0.5,
+    fullAt: 0.6,
+    flickSpeed: 800,
+    slopPt: 12,
+    goneMs: DURATION.normal,
+    spring: {
+      damping: 26,
+      stiffness: 300,
+      mass: 0.9,
+      energyThreshold: 1e-4,
+      reduceMotion: ReduceMotion.System,
+    } satisfies WithSpringConfig,
+  },
   /** settle: something in a fixed frame moving to make room (a button gliding as the one below it goes). */
   settle: { durationMs: DURATION.normal },
   /** fadeUp: something appearing in place (a banner, a status line) rises a little as it fades in. */

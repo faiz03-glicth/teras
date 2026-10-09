@@ -158,6 +158,8 @@ export interface WorkoutRepository {
   addSet(workoutExerciseId: string): Promise<Workout>;
   updateSet(setId: string, patch: SetPatch): Promise<Workout>;
   setStatus(setId: string, status: SetStatus): Promise<Workout>;
+  /** Deletes one set; the sets around it keep their order. */
+  removeSet(setId: string): Promise<Workout>;
   /**
    * Ends the workout and writes the day it belongs to: the totals cover every workout of that date, and
    * the heat level is computed from them. This is the only path by which training reaches Streak.
@@ -415,6 +417,14 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     const timestamp = now();
     // `completedAt` is when it was ticked; un-ticking clears it.
     await dao.updateSet(setId, { status, completedAt: status === 'done' ? timestamp : null }, timestamp);
+    return this.require(workoutId);
+  }
+
+  async removeSet(setId: string): Promise<Workout> {
+    const { dao } = this.deps;
+    const workoutId = await dao.workoutIdForSet(setId);
+    if (!workoutId) throw new Error(`No set ${setId}`);
+    await dao.deleteSet(setId);
     return this.require(workoutId);
   }
 

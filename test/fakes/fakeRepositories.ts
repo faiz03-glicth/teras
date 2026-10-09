@@ -145,6 +145,7 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
     addSet: mockFn<Workouts['addSet']>(async () => empty),
     updateSet: mockFn<Workouts['updateSet']>(async () => empty),
     setStatus: mockFn<Workouts['setStatus']>(async () => empty),
+    removeSet: mockFn<Workouts['removeSet']>(async () => empty),
     finish: mockFn<Workouts['finish']>(async (): Promise<WorkoutDay> => ({
       date,
       volumeKg: 0,

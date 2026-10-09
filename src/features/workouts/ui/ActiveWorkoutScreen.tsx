@@ -80,6 +80,7 @@ export function ActiveWorkoutScreen() {
                 previousLabel={previousLabel}
                 onChange={vm.onChangeSet}
                 onTick={vm.onTickSet}
+                onDelete={vm.onRemoveSet}
               />
             ))}
             <Button

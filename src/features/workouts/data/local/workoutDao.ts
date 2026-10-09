@@ -145,6 +145,7 @@ export interface WorkoutDao {
   exercisesOf(workoutIds: readonly string[]): Promise<(WorkoutExerciseWithName & { workoutId: string })[]>;
   setsOf(workoutIds: readonly string[]): Promise<SetOfWorkout[]>;
   updateSet(id: string, patch: Partial<NewWorkoutSetRow>, updatedAt: string): Promise<void>;
+  deleteSet(id: string): Promise<void>;
   nextSetPosition(workoutExerciseId: string): Promise<number>;
 
   /**
@@ -411,6 +412,10 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
         .set({ ...patch, updatedAt })
         .where(eq(workoutSets.id, id))
         .run();
+    },
+
+    async deleteSet(id) {
+      db.delete(workoutSets).where(eq(workoutSets.id, id)).run();
     },
 
     async nextSetPosition(workoutExerciseId) {

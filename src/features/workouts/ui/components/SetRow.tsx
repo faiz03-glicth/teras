@@ -1,9 +1,9 @@
-import { memo, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { TextInput, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
-import { Icon, PressableScale, Text } from '@/shared/ui';
+import { Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
 
 import type { SetPatch, WorkoutExercise, WorkoutSet } from '../../data/WorkoutRepository';
 import { parseSetWeight, setWeightText, weightColumn } from '../../domain/setUnits';
@@ -19,6 +19,8 @@ export interface SetRowProps {
   previousLabel: string;
   onChange: (setId: string, patch: SetPatch) => void;
   onTick: (setId: string, done: boolean) => void;
+  /** Swiped away (or asked for by a screen reader, on the tick). */
+  onDelete: (setId: string) => void;
 }
 
 /** The table's fixed columns, shared by the header and every row so they always line up. */
@@ -65,8 +67,11 @@ const asNumber = (text: string): number | null => {
   return Number.isFinite(value) ? value : null;
 };
 
+const DELETE_ACTIONS = [{ name: 'delete', label: 'Delete set' }];
+
 /**
- * One line of the set table: its number, what was lifted, and the tick that completes it.
+ * One line of the set table: its number, what was lifted, and the tick that completes it. Swiped left it
+ * uncovers Delete; swiped on past most of the row, it goes.
  * The fields keep what is typed locally and push the parsed number up, so a reformat never moves
  * the cursor mid-entry.
  */
@@ -79,12 +84,14 @@ export const SetRow = memo(function SetRow({
   previousLabel,
   onChange,
   onTick,
+  onDelete,
 }: SetRowProps) {
   const { theme } = useUnistyles();
   const [weight, setWeight] = useState(() => setWeightText(set.weightKg, unit));
   const [reps, setReps] = useState(() => asText(set.reps));
   const [seconds, setSeconds] = useState(() => asText(set.seconds));
   const done = set.status === 'done';
+  const remove = useCallback(() => onDelete(set.id), [onDelete, set.id]);
 
   const field = (
     value: string,
@@ -111,45 +118,53 @@ export const SetRow = memo(function SetRow({
   );
 
   return (
-    <View style={styles.row} testID={`set-${set.id}`}>
-      <Text variant="sub" tone="secondary" style={styles.number}>
-        {index + 1}
-      </Text>
-      <Text
-        variant="footnote"
-        tone="tertiary"
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.75}
-        accessibilityLabel={previousLabel}
-        style={styles.previous}
-        testID={`set-${set.id}-previous`}
-      >
-        {previous}
-      </Text>
+    <SwipeToDelete
+      onDelete={remove}
+      accessibilityLabel={`Delete set ${index + 1}`}
+      testID={`set-${set.id}-swipe`}
+    >
+      <View style={styles.row} testID={`set-${set.id}`}>
+        <Text variant="sub" tone="secondary" style={styles.number}>
+          {index + 1}
+        </Text>
+        <Text
+          variant="footnote"
+          tone="tertiary"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+          accessibilityLabel={previousLabel}
+          style={styles.previous}
+          testID={`set-${set.id}-previous`}
+        >
+          {previous}
+        </Text>
 
-      {type === 'timed' ? (
-        <View style={styles.fields}>
-          {field(seconds, setSeconds, (text) => ({ seconds: asNumber(text) }), 'seconds')}
-        </View>
-      ) : (
-        <View style={styles.fields}>
-          {field(weight, setWeight, (text) => ({ weightKg: parseSetWeight(text, unit) }), 'weight')}
-          {field(reps, setReps, (text) => ({ reps: asNumber(text) }), 'reps')}
-        </View>
-      )}
+        {type === 'timed' ? (
+          <View style={styles.fields}>
+            {field(seconds, setSeconds, (text) => ({ seconds: asNumber(text) }), 'seconds')}
+          </View>
+        ) : (
+          <View style={styles.fields}>
+            {field(weight, setWeight, (text) => ({ weightKg: parseSetWeight(text, unit) }), 'weight')}
+            {field(reps, setReps, (text) => ({ reps: asNumber(text) }), 'reps')}
+          </View>
+        )}
 
-      <PressableScale
-        onPress={() => onTick(set.id, !done)}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: done }}
-        accessibilityLabel={`Set ${index + 1} done`}
-        style={styles.tick(done)}
-        testID={`set-${set.id}-tick`}
-      >
-        <Icon name="check" size={20} color={done ? theme.colors.onAccent : theme.colors.text3} />
-      </PressableScale>
-    </View>
+        <PressableScale
+          onPress={() => onTick(set.id, !done)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: done }}
+          accessibilityLabel={`Set ${index + 1} done`}
+          accessibilityActions={DELETE_ACTIONS}
+          onAccessibilityAction={(event) => event.nativeEvent.actionName === 'delete' && remove()}
+          style={styles.tick(done)}
+          testID={`set-${set.id}-tick`}
+        >
+          <Icon name="check" size={20} color={done ? theme.colors.onAccent : theme.colors.text3} />
+        </PressableScale>
+      </View>
+    </SwipeToDelete>
   );
 });
 

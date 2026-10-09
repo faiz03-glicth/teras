@@ -1,5 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Alert, type AlertButton } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { toast } from 'sonner-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
@@ -225,6 +227,42 @@ describe('the set table', () => {
     await act(async () => finishFirst?.());
 
     await waitFor(() => expect(order).toEqual(['1', '12']));
+  });
+});
+
+describe('deleting a set', () => {
+  const twoSets = () => running([bench([set('s1', 'done'), set('s2', 'pending', { position: 1 })])]);
+  const withoutSecond = (fakes: Repositories) =>
+    void fakes.workouts.removeSet.mockResolvedValue(running([bench([set('s1', 'done')])]));
+
+  it('deletes the set whose row is swiped away', async () => {
+    const { repositories } = log(twoSets(), withoutSecond);
+    fireEvent(await screen.findByTestId('set-s2-swipe-content'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 52 } },
+    });
+
+    fireGestureHandler(getByGestureTestId('set-s2-swipe'), [
+      { state: State.BEGAN, translationX: 0 },
+      { state: State.ACTIVE, translationX: -12 },
+      { state: State.ACTIVE, translationX: -260 },
+      { state: State.END, translationX: -260 },
+    ]);
+    act(() => jest.advanceTimersByTime(600));
+
+    await waitFor(() => expect(screen.queryByTestId('set-s2')).toBeNull());
+    expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
+    expect(screen.getByTestId('set-s1')).toBeTruthy();
+  });
+
+  it('can be deleted from its tick with a screen reader', async () => {
+    const { repositories } = log(twoSets(), withoutSecond);
+
+    fireEvent(await screen.findByTestId('set-s2-tick'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'delete' },
+    });
+
+    await waitFor(() => expect(screen.queryByTestId('set-s2')).toBeNull());
+    expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
   });
 });
 
