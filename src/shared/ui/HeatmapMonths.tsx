@@ -38,6 +38,11 @@ const LABEL_WIDTH = 10;
 const LABEL_GAP = 8;
 const MONTH_LABEL = 14;
 const MONTH_LABEL_GAP = 6;
+/**
+ * Room around a month's cached cells for what a cell draws outside itself: the today/selected ring (1.5
+ * offset + 2 wide). A cached view clips to its bounds.
+ */
+const CACHE_BLEED = 4;
 
 /**
  * Months side by side, weeks as columns (the prototype's monthsHM): Home's training wave and each row
@@ -128,7 +133,18 @@ const MonthGrid = memo(function MonthGrid({
       >
         {month.label}
       </Text>
-      <View style={styles.row(gap)}>
+      {/*
+       * The month's cells are drawn once into a texture, reused while the wave fades, scrolls or has a
+       * screen slide back over it. On Android each empty day's dent is two blurred inset shadows, which the
+       * phone otherwise rasterises again, in software, for every cell on every frame. collapsable={false}
+       * keeps the view, so the cache isn't flattened away. No effect on iOS.
+       */}
+      <View
+        style={[styles.row(gap), styles.cached]}
+        collapsable={false}
+        renderToHardwareTextureAndroid
+        testID={`month-cells-${month.key}`}
+      >
         {month.grid.columns.map((column, columnIndex) => (
           <View key={columnIndex} style={styles.column(gap)}>
             {column.map((day) => (
@@ -212,6 +228,8 @@ const DayCell = memo(function DayCell({
 const styles = StyleSheet.create({
   row: (gap: number) => ({ flexDirection: 'row' as const, gap }),
   column: (gap: number) => ({ gap }),
+  // Bleed room that takes no space: the cells sit exactly where they did.
+  cached: { margin: -CACHE_BLEED, padding: CACHE_BLEED },
   month: { gap: MONTH_LABEL_GAP },
   monthLabel: { height: MONTH_LABEL, lineHeight: MONTH_LABEL },
   dayLabels: (gap: number) => ({
