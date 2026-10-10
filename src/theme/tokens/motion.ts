@@ -241,7 +241,7 @@ export const motion = {
    * moving between the onboarding/login flow and the app cross-fades. With Reduce Motion nothing slides:
    * every route change cross-fades. The tab navigator only swaps its pages ('none', in both modes: a
    * transition switched at runtime changes its native screen container on iOS, remounting every tab and
-   * blanking pages); the pages animate themselves (`tabSquirt`). `fadeMs` sets iOS cross-fades (whose
+   * blanking pages); the pages animate themselves (`tabFade`). `fadeMs` sets iOS cross-fades (whose
    * platform default, 500ms, drags).
    */
   navigation: {
@@ -250,17 +250,17 @@ export const motion = {
     fadeMs: DURATION.emphasis,
   },
   /**
-   * tabSquirt: a chosen tab's page squirts out of its icon in the tab bar: from a speck the icon's size
-   * (`fromScale`) to the whole screen over `durationMs`, on the emphasis curve (a burst, then a soft
-   * landing), opaque by `fadeInAt` of the way. The page it replaces is put away at once, so pages never
-   * stack however fast tabs are tapped. With Reduce Motion the page fades in, in place (`fade`: opacity
-   * only, so always played).
+   * tabFade: a chosen tab's page fades in where it is, on the enter curve (most of the way there at once,
+   * then settling): the plain tab change. The page it replaces is put away at once, so two pages are never
+   * drawn together and never stack however fast tabs are tapped. Opacity only, so nothing is laid out or
+   * drawn again while it plays, and it plays the same with Reduce Motion.
    */
-  tabSquirt: {
-    durationMs: 380,
-    fromScale: 0.06,
-    fadeInAt: 0.25,
-    fade: { duration: DURATION.fast, reduceMotion: ReduceMotion.Never } satisfies WithTimingConfig,
+  tabFade: {
+    timing: {
+      duration: DURATION.normal,
+      easing: ease.enter,
+      reduceMotion: ReduceMotion.Never,
+    } satisfies WithTimingConfig,
   },
   /**
    * The liquid tab bar: ONE liquid body with a leading head and a trailing tail. The head springs to the

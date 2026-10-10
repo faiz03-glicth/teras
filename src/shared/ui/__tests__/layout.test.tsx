@@ -39,20 +39,6 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
     expect(onTabPress).toHaveBeenCalledWith('workout');
   });
 
-  it('TabBar reports its size once laid out, so a page can grow out of its tab icon', () => {
-    const onMeasure = jest.fn();
-    renderInScheme(
-      <TabBar items={TAB_ITEMS} active="home" onTabPress={jest.fn()} onMeasure={onMeasure} />,
-      scheme,
-    );
-
-    fireEvent(screen.getByTestId('tab-bar'), 'layout', {
-      nativeEvent: { layout: { x: 0, y: 760, width: 390, height: 84 } },
-    });
-
-    expect(onMeasure).toHaveBeenCalledWith({ width: 390, height: 84 });
-  });
-
   it('TabBar colours the active icon and label, apart from the well that now carries the fill', () => {
     renderInScheme(<TabBar items={TAB_ITEMS} active="workout" onTabPress={jest.fn()} />, scheme);
     expect(screen.getByRole('tab', { name: 'Workout' }).props.accessibilityState).toEqual({

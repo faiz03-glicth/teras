@@ -42,7 +42,7 @@ export { SsoButton } from './SsoButton';
 export { StatTile } from './StatTile';
 export { StepperRow, type StepperField } from './StepperRow';
 export { SwipeToDelete } from './SwipeToDelete';
-export { TAB_ICON_Y, TabBar, tabCenters } from './TabBar';
+export { TabBar } from './TabBar';
 export { TabMotionProvider, TabScene, type TabMotion } from './TabScene';
 export { Text } from './Text';
 export { TextField } from './TextField';
