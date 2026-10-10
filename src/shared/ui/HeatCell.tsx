@@ -91,10 +91,17 @@ const styles = StyleSheet.create((theme) => ({
         : carved
           ? theme.material.carved.background
           : theme.heat[level],
-    // The darker fill marks the dent on its own; the inner shadow (Android 10+) gives it depth.
-    boxShadow: carved ? theme.material.carved.shadow : undefined,
-    borderWidth: state === 'future' ? 1 : 0,
-    borderColor: theme.colors.border,
+    // The darker fill marks the dent on its own; its edges give it depth, the shade up-left and the light
+    // down-right. Edges, not inner shadows: Android blurs each inner shadow offscreen, dozens of times a month.
+    ...(carved
+      ? {
+          borderWidth: theme.material.carved.edge,
+          borderTopColor: theme.material.carved.shade,
+          borderLeftColor: theme.material.carved.shade,
+          borderBottomColor: theme.material.carved.light,
+          borderRightColor: theme.material.carved.light,
+        }
+      : { borderWidth: state === 'future' ? 1 : 0, borderColor: theme.colors.border }),
     // A day still to come is a faint outline: set apart from an outlined empty day that has happened.
     opacity: state === 'future' ? 0.5 : 1,
     outlineWidth: state === 'today' ? 1.5 : state === 'selected' ? 2 : 0,
@@ -103,17 +110,19 @@ const styles = StyleSheet.create((theme) => ({
   }),
   outline: { borderWidth: 1, borderColor: theme.colors.border },
   // A small bead resting in the dent: it reads at any cell size and never collides with a trained fill
-  // (marked is only ever true on a carved, level-0 cell).
+  // (marked is only ever true on a carved, level-0 cell). It is placed from inside the dent's edges, so
+  // centring it takes them off.
   dot: (size: number) => {
     const diameter = Math.max(3, Math.round(size * 0.36));
+    const offset = (size - diameter) / 2 - theme.material.carved.edge;
     return {
       position: 'absolute' as const,
       width: diameter,
       height: diameter,
       borderRadius: diameter / 2,
       backgroundColor: theme.colors.accentText,
-      top: (size - diameter) / 2,
-      left: (size - diameter) / 2,
+      top: offset,
+      left: offset,
     };
   },
 }));

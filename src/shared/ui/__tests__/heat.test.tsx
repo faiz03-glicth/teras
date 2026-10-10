@@ -31,20 +31,32 @@ describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
 
   it('HeatCell carves an empty day into the card, in place of its outline', () => {
     const { theme, toJSON, rerender } = renderInScheme(<HeatCell level={0} size={14} outlined />, scheme);
+    const { carved } = theme.material;
+    // The dent's edges, the shade up-left and the light down-right: a border, never a blurred inner shadow.
+    const dent = {
+      borderWidth: carved.edge,
+      borderTopColor: carved.shade,
+      borderLeftColor: carved.shade,
+      borderBottomColor: carved.light,
+      borderRightColor: carved.light,
+    };
     let style = styleOf(toJSON());
-    expect(style.backgroundColor).toBe(theme.material.carved.background);
-    expect(style.boxShadow).toBe(theme.material.carved.shadow);
-    expect(style.borderWidth).toBe(0);
+    expect(style.backgroundColor).toBe(carved.background);
+    expect(style).toMatchObject(dent);
+    expect(style.boxShadow).toBeUndefined();
+    // The dent takes the outline's place.
+    expect(style.borderColor).toBeUndefined();
 
     // Today with no workout yet is still a dent, ringed like any today.
     rerender(<HeatCell level={0} size={14} state="today" />);
     style = styleOf(toJSON());
-    expect(style.boxShadow).toBe(theme.material.carved.shadow);
+    expect(style).toMatchObject(dent);
     expect(style.outlineWidth).toBe(1.5);
 
     // A day still to come is not carved: it hasn't happened yet.
     rerender(<HeatCell level={0} size={14} state="future" />);
     style = styleOf(toJSON());
+    expect(style.borderTopColor).toBeUndefined();
     expect(style.boxShadow).toBeUndefined();
     expect(style.backgroundColor).toBe('transparent');
   });
@@ -53,9 +65,11 @@ describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
     const { theme, toJSON } = renderInScheme(<HeatCell level={0} size={20} marked />, scheme);
     const node = toJSON();
     const [dot] = childrenOf(node);
-    expect(dot && typeof dot !== 'string' ? styleOf(dot).backgroundColor : undefined).toBe(
-      theme.colors.accentText,
-    );
+    const bead = dot && typeof dot !== 'string' ? styleOf(dot) : {};
+    expect(bead.backgroundColor).toBe(theme.colors.accentText);
+    // Centred in the dent: a 7pt bead (36% of 20) placed from inside the edges, so they come off.
+    const offset = (20 - 7) / 2 - theme.material.carved.edge;
+    expect(bead).toMatchObject({ width: 7, top: offset, left: offset });
   });
 
   it('never marks a cell that is not carved, whatever `marked` says', () => {

@@ -43,7 +43,9 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
     },
     carved: {
       background: '#ECD9A0',
-      shadow: 'inset 1.5px 1.5px 2.5px rgba(122,86,30,0.32), inset -1.5px -1.5px 2.5px rgba(255,251,235,0.9)',
+      shade: 'rgba(122,86,30,0.32)',
+      light: 'rgba(255,251,235,0.9)',
+      edge: 1.5,
     },
     bar: { background: '#FAEDC2', shadow: '0px -4px 12px rgba(122,86,30,0.16)' },
     accent: {
@@ -67,10 +69,7 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
     pressed: {
       shadow: 'inset 3px 3px 6px rgba(0,0,0,0.50), inset -2px -2px 5px rgba(255,236,200,0.07)',
     },
-    carved: {
-      background: '#221A13',
-      shadow: 'inset 1.5px 1.5px 2.5px rgba(0,0,0,0.55), inset -1.5px -1.5px 2px rgba(255,236,200,0.08)',
-    },
+    carved: { background: '#221A13', shade: 'rgba(0,0,0,0.55)', light: 'rgba(255,236,200,0.08)', edge: 1.5 },
     // Its top edge catches the light, and it casts upward onto the content scrolling beneath it.
     bar: {
       background: semanticColors.dark.surface,

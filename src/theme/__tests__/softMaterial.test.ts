@@ -69,10 +69,19 @@ describe.each(['light', 'dark'] as const)('the %s soft material', (scheme) => {
     expect(luminance(material.carved.background)).toBeLessThan(luminance(material.raised.background));
   });
 
+  it('cuts an empty day in with fine edges, lit like every other surface, and no blur', () => {
+    // Edges, not inner shadows: Android blurs each inner shadow offscreen, and a month holds dozens of days.
+    const brightness = (color: string) =>
+      (color.match(/[\d.]+/g) ?? []).slice(0, 3).reduce((sum, channel) => sum + Number(channel), 0);
+    // Light falls from the upper left: the shade edge (up-left) is darker than the light edge (down-right).
+    expect(brightness(material.carved.shade)).toBeLessThan(brightness(material.carved.light));
+    expect(material.carved.edge).toBeGreaterThan(0);
+    expect(material.carved.edge).toBeLessThanOrEqual(2);
+  });
+
   it.each([
     ['inset', material.inset.shadow],
     ['pressed', material.pressed.shadow],
-    ['carved', material.carved.shadow],
   ])('presses a %s surface into the ground with inner shadows only', (_name, shadow) => {
     const parts = shadowsOf(shadow);
     expect(parts.length).toBeGreaterThan(0);
@@ -85,7 +94,6 @@ describe.each(['light', 'dark'] as const)('the %s soft material', (scheme) => {
       material.raisedSm.shadow,
       material.inset.shadow,
       material.pressed.shadow,
-      material.carved.shadow,
       material.accent.shadow,
     ].flatMap(shadowsOf);
     for (const shadow of all) {
