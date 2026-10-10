@@ -1,103 +1,67 @@
+// The icons are glyphs of lucide's own icon font (lucide-static, the same release as lucide-react-native):
+// one line of text each, drawn from the GPU's glyph cache. As SVGs they were four or five native views
+// apiece, each painted in software into a bitmap of its own on the UI thread and then uploaded to the GPU,
+// which made every screen with a list of icons slow to open. Only the filled heart (a favourite) is still
+// an SVG: a glyph is an outline and can't be filled.
 // One file per icon: Metro doesn't tree-shake, so importing from the package root bundles all ~1,900 icons.
-import Bell from 'lucide-react-native/icons/bell';
-import Book from 'lucide-react-native/icons/book';
-import Calendar from 'lucide-react-native/icons/calendar';
-import ChartColumn from 'lucide-react-native/icons/chart-column';
-import Check from 'lucide-react-native/icons/check';
-import ChevronDown from 'lucide-react-native/icons/chevron-down';
-import ChevronLeft from 'lucide-react-native/icons/chevron-left';
-import ChevronRight from 'lucide-react-native/icons/chevron-right';
-import ChevronUp from 'lucide-react-native/icons/chevron-up';
-import CircleAlert from 'lucide-react-native/icons/circle-alert';
-import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
-import Clock from 'lucide-react-native/icons/clock';
-import Code from 'lucide-react-native/icons/code';
-import Contrast from 'lucide-react-native/icons/contrast';
-import Download from 'lucide-react-native/icons/download';
-import Droplet from 'lucide-react-native/icons/droplet';
-import Dumbbell from 'lucide-react-native/icons/dumbbell';
-import Flame from 'lucide-react-native/icons/flame';
-import Flower2 from 'lucide-react-native/icons/flower-2';
-import Footprints from 'lucide-react-native/icons/footprints';
 import Heart from 'lucide-react-native/icons/heart';
-import House from 'lucide-react-native/icons/house';
-import Info from 'lucide-react-native/icons/info';
-import ListChecks from 'lucide-react-native/icons/list-checks';
-import Lock from 'lucide-react-native/icons/lock';
-import LogOut from 'lucide-react-native/icons/log-out';
-import Mail from 'lucide-react-native/icons/mail';
-import Minus from 'lucide-react-native/icons/minus';
-import Moon from 'lucide-react-native/icons/moon';
-import Palette from 'lucide-react-native/icons/palette';
-import Pencil from 'lucide-react-native/icons/pencil';
-import Plus from 'lucide-react-native/icons/plus';
-import Search from 'lucide-react-native/icons/search';
-import Shield from 'lucide-react-native/icons/shield';
-import Sparkles from 'lucide-react-native/icons/sparkles';
-import Star from 'lucide-react-native/icons/star';
-import Target from 'lucide-react-native/icons/target';
-import Trash from 'lucide-react-native/icons/trash';
-import TrendingDown from 'lucide-react-native/icons/trending-down';
-import TrendingUp from 'lucide-react-native/icons/trending-up';
-import Trophy from 'lucide-react-native/icons/trophy';
-import Upload from 'lucide-react-native/icons/upload';
-import User from 'lucide-react-native/icons/user';
-import Volume2 from 'lucide-react-native/icons/volume-2';
-import X from 'lucide-react-native/icons/x';
 
-/** Every lucide icon has this type (taken from one, so the package root is never imported). */
-type LucideIcon = typeof Bell;
-
-/** The icons the app uses, by name. */
+/**
+ * The icons the app uses, by name: the lucide icon each one is, and that icon's code point in lucide's
+ * font (lucide-static/font/codepoints.json; a test keeps the two in step).
+ */
 export const ICONS = {
-  alert: CircleAlert,
-  bell: Bell,
-  book: Book,
-  calendar: Calendar,
-  chart: ChartColumn,
-  check: Check,
-  'chevron-down': ChevronDown,
-  'chevron-left': ChevronLeft,
-  'chevron-right': ChevronRight,
-  'chevron-up': ChevronUp,
-  clock: Clock,
-  close: X,
-  code: Code,
-  contrast: Contrast,
-  download: Download,
-  droplet: Droplet,
-  dumbbell: Dumbbell,
-  flame: Flame,
-  flower: Flower2,
-  footprints: Footprints,
-  heart: Heart,
-  help: CircleQuestionMark,
-  house: House,
-  info: Info,
-  list: ListChecks,
-  lock: Lock,
-  'log-out': LogOut,
-  mail: Mail,
-  minus: Minus,
-  moon: Moon,
-  palette: Palette,
-  pencil: Pencil,
-  plus: Plus,
-  search: Search,
-  shield: Shield,
-  sparkles: Sparkles,
-  star: Star,
-  target: Target,
-  trash: Trash,
-  'trending-down': TrendingDown,
-  'trending-up': TrendingUp,
-  trophy: Trophy,
-  upload: Upload,
-  user: User,
-  volume: Volume2,
-} satisfies Record<string, LucideIcon>;
+  alert: { lucide: 'circle-alert', code: 57463 },
+  bell: { lucide: 'bell', code: 57433 },
+  book: { lucide: 'book', code: 57438 },
+  calendar: { lucide: 'calendar', code: 57443 },
+  chart: { lucide: 'chart-column', code: 58019 },
+  check: { lucide: 'check', code: 57452 },
+  'chevron-down': { lucide: 'chevron-down', code: 57453 },
+  'chevron-left': { lucide: 'chevron-left', code: 57454 },
+  'chevron-right': { lucide: 'chevron-right', code: 57455 },
+  'chevron-up': { lucide: 'chevron-up', code: 57456 },
+  clock: { lucide: 'clock', code: 57479 },
+  close: { lucide: 'x', code: 57778 },
+  code: { lucide: 'code', code: 57491 },
+  contrast: { lucide: 'contrast', code: 57501 },
+  download: { lucide: 'download', code: 57522 },
+  droplet: { lucide: 'droplet', code: 57524 },
+  dumbbell: { lucide: 'dumbbell', code: 58273 },
+  flame: { lucide: 'flame', code: 57554 },
+  flower: { lucide: 'flower-2', code: 58068 },
+  footprints: { lucide: 'footprints', code: 58297 },
+  heart: { lucide: 'heart', code: 57586 },
+  help: { lucide: 'circle-question-mark', code: 57474 },
+  house: { lucide: 'house', code: 57589 },
+  info: { lucide: 'info', code: 57593 },
+  list: { lucide: 'list-checks', code: 57808 },
+  lock: { lucide: 'lock', code: 57611 },
+  'log-out': { lucide: 'log-out', code: 57614 },
+  mail: { lucide: 'mail', code: 57615 },
+  minus: { lucide: 'minus', code: 57628 },
+  moon: { lucide: 'moon', code: 57630 },
+  palette: { lucide: 'palette', code: 57821 },
+  pencil: { lucide: 'pencil', code: 57849 },
+  plus: { lucide: 'plus', code: 57661 },
+  search: { lucide: 'search', code: 57681 },
+  shield: { lucide: 'shield', code: 57688 },
+  sparkles: { lucide: 'sparkles', code: 58386 },
+  star: { lucide: 'star', code: 57718 },
+  target: { lucide: 'target', code: 57728 },
+  trash: { lucide: 'trash', code: 57741 },
+  'trending-down': { lucide: 'trending-down', code: 57744 },
+  'trending-up': { lucide: 'trending-up', code: 57745 },
+  trophy: { lucide: 'trophy', code: 58227 },
+  upload: { lucide: 'upload', code: 57758 },
+  user: { lucide: 'user', code: 57759 },
+  volume: { lucide: 'volume-2', code: 57771 },
+} as const satisfies Record<string, { lucide: string; code: number }>;
 
 export type IconName = keyof typeof ICONS;
+
+/** The icons that also come filled (`Icon`'s `fill`), drawn as SVG. */
+export const FILLED_ICONS: Partial<Record<IconName, typeof Heart>> = { heart: Heart };
 
 export function isIconName(name: string): name is IconName {
   return Object.hasOwn(ICONS, name);
