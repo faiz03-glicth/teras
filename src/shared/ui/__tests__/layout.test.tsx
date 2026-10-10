@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
 import { toast } from 'sonner-native';
 
@@ -68,8 +68,14 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
       // Home is the first of three equal 100pt segments: centred, the well sits at x = 50 - 92/2 = 4.
       expect(style.transform[0]?.translateX).toBeCloseTo(4, 0);
       expect(style.transform[1]?.scaleX).toBeCloseTo(1, 1);
-      expect(styleOf(screen.getByTestId('tab-liquid'))).toMatchObject({
-        width: 92,
+      const liquid = screen.getByTestId('tab-liquid');
+      expect(styleOf(liquid)).toMatchObject({ width: 92 });
+      // Its pressed-in look is a texture the springs only move and stretch, never re-blurred as it travels.
+      expect(styleOf(liquid).boxShadow).toBeUndefined();
+      const cached = within(liquid).getByTestId('cached-surface');
+      expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
+      expect(styleOf(cached.props.children)).toMatchObject({
+        borderRadius: 16,
         backgroundColor: theme.material.inset.background,
         boxShadow: theme.material.inset.shadow,
       });

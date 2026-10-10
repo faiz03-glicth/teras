@@ -8,6 +8,7 @@ import { haptics } from '@/shared/lib/haptics';
 import { motion } from '@/theme';
 
 import type { TabId, TabItem } from '../config/tabs';
+import { CachedSurface } from './CachedSurface';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
@@ -92,7 +93,9 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
           pointerEvents="none"
           testID="tab-liquid"
           style={[styles.liquid, { width: wellWidth }, liquidStyle]}
-        />
+        >
+          <CachedSurface style={styles.liquidSurface} bleed="none" />
+        </Animated.View>
       )}
       {items.map((item) => {
         const on = item.id === active;
@@ -143,6 +146,11 @@ const styles = StyleSheet.create((theme) => ({
     position: 'absolute',
     top: theme.spacing.sm,
     height: WELL_HEIGHT,
+  },
+  // Drawn once into a texture (CachedSurface) that the well's springs only move and stretch. Android blurs
+  // an inner shadow offscreen on every frame it is drawn, and the bar is drawn on every frame of a tab
+  // change, a push and a pop, and under every scroll.
+  liquidSurface: {
     borderRadius: WELL_RADIUS,
     backgroundColor: theme.material.inset.background,
     boxShadow: theme.material.inset.shadow,

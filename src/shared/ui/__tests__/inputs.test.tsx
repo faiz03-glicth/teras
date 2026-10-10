@@ -24,6 +24,21 @@ describe.each(SCHEMES)('inputs in %s', (scheme) => {
     expect(screen.getByRole('alert')).toHaveTextContent('Enter a valid email');
   });
 
+  it("TextField draws its well's inner shadow once, inside its edge, so a sliding screen never re-blurs it", () => {
+    const { theme } = renderInScheme(<TextField label="Search" icon="search" />, scheme);
+    const cached = screen.getByTestId('cached-surface');
+    expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
+    expect(styleOf(cached.props.children)).toMatchObject({
+      borderRadius: theme.radii.control - 1,
+      boxShadow: theme.material.inset.shadow,
+    });
+    // That texture is the only shadow the field draws: nothing around it blurs live.
+    const shadowed = screen.UNSAFE_root.findAll(
+      (node) => typeof node.type === 'string' && styleOf(node).boxShadow !== undefined,
+    );
+    expect(shadowed).toHaveLength(1);
+  });
+
   it('OtpInput keeps digits only and completes once on the sixth digit', () => {
     const onComplete = jest.fn();
     renderInScheme(<ControlledOtp onComplete={onComplete} />, scheme);

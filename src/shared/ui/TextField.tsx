@@ -5,6 +5,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { useStateTransition } from '@/theme';
 
+import { CachedSurface } from './CachedSurface';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
 import { Text } from './Text';
@@ -30,6 +31,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   return (
     <View style={styles.wrapper}>
       <Animated.View style={[styles.field, { borderColor }, outline]}>
+        <CachedSurface style={styles.well} bleed="none" />
         {icon && <Icon name={icon} size={18} color={theme.colors.text3} />}
         <TextInput
           ref={ref}
@@ -69,7 +71,14 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: 14,
     borderRadius: theme.radii.control,
     borderWidth: 1,
+    // The fill stays on the field, under its edge, so no seam shows where the edge meets the well.
     backgroundColor: theme.material.inset.background,
+  },
+  // The well's inner shadow, inside the edge and drawn once into a texture (CachedSurface): Android blurs an
+  // inner shadow offscreen on every frame it is drawn, and a search field slides in with its screen. The
+  // edge around it, whose colour animates on focus, stays live.
+  well: {
+    borderRadius: theme.radii.control - 1,
     boxShadow: theme.material.inset.shadow,
   },
   input: {
