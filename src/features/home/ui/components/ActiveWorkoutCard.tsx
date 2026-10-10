@@ -21,6 +21,7 @@ export function ActiveWorkoutCard({ entry, onPress }: { entry: ActiveEntry; onPr
       accessibilityLabel={entry.accessibilityLabel}
       accessibilityHint="Opens the workout in progress"
       style={styles.card}
+      surface={{ style: styles.surface, bleed: 'none' }}
       testID="home-in-progress"
     >
       <View style={styles.status}>
@@ -48,9 +49,10 @@ export function ActiveWorkoutCard({ entry, onPress }: { entry: ActiveEntry; onPr
 }
 
 const styles = StyleSheet.create((theme) => ({
-  card: {
-    gap: theme.spacing.xs,
-    padding: theme.spacing.lg,
+  card: { gap: theme.spacing.xs, padding: theme.spacing.lg },
+  // The gold-tinted well, drawn once into a texture behind the text (PressableScale's `surface`): Android
+  // blurs an inner shadow offscreen on every frame it is drawn, and Home is redrawn on every tab change.
+  surface: {
     borderRadius: theme.radii.card,
     backgroundColor: theme.colors.accentSoft,
     boxShadow: theme.material.inset.shadow,
