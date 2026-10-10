@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
@@ -47,9 +47,10 @@ describe.each(SCHEMES)('LoginScreen in %s', (scheme) => {
     const { theme } = renderWithApp(<LoginScreen intent="new" />, { scheme });
     await screen.findByRole('button', { name: 'Sign in with Apple' });
     const google = styleOf(screen.getByRole('button', { name: 'Continue with Google' }));
-    const email = styleOf(screen.getByRole('button', { name: 'Continue with email' }));
-    expect(email.height).toBe(google.height);
-    expect(email).toMatchObject({
+    const emailKey = screen.getByRole('button', { name: 'Continue with email' });
+    expect(styleOf(emailKey).height).toBe(google.height);
+    // Its raised look is drawn once into a texture behind the label (PressableScale's `surface`).
+    expect(styleOf(within(emailKey).getByTestId('cached-surface').props.children)).toMatchObject({
       backgroundColor: theme.material.raised.background,
       boxShadow: theme.material.raised.shadow,
     });

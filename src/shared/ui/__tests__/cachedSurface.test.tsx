@@ -1,9 +1,11 @@
-import { screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
 import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
+import { Button } from '../Button';
 import { Card } from '../Card';
+import { SegmentedControl } from '../SegmentedControl';
 import { StatTile } from '../StatTile';
 import { Text } from '../Text';
 
@@ -49,6 +51,43 @@ describe.each(SCHEMES)('cached surfaces in %s', (scheme) => {
       backgroundColor: theme.colors.accentSoft,
       boxShadow: theme.material.inset.shadow,
     });
+  });
+
+  it("caches a segmented control's well and the key gliding along it, so neither re-blurs as it moves", () => {
+    const { theme } = renderInScheme(
+      <SegmentedControl
+        options={[
+          { value: 'kg', label: 'kg' },
+          { value: 'lb', label: 'lb' },
+        ]}
+        value="kg"
+        onChange={jest.fn()}
+        accessibilityLabel="Unit"
+        testID="unit"
+      />,
+      scheme,
+    );
+    fireEvent(screen.getByTestId('unit'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 200, height: 44 } },
+    });
+
+    expect(styleOf(screen.getByTestId('unit')).boxShadow).toBeUndefined();
+    const [track, pill] = screen.getAllByTestId('cached-surface');
+    expect(lookOf(track!)).toMatchObject({ boxShadow: theme.material.inset.shadow });
+    expect(styleOf(screen.getByTestId('unit-pill')).boxShadow).toBeUndefined();
+    expect(lookOf(pill!)).toMatchObject({
+      backgroundColor: theme.material.raisedSm.background,
+      boxShadow: theme.material.raisedSm.shadow,
+    });
+  });
+
+  it("caches a gold Button's raised look with room for its deeper shadow", () => {
+    const { theme } = renderInScheme(<Button label="Start" onPress={jest.fn()} />, scheme);
+
+    const cached = screen.getByTestId('cached-surface');
+    expect(lookOf(cached)).toMatchObject({ boxShadow: theme.material.accent.shadow });
+    // Room around the key for the gold's 4px offset and 12px blur ('card', not a small key's 12pt).
+    expect(styleOf(cached)).toMatchObject({ top: -24, left: -24 });
   });
 
   it("caches a stat tile's raised look", () => {

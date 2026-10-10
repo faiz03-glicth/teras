@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { motion } from '@/theme';
 
+import { CachedSurface } from './CachedSurface';
 import { Crossfade } from './Crossfade';
 import { Text } from './Text';
 
@@ -70,12 +71,15 @@ export function SegmentedControl<T extends string>({
       accessibilityLabel={accessibilityLabel}
       onLayout={measure}
     >
+      <CachedSurface style={styles.trackSurface} bleed="none" />
       {segment > 0 && (
         <Animated.View
           pointerEvents="none"
           style={[styles.pill(segment), pill]}
           testID={testID && `${testID}-pill`}
-        />
+        >
+          <CachedSurface style={styles.pillSurface} />
+        </Animated.View>
       )}
       {options.map((option) => {
         const selected = option.value === value;
@@ -132,7 +136,11 @@ const styles = StyleSheet.create((theme) => ({
     gap: GAP,
     padding: PAD,
     borderRadius: theme.radii.control,
-    // The track is pressed into the material; the chosen segment is a key raised out of it.
+  },
+  // The track is pressed into the material; the chosen segment is a key raised out of it. Both looks are
+  // drawn once into textures (CachedSurface), so the key glides and the screens slide without re-blurring.
+  trackSurface: {
+    borderRadius: theme.radii.control,
     backgroundColor: theme.material.inset.background,
     boxShadow: theme.material.inset.shadow,
   },
@@ -150,8 +158,10 @@ const styles = StyleSheet.create((theme) => ({
     top: PAD,
     bottom: PAD,
     width,
+  }),
+  pillSurface: {
     borderRadius: theme.radii.control - PAD,
     backgroundColor: theme.material.raisedSm.background,
     boxShadow: theme.material.raisedSm.shadow,
-  }),
+  },
 }));

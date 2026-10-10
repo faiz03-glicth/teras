@@ -75,8 +75,12 @@ export function Button({
       accessibilityLabel={loading ? shownLabel : (accessibilityLabel ?? label)}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
-      style={[styles.base(variant, size), { opacity: disabled && !loading ? 0.45 : 1 }, fade]}
-      pressedStyle={styles.pressed(variant)}
+      style={[styles.base(size), { opacity: disabled && !loading ? 0.45 : 1 }, fade]}
+      surface={{
+        style: styles.surface(variant),
+        pressed: styles.pressed(variant),
+        bleed: variant === 'primary' || variant === 'secondary' ? 'card' : 'key',
+      }}
     >
       <ContentSwap id={loading ? `busy:${shownLabel}` : label} style={styles.content}>
         {loading ? (
@@ -98,13 +102,17 @@ export function Button({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  base: (variant: ButtonVariant, size: ButtonSize) => ({
+  base: (size: ButtonSize) => ({
     height: HEIGHT[size],
     paddingHorizontal: size === 'sm' ? theme.spacing.md + 2 : theme.spacing.lg,
     alignSelf: size === 'sm' ? ('flex-start' as const) : ('stretch' as const),
     // A key on a console, not a pill: controlled corners read as a physical object.
     borderRadius: theme.radii.control,
     justifyContent: 'center' as const,
+  }),
+  /** The key's material, drawn once into a texture behind its label (PressableScale's `surface`). */
+  surface: (variant: ButtonVariant) => ({
+    borderRadius: theme.radii.control,
     backgroundColor: {
       primary: theme.material.accent.background,
       secondary: theme.material.raised.background,

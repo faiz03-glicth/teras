@@ -34,8 +34,8 @@ export function FilterButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={expanded === undefined ? undefined : { expanded }}
       testID={testID}
-      style={[styles.button, active ? styles.active : styles.idle]}
-      pressedStyle={styles.pressed}
+      style={styles.button}
+      surface={{ style: [styles.surface, active ? styles.active : styles.idle], pressed: styles.pressed }}
     >
       {active && <Icon name="check" size={14} color={color} />}
       <Text variant="sub" weight="semibold" numberOfLines={1} style={[styles.label, { color }]}>
@@ -57,6 +57,8 @@ const styles = StyleSheet.create((theme) => ({
     paddingHorizontal: theme.spacing.md,
     borderRadius: theme.radii.control,
   },
+  // The look, drawn once into a texture behind the label (PressableScale's `surface`).
+  surface: { borderRadius: theme.radii.control },
   idle: { backgroundColor: theme.material.raised.background, boxShadow: theme.material.raisedSm.shadow },
   // Selected states are pressed in, a darker fill as well as the inner shadow.
   active: { backgroundColor: theme.material.inset.background, boxShadow: theme.material.inset.shadow },

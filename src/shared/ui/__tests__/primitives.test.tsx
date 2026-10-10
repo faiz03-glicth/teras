@@ -1,4 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
+import type { ReactTestInstance } from 'react-test-renderer';
 
 import { childrenOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
 
@@ -15,6 +16,13 @@ import { OrDivider } from '../OrDivider';
 import { PageDots } from '../PageDots';
 import { Text } from '../Text';
 import { Toggle } from '../Toggle';
+
+/** A control's material: drawn once into a texture behind its content (PressableScale's `surface`). */
+function surfaceOf(control: ReactTestInstance) {
+  const cached = within(control).getByTestId('cached-surface');
+  expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
+  return styleOf(cached.props.children);
+}
 
 describe.each(SCHEMES)('primitives in %s', (scheme) => {
   it('Text uses the tone colour and typography variant', () => {
@@ -33,7 +41,8 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     const onPress = jest.fn();
     const { theme, rerender } = renderInScheme(<Button label="Get started" onPress={onPress} />, scheme);
     const button = screen.getByRole('button', { name: 'Get started' });
-    expect(styleOf(button).backgroundColor).toBe(theme.colors.accent);
+    expect(styleOf(button).backgroundColor).toBeUndefined();
+    expect(surfaceOf(button).backgroundColor).toBe(theme.colors.accent);
     fireEvent.press(button);
     expect(onPress).toHaveBeenCalledTimes(1);
 
@@ -58,17 +67,19 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       <Button label="Add set" variant={variant} size="sm" onPress={jest.fn()} />,
       scheme,
     );
-    expect(styleOf(screen.getByRole('button', { name: 'Add set' }))).toMatchObject({
-      height: 36,
+    const key = () => screen.getByRole('button', { name: 'Add set' });
+    expect(styleOf(key())).toMatchObject({ height: 36, borderRadius: theme.radii.control });
+    expect(styleOf(key()).boxShadow).toBeUndefined();
+    expect(surfaceOf(key())).toMatchObject({
       borderRadius: theme.radii.control,
       backgroundColor: theme.material.raisedSm.background,
       boxShadow: theme.material.raisedSm.shadow,
     });
     // Under a finger the lift gives way to a shallow press, as on every other key.
-    fireEvent(screen.getByRole('button', { name: 'Add set' }), 'pressIn');
-    expect(styleOf(screen.getByRole('button', { name: 'Add set' })).boxShadow).toBe(
-      theme.material.pressed.shadow,
-    );
+    fireEvent(key(), 'pressIn');
+    expect(surfaceOf(key()).boxShadow).toBe(theme.material.pressed.shadow);
+    fireEvent(key(), 'pressOut');
+    expect(surfaceOf(key()).boxShadow).toBe(theme.material.raisedSm.shadow);
   });
 
   it('a small Button still reaches a 44pt touch target', () => {
@@ -90,16 +101,15 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       scheme,
     );
     const button = screen.getByRole('button', { name: 'Back' });
-    expect(styleOf(button)).toMatchObject({
-      width: 40,
-      height: 40,
+    expect(styleOf(button)).toMatchObject({ width: 40, height: 40, borderRadius: theme.radii.key });
+    expect(surfaceOf(button)).toMatchObject({
       borderRadius: theme.radii.key,
       backgroundColor: theme.material.raisedSm.background,
       boxShadow: theme.material.raisedSm.shadow,
     });
     expect(button.props.hitSlop).toBe(2);
     fireEvent(button, 'pressIn');
-    expect(styleOf(screen.getByRole('button', { name: 'Back' })).boxShadow).toBe(
+    expect(surfaceOf(screen.getByRole('button', { name: 'Back' })).boxShadow).toBe(
       theme.material.pressed.shadow,
     );
   });
@@ -107,8 +117,9 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
   it('a plain IconButton is an icon printed on the surface, still a 44pt target', () => {
     renderInScheme(<IconButton icon="pencil" plain onPress={jest.fn()} accessibilityLabel="Edit" />, scheme);
     const button = screen.getByRole('button', { name: 'Edit' });
-    expect(styleOf(button).backgroundColor).toBe('transparent');
+    expect(styleOf(button).backgroundColor).toBeUndefined();
     expect(styleOf(button).boxShadow).toBeUndefined();
+    expect(within(button).queryByTestId('cached-surface')).toBeNull();
     expect(button.props.hitSlop).toBe(5);
   });
 
@@ -117,7 +128,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       <IconButton icon="trash" tone="danger" onPress={jest.fn()} accessibilityLabel="Remove Squat" />,
       scheme,
     );
-    expect(styleOf(screen.getByRole('button', { name: 'Remove Squat' })).backgroundColor).toBe(
+    expect(surfaceOf(screen.getByRole('button', { name: 'Remove Squat' })).backgroundColor).toBe(
       theme.material.raisedSm.background,
     );
     expect(screen.UNSAFE_getByType(Icon).props.color).toBe(theme.colors.danger);
@@ -131,7 +142,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     );
     expect(screen.getByRole('header', { name: 'Settings' })).toBeTruthy();
     const back = screen.getByRole('button', { name: 'Back' });
-    expect(styleOf(back).backgroundColor).toBe(theme.material.raisedSm.background);
+    expect(surfaceOf(back).backgroundColor).toBe(theme.material.raisedSm.background);
     fireEvent.press(back);
     expect(onBack).toHaveBeenCalled();
     expect(screen.getByText('Skip')).toBeTruthy();

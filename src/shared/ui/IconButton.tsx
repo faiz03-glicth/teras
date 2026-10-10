@@ -57,7 +57,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       style={[styles.base(plain), { opacity: disabled ? 0.45 : 1 }, fade]}
-      pressedStyle={plain ? undefined : styles.pressed}
+      surface={plain ? undefined : { style: styles.surface, pressed: styles.pressed }}
     >
       <Icon
         name={icon}
@@ -73,13 +73,16 @@ const styles = StyleSheet.create((theme) => ({
   base: (plain: boolean) => ({
     width: plain ? PLAIN_SIZE : KEY_SIZE,
     height: plain ? PLAIN_SIZE : KEY_SIZE,
-    // A small raised key with softened corners, like the app's buttons; `plain` stays flat, an icon
-    // printed on the surface.
     borderRadius: plain ? PLAIN_SIZE / 2 : theme.radii.key,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: plain ? 'transparent' : theme.material.raisedSm.background,
-    boxShadow: plain ? undefined : theme.material.raisedSm.shadow,
   }),
+  // A small raised key with softened corners, like the app's buttons, drawn once into a texture behind its
+  // icon (PressableScale's `surface`); `plain` has none, an icon printed on the surface.
+  surface: {
+    borderRadius: theme.radii.key,
+    backgroundColor: theme.material.raisedSm.background,
+    boxShadow: theme.material.raisedSm.shadow,
+  },
   pressed: { boxShadow: theme.material.pressed.shadow },
 }));
