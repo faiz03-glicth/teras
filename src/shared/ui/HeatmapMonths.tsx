@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Pressable, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import type { HeatCellState, HeatGrid } from '@/features/heatmap/domain/grid';
@@ -177,30 +177,22 @@ const DayCell = memo(function DayCell({
 }: DayCellProps) {
   // An empty day that has happened keeps a hairline edge: its pale swatch alone barely parts from the
   // card, and the wave's shape must read even before anything is logged.
-  const square = (
+  const pressable = onDayPress && label;
+  // One native view per day: a pressable day is the cell itself, not a Pressable around a View.
+  return (
     <HeatCell
       level={level}
       state={state}
       size={size}
       radius={radius}
       outlined={level === 0 && state !== 'future' && state !== 'blank'}
-    />
-  );
-  if (!onDayPress || !label) return square;
-  return (
-    <Pressable
-      onPress={() => onDayPress(day)}
+      onPress={pressable ? () => onDayPress(day) : undefined}
       hitSlop={gap / 2}
       // On a scrolling screen, a touch that becomes a scroll neither dims the day nor opens it.
-      unstable_pressDelay={pressDelay || undefined}
-      accessibilityRole="button"
+      pressDelay={pressDelay}
       accessibilityLabel={label}
-      accessibilityState={{ selected: state === 'selected' }}
-      style={({ pressed }) => (pressed ? styles.pressed : undefined)}
-      testID={`day-${day}`}
-    >
-      {square}
-    </Pressable>
+      testID={pressable ? `day-${day}` : undefined}
+    />
   );
 });
 
@@ -215,6 +207,4 @@ const styles = StyleSheet.create({
     paddingTop: MONTH_LABEL + MONTH_LABEL_GAP,
   }),
   dayLabel: (size: number) => ({ height: size, lineHeight: size, fontSize: Math.min(10, size - 1) }),
-  // A day under the finger dims at once: feedback with no animation to run on every cell.
-  pressed: { opacity: 0.55 },
 });

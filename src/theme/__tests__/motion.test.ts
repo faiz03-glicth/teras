@@ -15,3 +15,13 @@ function nonPlainPaths(value: unknown, path: string): string[] {
 it('motion tokens are plain data that worklets can safely capture', () => {
   expect(nonPlainPaths(motion, 'motion')).toEqual([]);
 });
+
+/**
+ * A press must feel instant: the control is fully sunk within ~4 frames, and a held press on a scrolling
+ * screen waits no longer than a scroll needs to claim the touch. Raising these makes every button feel late.
+ */
+it('keeps the press within its instant budget', () => {
+  expect(motion.press.inMs).toBeLessThanOrEqual(70);
+  expect(motion.scroll.pressDelayMs).toBeLessThanOrEqual(50);
+  expect(motion.pager.pressDelayMs).toBeLessThanOrEqual(100);
+});

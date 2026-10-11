@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -11,7 +12,13 @@ import type { ActiveEntry } from '../useHomeViewModel';
  * record, so it is the gold-tinted well (as the rest timer is), set apart from the raised past workouts
  * by its colour, its label and its Resume as well as its depth.
  */
-export function ActiveWorkoutCard({ entry, onPress }: { entry: ActiveEntry; onPress: () => void }) {
+export const ActiveWorkoutCard = memo(function ActiveWorkoutCard({
+  entry,
+  onPress,
+}: {
+  entry: ActiveEntry;
+  onPress: () => void;
+}) {
   const { theme } = useUnistyles();
   return (
     <PressableScale
@@ -21,6 +28,7 @@ export function ActiveWorkoutCard({ entry, onPress }: { entry: ActiveEntry; onPr
       accessibilityLabel={entry.accessibilityLabel}
       accessibilityHint="Opens the workout in progress"
       style={styles.card}
+      pressedStyle={styles.pressed}
       testID="home-in-progress"
     >
       <View style={styles.status}>
@@ -45,7 +53,7 @@ export function ActiveWorkoutCard({ entry, onPress }: { entry: ActiveEntry; onPr
       </Text>
     </PressableScale>
   );
-}
+});
 
 const styles = StyleSheet.create((theme) => ({
   card: {
@@ -55,6 +63,8 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.accentSoft,
     boxShadow: theme.material.inset.shadow,
   },
+  // Already set into the page; pressed, it sinks deeper, like the gold keys.
+  pressed: { boxShadow: theme.material.accent.pressedShadow },
   status: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.accentText },
   heading: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },

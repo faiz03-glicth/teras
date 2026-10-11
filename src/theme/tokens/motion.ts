@@ -111,11 +111,11 @@ export const motion = {
     tickGapMs: 35,
   },
   /**
-   * scroll: a press that begins in something that scrolls waits `pressDelayMs` (Android's own tap timeout
-   * in scrolling lists): a touch that turns into a scroll within that time never presses, so starting a
-   * scroll on a card or a month doesn't dip it. A quick tap is still a tap (pressed and released at once).
+   * scroll: a press that begins in something that scrolls waits `pressDelayMs` (half Android's tap timeout
+   * in scrolling lists): a scroll claims the touch well within that, so starting a scroll on a card or a
+   * month still doesn't dip it, while a held press sinks without a felt wait. A quick tap is still a tap.
    */
-  scroll: { pressDelayMs: DURATION.quick },
+  scroll: { pressDelayMs: 50 },
   /** settle: something in a fixed frame moving to make room (a button gliding as the one below it goes). */
   settle: { durationMs: DURATION.normal },
   /** fadeUp: something appearing in place (a banner, a status line) rises a little as it fades in. */
@@ -196,7 +196,11 @@ export const motion = {
     mass: 0.9,
     reduceMotion: ReduceMotion.System,
   } satisfies WithSpringConfig,
-  press: { scale: 0.96, subtleScale: 0.985 },
+  /**
+   * press: a control sinks to `scale` (cards `subtleScale`) in `inMs` on finger-down: fast enough to read
+   * as instant, never a visible animation. The release eases back on the standard spring.
+   */
+  press: { scale: 0.96, subtleScale: 0.985, inMs: 60 },
   pulse: { scale: 1.45, durationMs: 600, repeats: 2 },
   /**
    * themeTransition: a change of theme fades through the screen's own background. A veil in the current

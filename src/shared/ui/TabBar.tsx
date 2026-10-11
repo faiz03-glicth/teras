@@ -45,16 +45,23 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
             style={styles.tab}
             testID={`tab-${item.id}`}
           >
-            <View style={styles.well(on)} testID={`tab-${item.id}-well`}>
-              <Icon
-                name={item.icon}
-                size={TAB_ICON}
-                color={on ? theme.colors.accentText : theme.colors.text2}
-              />
-              <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
-                {item.label}
-              </Text>
-            </View>
+            {({ pressed }) => (
+              // Pressed, another tab's well sinks into the bar under the finger (the whole tab is the target);
+              // the tab you are on already sits in its well.
+              <View
+                style={[styles.well(on), pressed && !on && styles.wellPressed]}
+                testID={`tab-${item.id}-well`}
+              >
+                <Icon
+                  name={item.icon}
+                  size={TAB_ICON}
+                  color={on ? theme.colors.accentText : theme.colors.text2}
+                />
+                <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
+                  {item.label}
+                </Text>
+              </View>
+            )}
           </PressableScale>
         );
       })}
@@ -89,4 +96,5 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: on ? theme.material.inset.background : 'transparent',
     boxShadow: on ? theme.material.inset.shadow : undefined,
   }),
+  wellPressed: { backgroundColor: theme.material.inset.background, boxShadow: theme.material.pressed.shadow },
 }));

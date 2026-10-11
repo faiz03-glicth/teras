@@ -150,6 +150,7 @@ export function StepperRow({
         if (event.nativeEvent.actionName === 'longpress') startTyping();
       }}
       style={styles.value}
+      pressedStyle={styles.valuePressed}
       testID={testID ? `${testID}-hold` : undefined}
     >
       <Text
@@ -243,6 +244,11 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radii.control,
+  },
+  // Held (on the way to typing), the value sinks into the row: the well it is about to become.
+  valuePressed: {
+    backgroundColor: theme.material.inset.background,
+    boxShadow: theme.material.pressed.shadow,
   },
   number: { fontVariant: ['tabular-nums'] },
   well: {

@@ -208,7 +208,7 @@ describe('the set table', () => {
     expect(screen.getByTestId('set-s2-weight').props.editable).toBe(true);
   });
 
-  it('saves edits in the order they were typed', async () => {
+  it('saves edits in the order typed, folding keys typed during a save into one write of the last value', async () => {
     const { repositories } = log(running([bench([set('s1', 'pending', { reps: null })])]));
     let finishFirst: (() => void) | undefined;
     const first = new Promise<void>((resolve) => (finishFirst = resolve));
@@ -221,10 +221,14 @@ describe('the set table', () => {
 
     const reps = await screen.findByTestId('set-s1-reps');
     fireEvent.changeText(reps, '1');
+    await waitFor(() => expect(repositories.workouts.updateSet).toHaveBeenCalledTimes(1));
+    // Typed while the first write is still saving: these wait as one write, not two.
     fireEvent.changeText(reps, '12');
+    fireEvent.changeText(reps, '120');
     await act(async () => finishFirst?.());
 
-    await waitFor(() => expect(order).toEqual(['1', '12']));
+    await waitFor(() => expect(order).toEqual(['1', '120']));
+    expect(repositories.workouts.updateSet).toHaveBeenCalledTimes(2);
   });
 });
 

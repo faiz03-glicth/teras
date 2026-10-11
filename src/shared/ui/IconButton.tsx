@@ -57,7 +57,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       style={[styles.base(plain), { opacity: disabled ? 0.45 : 1 }, fade]}
-      pressedStyle={plain ? undefined : styles.pressed}
+      pressedStyle={plain ? styles.plainPressed : styles.pressed}
     >
       <Icon
         name={icon}
@@ -82,4 +82,9 @@ const styles = StyleSheet.create((theme) => ({
     boxShadow: plain ? undefined : theme.material.raisedSm.shadow,
   }),
   pressed: { boxShadow: theme.material.pressed.shadow },
+  // A plain icon has no key to sink; pressed, a round well opens under it instead.
+  plainPressed: {
+    backgroundColor: theme.material.inset.background,
+    boxShadow: theme.material.pressed.shadow,
+  },
 }));

@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -7,7 +8,7 @@ import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, SectionLabe
 import { ActiveWorkoutCard } from './components/ActiveWorkoutCard';
 import { FeedCard } from './components/FeedCard';
 
-import { useHomeViewModel } from './useHomeViewModel';
+import { useHomeSelectedDay, useHomeViewModel } from './useHomeViewModel';
 
 /** Home: the training wave on top, then the workouts behind it. */
 export function HomeScreen() {
@@ -24,12 +25,10 @@ export function HomeScreen() {
         </Text>
       </View>
 
-      <TrainingWave
-        testID="training-wave"
+      <HomeWave
         rows={vm.waveRows}
         dayLabels={vm.dayLabels}
         onDayPress={vm.onDayPress}
-        selected={vm.selected}
         legendCaption={vm.legendCaption}
         header={vm.waveHeader}
       />
@@ -57,6 +56,14 @@ export function HomeScreen() {
       </View>
     </Screen>
   );
+}
+
+type HomeWaveProps = Omit<ComponentProps<typeof TrainingWave>, 'selected' | 'testID'>;
+
+/** The wave owns the selected-day subscription, so tapping a day re-renders the wave and not all of Home. */
+function HomeWave(props: HomeWaveProps) {
+  const selected = useHomeSelectedDay();
+  return <TrainingWave {...props} testID="training-wave" selected={selected} />;
 }
 
 const styles = StyleSheet.create((theme) => ({

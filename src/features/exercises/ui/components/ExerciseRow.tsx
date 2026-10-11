@@ -29,6 +29,7 @@ export const ExerciseRow = memo(function ExerciseRow({ choice, onPress, onInfo, 
         accessibilityRole="button"
         accessibilityLabel={choice.label}
         style={styles.main}
+        pressedStyle={styles.mainPressed}
         testID={testID}
       >
         <View style={styles.badge}>
@@ -77,6 +78,8 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
   },
+  // Rows stay flat (materials/soft.ts): pressed, the row darkens into the surface rather than sinking.
+  mainPressed: { backgroundColor: theme.material.inset.background, borderRadius: theme.radii.controlSm },
   badge: {
     width: 36,
     height: 36,

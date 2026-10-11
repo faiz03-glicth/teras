@@ -108,6 +108,7 @@ export function ListRow({
         accessibilityLabel={description ? `${title}, ${description}` : title}
         accessibilityHint={accessibilityHint}
         style={styles.row(compact)}
+        pressedStyle={styles.pressed}
       >
         {body}
       </PressableScale>
@@ -129,4 +130,6 @@ const styles = StyleSheet.create((theme) => ({
     paddingVertical: compact ? 9 : theme.spacing.md,
   }),
   text: (centered: boolean) => ({ flex: 1, gap: 1, alignItems: centered ? ('center' as const) : undefined }),
+  // Rows stay flat (materials/soft.ts): pressed, the row darkens into the surface rather than sinking.
+  pressed: { backgroundColor: theme.material.inset.background, borderRadius: theme.radii.controlSm },
 }));

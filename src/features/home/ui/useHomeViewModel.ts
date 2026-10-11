@@ -99,7 +99,6 @@ export function useHomeViewModel() {
   const owner = useWorkoutOwner();
   const today = useToday();
   const unit = useTrainingPreferencesStore((state) => state.unit);
-  const selected = useSelectedDayStore((state) => state.day);
 
   const months = useMemo(() => recentMonths(today, MONTHS_PER_ROW), [today]);
   // Exactly the days the wave draws, so Home never reads a year to colour three months.
@@ -124,6 +123,10 @@ export function useHomeViewModel() {
     () => (feed.data ?? []).map((summary) => feedEntry(summary, today, unit)),
     [feed.data, today, unit],
   );
+
+  // Stable between renders, so the memoised card only redraws when the workout in progress changes.
+  const activeData = active.data;
+  const activeCard = useMemo(() => (activeData ? activeEntry(activeData) : null), [activeData]);
 
   const range = monthRangeLabel(months);
   const workouts = days.data?.reduce((sum, day) => sum + day.workouts, 0);
@@ -155,27 +158,33 @@ export function useHomeViewModel() {
     openDay(day);
   }, []);
   const onOpenWorkout = useCallback((id: string) => openSession(id), []);
+  const onResume = useCallback(() => openActiveWorkout(), []);
+  const onStartWorkout = useCallback(() => goTab('workout'), []);
 
   return {
     dateLine: longDate(today),
     waveHeader,
     waveRows,
-    selected,
     dayLabels: DAY_LABELS,
     legendCaption: 'vs your last 90 days',
 
     status,
     entries,
-    active: active.data ? activeEntry(active.data) : null,
+    active: activeCard,
     /** Nothing logged and nothing running: Home offers the first workout instead of an empty list. */
     empty: status === 'ready' && entries.length === 0 && !active.data,
 
     onDayPress,
     onOpenWorkout,
-    onResume: () => openActiveWorkout(),
-    onStartWorkout: () => goTab('workout'),
+    onResume,
+    onStartWorkout,
     onRetry,
   };
+}
+
+/** The day whose detail is open, read apart from the rest of Home so a tap re-renders only the wave. */
+export function useHomeSelectedDay() {
+  return useSelectedDayStore((state) => state.day);
 }
 
 export type HomeViewModel = ReturnType<typeof useHomeViewModel>;

@@ -92,6 +92,8 @@ export function useActiveWorkoutViewModel() {
   // A workout that ends while this screen is open should leave, but only once.
   const leaving = useRef(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
+  /** Each set's typed values whose write is queued but not yet started. */
+  const typed = useRef(new Map<string, SetPatch>());
 
   const report = useCallback((what: string, cause: unknown) => {
     console.error(`[workouts] ${what} (${cause instanceof Error ? cause.name : 'unknown'})`); // TODO(Sentry)
@@ -131,9 +133,22 @@ export function useActiveWorkoutViewModel() {
     [change, owner, queryClient, startRest, stopRest, workouts],
   );
 
+  /**
+   * Typing writes as it goes, but keystrokes that land while a set's write is still waiting its turn join
+   * that write instead of queueing their own: a burst of typing is a write or two, not one per key, and
+   * the value saved is always the last one typed. Nothing waits on a timer, so nothing typed can be lost.
+   */
   const onChangeSet = useCallback(
-    (setId: string, patch: SetPatch) =>
-      change('Could not save a set', () => workouts.updateSet(setId, patch)),
+    (setId: string, patch: SetPatch) => {
+      const waiting = typed.current.get(setId);
+      typed.current.set(setId, { ...waiting, ...patch });
+      if (waiting) return;
+      change('Could not save a set', () => {
+        const latest = typed.current.get(setId) ?? patch;
+        typed.current.delete(setId);
+        return workouts.updateSet(setId, latest);
+      });
+    },
     [change, workouts],
   );
 

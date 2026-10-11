@@ -193,6 +193,7 @@ function SessionRow({
       accessibilityRole="button"
       accessibilityLabel={session.accessibilityLabel}
       style={styles.session}
+      pressedStyle={styles.sessionPressed}
       testID={`session-${session.id}`}
     >
       <View style={styles.sessionText}>
@@ -231,5 +232,7 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing.md,
     paddingVertical: theme.spacing.md,
   },
+  // Rows stay flat (materials/soft.ts): pressed, the row darkens into the surface rather than sinking.
+  sessionPressed: { backgroundColor: theme.material.inset.background, borderRadius: theme.radii.controlSm },
   sessionText: { flex: 1, gap: 1 },
 }));

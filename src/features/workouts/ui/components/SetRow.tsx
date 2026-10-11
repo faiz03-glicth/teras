@@ -145,6 +145,7 @@ export const SetRow = memo(function SetRow({
         accessibilityState={{ checked: done }}
         accessibilityLabel={`Set ${index + 1} done`}
         style={styles.tick(done)}
+        pressedStyle={styles.tickPressed(done)}
         testID={`set-${set.id}-tick`}
       >
         <Icon name="check" size={20} color={done ? theme.colors.onAccent : theme.colors.text3} />
@@ -191,5 +192,8 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center' as const,
     backgroundColor: done ? theme.material.accent.background : theme.material.raisedSm.background,
     boxShadow: done ? theme.material.accent.pressedShadow : theme.material.raisedSm.shadow,
+  }),
+  tickPressed: (done: boolean) => ({
+    boxShadow: done ? theme.material.accent.pressedShadow : theme.material.pressed.shadow,
   }),
 }));

@@ -80,6 +80,7 @@ export function SessionScreen({ id }: { id: string | null }) {
             <Card key={exercise.id} testID={`session-exercise-${exercise.id}`} style={styles.exercise}>
               <PressableScale
                 style={styles.exerciseHead}
+                pressedStyle={styles.exerciseHeadPressed}
                 onPress={() => vm.onOpenExercise(exercise.exerciseId)}
                 accessibilityRole="button"
                 accessibilityLabel={`${exercise.name}, ${exercise.count}`}
@@ -146,6 +147,10 @@ const styles = StyleSheet.create((theme) => ({
   exercise: { gap: theme.spacing.sm },
   // The whole heading is the target, at least 44 pt tall like every other control.
   exerciseHead: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, minHeight: 44 },
+  exerciseHeadPressed: {
+    backgroundColor: theme.material.inset.background,
+    borderRadius: theme.radii.controlSm,
+  },
   grow: { flex: 1 },
   set: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, minHeight: 28 },
   // A fixed column, so every set's numbers line up.

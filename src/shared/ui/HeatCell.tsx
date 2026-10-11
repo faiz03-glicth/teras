@@ -22,6 +22,10 @@ export interface HeatCellProps {
   outlined?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** Pressable cells only: widens the tap target, delays the press on scrolling screens, names the cell. */
+  hitSlop?: number;
+  pressDelay?: number;
+  testID?: string;
 }
 
 /** Only cells that pulse subscribe to the motion system. */
@@ -41,11 +45,29 @@ export const HeatCell = memo(function HeatCell({
   outlined = false,
   onPress,
   accessibilityLabel,
+  hitSlop,
+  pressDelay,
+  testID,
 }: HeatCellProps) {
   const style = [
     styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state),
     outlined && styles.outline,
   ];
+  // A pressable cell is the one view itself (no wrapper), dimmed at once while held: no animation per cell.
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        hitSlop={hitSlop}
+        unstable_pressDelay={pressDelay || undefined}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ selected: state === 'selected' }}
+        style={({ pressed }) => (pressed ? [...style, styles.pressed] : style)}
+        testID={testID}
+      />
+    );
+  }
   const cell = appear ? (
     <Animated.View style={[style, appear]} />
   ) : pulse ? (
@@ -53,18 +75,7 @@ export const HeatCell = memo(function HeatCell({
   ) : (
     <View style={style} />
   );
-
-  if (!onPress) return cell;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected: state === 'selected' }}
-    >
-      {cell}
-    </Pressable>
-  );
+  return cell;
 });
 
 const styles = StyleSheet.create((theme) => ({
@@ -82,4 +93,5 @@ const styles = StyleSheet.create((theme) => ({
     outlineColor: state === 'selected' ? theme.colors.accentText : theme.colors.text,
   }),
   outline: { borderWidth: 1, borderColor: theme.colors.border },
+  pressed: { opacity: 0.55 },
 }));

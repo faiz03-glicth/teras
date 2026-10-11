@@ -25,6 +25,10 @@ export interface TrainingWaveProps {
   legendCaption: string;
   header?: TrainingWaveHeader;
   testID?: string;
+  /** Size cells as if the panel held this many week columns: a list that draws one row per panel keeps one cell size. */
+  columns?: number;
+  /** Draws the legend under the cells. Default true. */
+  legend?: boolean;
 }
 
 /**
@@ -40,10 +44,12 @@ export const TrainingWave = memo(function TrainingWave({
   legendCaption,
   header,
   testID,
+  columns: sharedColumns = 0,
+  legend = true,
 }: TrainingWaveProps) {
   const { theme } = useUnistyles();
   const columns = Math.max(
-    0,
+    sharedColumns,
     ...rows.map((row) => row.reduce((sum, month) => sum + month.grid.columns.length, 0)),
   );
 
@@ -59,16 +65,20 @@ export const TrainingWave = memo(function TrainingWave({
           style={styles.header}
           testID={testID && `${testID}-open`}
         >
-          <View style={styles.titles}>
-            <Text variant="headline">{header.title}</Text>
-            <Text variant="footnote" tone="secondary">
-              {header.subtitle}
-            </Text>
-          </View>
-          {/* A small raised key: it reads as the thing to press, like the app's other icon keys. */}
-          <View style={styles.key}>
-            <Icon name="chevron-right" size={18} color={theme.colors.text} />
-          </View>
+          {({ pressed }) => (
+            <>
+              <View style={styles.titles}>
+                <Text variant="headline">{header.title}</Text>
+                <Text variant="footnote" tone="secondary">
+                  {header.subtitle}
+                </Text>
+              </View>
+              {/* A small raised key: it reads as the thing to press, and sinks while the header is held. */}
+              <View style={[styles.key, pressed && styles.keyPressed]}>
+                <Icon name="chevron-right" size={18} color={theme.colors.text} />
+              </View>
+            </>
+          )}
         </PressableScale>
       )}
       <View style={styles.rows}>
@@ -83,7 +93,7 @@ export const TrainingWave = memo(function TrainingWave({
           />
         ))}
       </View>
-      <Legend caption={legendCaption} />
+      {legend && <Legend caption={legendCaption} />}
     </Card>
   );
 });
@@ -103,5 +113,6 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.material.raisedSm.background,
     boxShadow: theme.material.raisedSm.shadow,
   },
+  keyPressed: { boxShadow: theme.material.pressed.shadow },
   rows: { gap: 18 },
 }));

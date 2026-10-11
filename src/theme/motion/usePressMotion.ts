@@ -34,7 +34,7 @@ export function usePressMotion(feedback: PressFeedback = 'scale', scaleTo: numbe
     style,
     pressIn: () => {
       if (reduced) return;
-      pressed.set(isLiquid ? withSpring(1, liquid.hold) : withTiming(1, motion.timing(motion.duration.fast)));
+      pressed.set(isLiquid ? withSpring(1, liquid.hold) : withTiming(1, motion.timing(motion.press.inMs)));
     },
     // Always released (also if Reduce Motion turned on mid-press); ReduceMotion.System makes it a jump then.
     pressOut: () => pressed.set(withSpring(0, isLiquid ? liquid.release : motion.spring)),
