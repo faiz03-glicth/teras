@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRepositories } from '@/core/DiProvider';
 import { useAuthStore } from '@/features/auth/state/authStore';
 
+import { pushDaysNow } from '../data/pushDaysNow';
+
 /**
  * Sends training-day summaries that haven't reached Supabase (and so Streak) yet: once the person is signed
  * in, again whenever the device comes back online, and whenever the app returns to the foreground. This is
@@ -16,15 +18,8 @@ export function usePushPendingWorkoutDays(): void {
 
   useEffect(() => {
     if (!userId) return;
-    const push = () => {
-      if (!onlineManager.isOnline()) return;
-      workoutDays.pushPending(userId).catch((error: unknown) => {
-        // The rows stay dirty and are tried again next time.
-        console.error(
-          `[workoutDays] Could not push pending days (${error instanceof Error ? error.name : 'unknown'})`,
-        ); // TODO(Sentry)
-      });
-    };
+    // A failure leaves the rows dirty, and they are tried again next time.
+    const push = () => pushDaysNow(workoutDays, userId);
     push();
     const offOnline = onlineManager.subscribe((online) => {
       if (online) push();
