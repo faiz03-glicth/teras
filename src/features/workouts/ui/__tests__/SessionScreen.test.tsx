@@ -278,12 +278,9 @@ describe('deleting a workout', () => {
 
     answerAlert('Delete');
 
-    await waitFor(() =>
-      expect(toast.info).toHaveBeenCalledWith(
-        "Couldn't delete",
-        expect.objectContaining({ description: 'Try again.' }),
-      ),
-    );
+    // A native alert, since toasts stop drawing on Android after the confirm Alert.
+    await waitFor(() => expect(Alert.alert).toHaveBeenLastCalledWith("Couldn't delete", 'Try again.'));
+    expect(toast.info).not.toHaveBeenCalled();
     expect(actions.goBack).not.toHaveBeenCalled();
     expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
 

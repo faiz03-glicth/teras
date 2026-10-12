@@ -1,9 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { hashKey, type Query, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useRepositories } from '@/core/DiProvider';
-import { useTrainingDays } from '@/features/heatmap/hooks/useTrainingDays';
+import { trainingDaysKey, useTrainingDays } from '@/features/heatmap/hooks/useTrainingDays';
 import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
@@ -12,7 +12,6 @@ import { goBack, openActiveWorkout, openExercise } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
-import { showInfo } from '@/shared/ui/toast';
 
 import { formatMinutes, sessionSeconds } from '../domain/duration';
 import { countSets } from '../domain/labels';
@@ -20,6 +19,7 @@ import { recordSetIds } from '../domain/records';
 import { loggedExercises, setLabel } from '../domain/session';
 import { workoutTotals } from '../domain/totals';
 import {
+  exerciseBestsKey,
   loggedWorkoutKey,
   useExerciseBests,
   useLoggedWorkout,
@@ -98,12 +98,16 @@ export function useSessionViewModel(id: string | null) {
   }, [refetch, refetchDay, refetchBests]);
 
   const [deleting, setDeleting] = useState(false);
-  // Set once the workout is gone. This screen's own copy of it is dropped when the screen closes, not
-  // before, so it never says "Workout not found" while it slides away.
-  const deleted = useRef(false);
+  // Set once the workout is gone: the day and records this screen still shows. They are refreshed, and
+  // its own copy of the workout dropped, when the screen closes, not before, so it never says "Workout not
+  // found" or loses its level and PR marks while it slides away, and does no reading mid-transition.
+  const shownOnClose = useRef<QueryKey[] | null>(null);
   useEffect(
     () => () => {
-      if (deleted.current) queryClient.removeQueries({ queryKey: loggedWorkoutKey(owner, id), exact: true });
+      const shown = shownOnClose.current;
+      if (!shown) return;
+      queryClient.removeQueries({ queryKey: loggedWorkoutKey(owner, id), exact: true });
+      for (const queryKey of shown) void queryClient.invalidateQueries({ queryKey, exact: true });
     },
     [id, owner, queryClient],
   );
@@ -117,27 +121,32 @@ export function useSessionViewModel(id: string | null) {
       console.error(
         `[workouts] Could not delete a workout (${cause instanceof Error ? cause.name : 'unknown'})`,
       ); // TODO(Sentry)
-      showInfo({ title: "Couldn't delete", sub: 'Try again.' });
+      // A native alert, not a toast: on Android, toasts stop drawing after the confirm Alert above.
+      Alert.alert("Couldn't delete", 'Try again.');
       setDeleting(false);
       return;
     }
-    deleted.current = true;
-    // The feed, the Calendar, the records and the heatmap all read this workout or its day. This screen's
-    // own copy is left alone until it closes (see `deleted`).
-    const own = loggedWorkoutKey(owner, workout.id);
-    void queryClient.invalidateQueries({
-      queryKey: workoutKeys.history,
-      predicate: (query) =>
-        query.queryKey.length !== own.length || query.queryKey.some((part, index) => part !== own[index]),
-    });
-    void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
+    // The feed, the Calendar, the records and the heatmap all read this workout or its day. What this
+    // screen itself shows is left alone until it closes (see `shownOnClose`).
+    const shown: QueryKey[] = [
+      trainingDaysKey(owner, workout.date, workout.date),
+      exerciseBestsKey(
+        owner,
+        logged.map((exercise) => exercise.exerciseId),
+      ),
+    ];
+    shownOnClose.current = shown;
+    const onScreen = new Set([loggedWorkoutKey(owner, workout.id), ...shown].map((key) => hashKey(key)));
+    const elsewhere = (query: Query) => !onScreen.has(query.queryHash);
+    void queryClient.invalidateQueries({ queryKey: workoutKeys.history, predicate: elsewhere });
+    void queryClient.invalidateQueries({ queryKey: workoutKeys.days, predicate: elsewhere });
     // A routine's card says when it was last done: that may have been this workout.
     void queryClient.invalidateQueries({ queryKey: workoutKeys.routines(owner) });
     // The rewritten day reaches the server (and Streak) now, not at the next time the app is opened.
     pushDaysNow(workoutDays, owner);
     haptics.success();
     goBack();
-  }, [deleting, owner, queryClient, workout, workoutDays, workouts]);
+  }, [deleting, logged, owner, queryClient, workout, workoutDays, workouts]);
 
   const onDelete = useCallback(() => {
     if (!workout) return;

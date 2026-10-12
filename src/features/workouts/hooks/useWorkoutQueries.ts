@@ -174,15 +174,21 @@ export function usePreviousSets(owner: WorkoutOwner, exerciseIds: readonly strin
   });
 }
 
+/** Where a set of exercises' records are cached, under the history key; order and repeats don't matter. */
+export const exerciseBestsKey = (owner: WorkoutOwner, exerciseIds: readonly string[]) =>
+  [...workoutKeys.history, owner, 'bests', uniqueSorted(exerciseIds)] as const;
+
+const uniqueSorted = (ids: readonly string[]) => [...new Set(ids)].sort();
+
 /**
  * Each exercise's records as they stand now, across every finished workout. Kept under the history key,
  * so finishing a workout that beats one refreshes it.
  */
 export function useExerciseBests(owner: WorkoutOwner, exerciseIds: readonly string[], enabled = true) {
   const { workouts } = useRepositories();
-  const ids = [...new Set(exerciseIds)].sort();
+  const ids = uniqueSorted(exerciseIds);
   return useQuery({
-    queryKey: [...workoutKeys.history, owner, 'bests', ids],
+    queryKey: exerciseBestsKey(owner, ids),
     queryFn: () => workouts.bests(owner, ids),
     enabled: enabled && ids.length > 0,
     networkMode: 'always',
