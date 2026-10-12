@@ -1,10 +1,23 @@
 import { fireEvent, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { buildLevelGrid } from '@/features/heatmap/domain/grid';
+import { checkInPulse, heatmapReveal } from '@/theme/motion/cssMotion';
 import { childrenOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
 
 import { HeatCell } from '../HeatCell';
 import { Heatmap } from '../Heatmap';
+
+/**
+ * The animation a labelled cell is given. jest's Reanimated drops CSS animation props from the host tree,
+ * so this reads them off the rendered components: the button itself must carry the animation.
+ */
+function animationOf(label: string) {
+  const carriers = screen.UNSAFE_root.findAll(
+    (node) => node.props.accessibilityLabel === label && StyleSheet.flatten(node.props.style)?.animationName,
+  );
+  return carriers.length ? StyleSheet.flatten(carriers[0]!.props.style).animationName : undefined;
+}
 
 describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
   it('HeatCell paints the palette step for its level', () => {
@@ -102,6 +115,23 @@ describe.each(SCHEMES)('heatmap components in %s', (scheme) => {
     );
     fireEvent.press(screen.getByRole('button', { name: 'Sep 24: Strong' }));
     expect(onPress).toHaveBeenCalled();
+  });
+
+  it('a pressable cell keeps its reveal and its pulse, and still presses (P5)', () => {
+    const onPress = jest.fn();
+    const reveal = heatmapReveal(2, 3);
+    const { rerender } = renderInScheme(
+      <HeatCell level={2} size={14} appear={reveal} onPress={onPress} accessibilityLabel="Sep 24: Strong" />,
+      scheme,
+    );
+    expect(animationOf('Sep 24: Strong')).toBe(reveal.animationName);
+    fireEvent.press(screen.getByRole('button', { name: 'Sep 24: Strong' }));
+    expect(onPress).toHaveBeenCalledTimes(1);
+
+    rerender(<HeatCell level={2} size={14} pulse onPress={onPress} accessibilityLabel="Sep 24: Strong" />);
+    expect(animationOf('Sep 24: Strong')).toBe(checkInPulse.animationName);
+    fireEvent.press(screen.getByRole('button', { name: 'Sep 24: Strong' }));
+    expect(onPress).toHaveBeenCalledTimes(2);
   });
 
   it('decorative Heatmap renders every cell but hides them from screen readers', () => {

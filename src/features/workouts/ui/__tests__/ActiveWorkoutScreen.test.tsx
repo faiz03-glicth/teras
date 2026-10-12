@@ -230,7 +230,7 @@ describe('the set table', () => {
     expect(screen.getByTestId('set-s2-weight').props.editable).toBe(true);
   });
 
-  it('saves edits in the order they were typed', async () => {
+  it('saves edits in the order typed, folding keys typed during a save into one write of the last value', async () => {
     const { repositories } = log(running([bench([set('s1', 'pending', { reps: null })])]));
     let finishFirst: (() => void) | undefined;
     const first = new Promise<void>((resolve) => (finishFirst = resolve));
@@ -243,10 +243,14 @@ describe('the set table', () => {
 
     const reps = await screen.findByTestId('set-s1-reps');
     fireEvent.changeText(reps, '1');
+    await waitFor(() => expect(repositories.workouts.updateSet).toHaveBeenCalledTimes(1));
+    // Typed while the first write is still saving: these wait as one write, not two.
     fireEvent.changeText(reps, '12');
+    fireEvent.changeText(reps, '120');
     await act(async () => finishFirst?.());
 
-    await waitFor(() => expect(order).toEqual(['1', '12']));
+    await waitFor(() => expect(order).toEqual(['1', '120']));
+    expect(repositories.workouts.updateSet).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -638,5 +642,48 @@ describe('ticking a set with nothing typed in (S21)', () => {
       expect.objectContaining({ description: 'Type what you lifted first.' }),
     );
     expect(toast.info).not.toHaveBeenCalledWith("Couldn't save", expect.anything());
+  });
+});
+
+describe('typing next to a tick or a delete (press-feedback typed writes meeting S21 and the swipe)', () => {
+  it('ticks only after what was just typed is saved, so the typed value is kept, not refused or filled over', async () => {
+    const { repositories } = log(running([bench([set('s1', 'pending', { weightKg: null, reps: null })])]));
+    const reps = await screen.findByTestId('set-s1-reps');
+
+    await act(async () => {
+      fireEvent.changeText(reps, '8');
+      fireEvent.press(screen.getByTestId('set-s1-tick'));
+    });
+
+    expect(repositories.workouts.updateSet).toHaveBeenCalledWith('s1', { reps: 8 });
+    const typedAt = repositories.workouts.updateSet.mock.invocationCallOrder[0] ?? Infinity;
+    const tickedAt = repositories.workouts.setStatus.mock.invocationCallOrder[0] ?? -1;
+    expect(typedAt).toBeLessThan(tickedAt);
+  });
+
+  it('writes nothing typed into a set once it is being deleted', async () => {
+    let finishRemove: (value: { workout: Workout; removed: RemovedSet }) => void = () => undefined;
+    const { repositories } = log(
+      running([bench([set('s1', 'done'), set('s2', 'pending', { position: 1 })])]),
+      (fakes) =>
+        void fakes.workouts.removeSet.mockReturnValue(
+          new Promise((resolve) => {
+            finishRemove = resolve;
+          }),
+        ),
+    );
+    const reps = await screen.findByTestId('set-s2-reps');
+
+    fireEvent(reps, 'accessibilityAction', { nativeEvent: { actionName: 'delete' } });
+    fireEvent.changeText(reps, '9');
+    await act(async () =>
+      finishRemove({
+        workout: running([bench([set('s1', 'done')])]),
+        removed: { row: { id: 's2' } } as unknown as RemovedSet,
+      }),
+    );
+
+    expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
+    expect(repositories.workouts.updateSet).not.toHaveBeenCalled();
   });
 });

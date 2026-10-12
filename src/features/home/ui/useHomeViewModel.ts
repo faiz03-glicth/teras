@@ -87,7 +87,6 @@ export function useHomeViewModel() {
   const owner = useWorkoutOwner();
   const today = useToday();
   const unit = useTrainingPreferencesStore((state) => state.unit);
-  const selected = useSelectedDayStore((state) => state.day);
 
   const months = useMemo(() => recentMonths(today, MONTHS_PER_ROW), [today]);
   // Exactly the days the wave draws, so Home never reads a year to colour three months.
@@ -166,7 +165,6 @@ export function useHomeViewModel() {
     },
     waveHeader,
     waveRows,
-    selected,
     dayLabels: DAY_LABELS,
     legendCaption: 'vs the same lifts last week',
 
@@ -186,6 +184,11 @@ export function useHomeViewModel() {
     onStartWorkout: () => void start(),
     onRetry,
   };
+}
+
+/** The day whose detail is open, read apart from the rest of Home so a tap re-renders only the wave. */
+export function useHomeSelectedDay() {
+  return useSelectedDayStore((state) => state.day);
 }
 
 export type HomeViewModel = ReturnType<typeof useHomeViewModel>;

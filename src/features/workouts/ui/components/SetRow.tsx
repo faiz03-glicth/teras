@@ -3,7 +3,7 @@ import { TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
-import { CachedSurface, Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
+import { Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
 
 import type { SetPatch, WorkoutExercise, WorkoutSet } from '../../data/WorkoutRepository';
 import { parseSetWeight, setWeightText, weightColumn } from '../../domain/setUnits';
@@ -186,9 +186,10 @@ export const SetRow = memo(function SetRow({
           accessibilityLabel={`Set ${index + 1} done`}
           {...deletable}
           style={styles.tick}
+          // The key is drawn once into a texture and sinks while held (press feedback, no shadow redraw).
+          surface={{ style: styles.key(done), pressed: styles.tickPressed(done), bleed: 'key' }}
           testID={`set-${set.id}-tick`}
         >
-          <CachedSurface style={styles.key(done)} bleed="key" />
           <Icon name="check" size={20} color={done ? theme.colors.onAccent : theme.colors.text3} />
         </PressableScale>
       </View>
@@ -238,5 +239,8 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.radii.control,
     backgroundColor: done ? theme.material.accent.background : theme.material.raisedSm.background,
     boxShadow: done ? theme.material.accent.pressedShadow : theme.material.raisedSm.shadow,
+  }),
+  tickPressed: (done: boolean) => ({
+    boxShadow: done ? theme.material.accent.pressedShadow : theme.material.pressed.shadow,
   }),
 }));

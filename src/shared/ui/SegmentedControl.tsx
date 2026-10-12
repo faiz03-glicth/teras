@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, View, type LayoutChangeEvent } from 'react-native';
+import { View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -7,9 +7,8 @@ import { motion } from '@/theme';
 
 import { CachedSurface } from './CachedSurface';
 import { Crossfade } from './Crossfade';
+import { PressableScale } from './PressableScale';
 import { Text } from './Text';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export interface SegmentOption<T extends string> {
   value: T;
@@ -84,8 +83,9 @@ export function SegmentedControl<T extends string>({
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <AnimatedPressable
+          <PressableScale
             key={option.value}
+            scaleTo={0.97}
             testID={testID && `${testID}-${option.value}`}
             onPress={() => {
               if (!selected) onChange(option.value);
@@ -95,6 +95,8 @@ export function SegmentedControl<T extends string>({
             accessibilityState={{ checked: selected }}
             // Segments are clear: the raised key sliding underneath is the selection.
             style={styles.segment}
+            // The chosen segment's key is the pill beneath; an open segment dips into the track when pressed.
+            pressedStyle={selected ? undefined : styles.pressed}
           >
             <Crossfade
               active={selected}
@@ -123,7 +125,7 @@ export function SegmentedControl<T extends string>({
                 </View>
               }
             />
-          </AnimatedPressable>
+          </PressableScale>
         );
       })}
     </View>
@@ -151,6 +153,7 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     borderRadius: theme.radii.control - PAD,
   },
+  pressed: { boxShadow: theme.material.pressed.shadow },
   label: { alignItems: 'center', paddingVertical: theme.spacing.xs },
   pill: (width: number) => ({
     position: 'absolute' as const,

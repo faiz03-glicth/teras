@@ -45,6 +45,7 @@ function Option({ label, selected, onPress, testID }: OptionProps) {
       accessibilityLabel={label}
       accessibilityState={{ checked: selected }}
       style={styles.option}
+      pressedStyle={styles.pressed}
       testID={testID}
     >
       <Text variant="body" weight={selected ? 'semibold' : 'regular'} style={styles.label}>
@@ -58,4 +59,6 @@ function Option({ label, selected, onPress, testID }: OptionProps) {
 const styles = StyleSheet.create((theme) => ({
   option: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
   label: { flex: 1 },
+  // Rows stay flat (materials/soft.ts): pressed, the row darkens into the surface rather than sinking.
+  pressed: { backgroundColor: theme.material.inset.background, borderRadius: theme.radii.controlSm },
 }));

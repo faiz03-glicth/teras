@@ -53,6 +53,7 @@ export function SelectableTile({
         },
         surface,
       ]}
+      pressedStyle={styles.pressed}
     >
       <Animated.View style={response}>{icon}</Animated.View>
       <Text variant="footnote" weight="medium" numberOfLines={1}>
@@ -74,4 +75,5 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: 16,
     borderWidth: 1.5,
   },
+  pressed: { boxShadow: theme.material.pressed.shadow },
 }));

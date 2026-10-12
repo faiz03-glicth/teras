@@ -13,6 +13,17 @@ import { renderInScheme } from '@test/render';
 
 import { CalendarScreen } from '../CalendarScreen';
 
+// Jest has no layout, so the list's window cannot move: draw it whole, so rows far down the history are reachable.
+jest.mock('react-native/Libraries/Lists/FlatList', () => {
+  const { createElement, forwardRef } = require('react');
+  const Actual = jest.requireActual('react-native/Libraries/Lists/FlatList').default;
+  return {
+    __esModule: true,
+    default: forwardRef(function WholeFlatList(props: object, ref: unknown) {
+      return createElement(Actual, { ...props, initialNumToRender: 100, ref });
+    }),
+  };
+});
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
 jest.mock('@/shared/lib/date/useToday', () => ({ useToday: () => '2026-10-02' }));
 
@@ -90,6 +101,7 @@ describe('the month lists', () => {
 
   it('names the year of a month from an earlier year', async () => {
     calendar({ workouts: [workout('a', '2025-09-12')], days: [day('2025-09-12', 2)] });
+    await screen.findByTestId('calendar-wave');
 
     expect(await screen.findByText('SEPTEMBER 2025 · 1 WORKOUT')).toBeTruthy();
   });
@@ -117,6 +129,16 @@ describe('the month lists', () => {
 });
 
 describe('the full wave', () => {
+  it('draws each row of the wave as its own panel, newest row first, with one legend', async () => {
+    calendar({ days: [day('2026-02-10', 2)], workouts: [workout('a', '2026-02-10')] });
+    await screen.findByRole('button', { name: 'Feb 10: Moderate' });
+
+    expect(screen.getAllByTestId('calendar-wave')).toHaveLength(1);
+    const ids = screen.getAllByTestId(/^day-/).map((cell) => cell.props.testID);
+    expect(ids.indexOf('day-2026-10-02')).toBeGreaterThanOrEqual(0);
+    expect(ids.indexOf('day-2026-10-02')).toBeLessThan(ids.indexOf('day-2026-02-10'));
+  });
+
   it("starts with Home's three months and reaches back to the first training day", async () => {
     calendar({ days: [day('2026-02-10', 2)], workouts: [workout('a', '2026-02-10')] });
 
@@ -126,6 +148,7 @@ describe('the full wave', () => {
 
   it('names the year of the months and days of an earlier year', async () => {
     calendar({ days: [day('2025-09-12', 2)], workouts: [workout('a', '2025-09-12')] });
+    await screen.findByTestId('calendar-wave');
 
     expect(await screen.findByRole('button', { name: 'Sep 12, 2025: Moderate' })).toBeTruthy();
     // Month headings are for the eye only: every day's label already names its month.

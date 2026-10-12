@@ -25,6 +25,10 @@ export interface TrainingWaveProps {
   legendCaption: string;
   header?: TrainingWaveHeader;
   testID?: string;
+  /** Size cells as if the panel held this many week columns: a list that draws one row per panel keeps one cell size. */
+  columns?: number;
+  /** Draws the legend under the cells. Default true. */
+  legend?: boolean;
 }
 
 /**
@@ -40,10 +44,12 @@ export const TrainingWave = memo(function TrainingWave({
   legendCaption,
   header,
   testID,
+  columns: sharedColumns = 0,
+  legend = true,
 }: TrainingWaveProps) {
   const { theme } = useUnistyles();
   const columns = Math.max(
-    0,
+    sharedColumns,
     ...rows.map((row) => row.reduce((sum, month) => sum + month.grid.columns.length, 0)),
   );
 
@@ -83,7 +89,7 @@ export const TrainingWave = memo(function TrainingWave({
           />
         ))}
       </View>
-      <Legend caption={legendCaption} />
+      {legend && <Legend caption={legendCaption} />}
     </Card>
   );
 });

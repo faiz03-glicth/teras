@@ -57,7 +57,9 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       style={[styles.base(plain), { opacity: disabled ? 0.45 : 1 }, fade]}
+      // A key is a cached raised surface that sinks when held; a plain icon opens a round well instead.
       surface={plain ? undefined : { style: styles.surface, pressed: styles.pressed }}
+      pressedStyle={plain ? styles.plainPressed : undefined}
     >
       <Icon
         name={icon}
@@ -85,4 +87,9 @@ const styles = StyleSheet.create((theme) => ({
     boxShadow: theme.material.raisedSm.shadow,
   },
   pressed: { boxShadow: theme.material.pressed.shadow },
+  // A plain icon has no key to sink; pressed, a round well opens under it instead.
+  plainPressed: {
+    backgroundColor: theme.material.inset.background,
+    boxShadow: theme.material.pressed.shadow,
+  },
 }));
