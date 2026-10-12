@@ -11,14 +11,20 @@ import {
 /**
  * The days the person checked in a Workout on Streak: dates only, pulled from the server and kept on the
  * phone, so the Calendar can show a day that was trained but not logged here. SQLite holds the copy;
- * Supabase `streak_workout_dates` is the source. Nothing goes back: Streak learns of Teras's days from
- * `workout_days` on the server.
+ * Supabase `streak_workout_dates` is the source. Streak learns of Teras's trained days from `workout_days`
+ * on the server; the one thing sent from here is a day logged with no details (`teras_log_day`), which is a
+ * Streak check-in itself and comes back with the other dates.
  */
 export interface StreakDayRepository {
   /** Brings the user's copy up to date. Returns how many dates were added or removed. */
   pull(userId: string): Promise<number>;
   /** The checked-in dates in the range (inclusive), oldest first. A guest has none. */
   list(owner: string | null, from: ISODate, to: ISODate): Promise<ISODate[]>;
+  /**
+   * Logs `date` with no details: checked in on Streak first (it needs the network; a failure throws and
+   * keeps nothing), then listed here at once.
+   */
+  logDay(userId: string, date: ISODate): Promise<void>;
 }
 
 export interface LocalStreakDayDeps {
@@ -48,6 +54,11 @@ export class LocalStreakDayRepository implements StreakDayRepository {
   async list(owner: string | null, from: ISODate, to: ISODate): Promise<ISODate[]> {
     if (owner === null) return [];
     return (await this.deps.dao.list(owner, from, to)) as ISODate[];
+  }
+
+  async logDay(userId: string, date: ISODate): Promise<void> {
+    await this.deps.api.logDay(date);
+    await this.deps.dao.add(userId, date);
   }
 
   pull(userId: string): Promise<number> {

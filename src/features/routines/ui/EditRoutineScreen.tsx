@@ -14,7 +14,7 @@ import {
   TextField,
 } from '@/shared/ui';
 
-import { RoutineItemRow } from './components/RoutineItemRow';
+import { RoutineItemList } from './components/RoutineItemList';
 import { useEditRoutineViewModel, type EditRoutineViewModel } from './useEditRoutineViewModel';
 
 /**
@@ -25,7 +25,7 @@ export function EditRoutineScreen({ routineId }: { routineId: string | null }) {
   const vm = useEditRoutineViewModel(routineId);
 
   return (
-    <Screen scroll keyboard testID="edit-routine-screen" contentStyle={styles.content}>
+    <Screen scroll keyboard dragRows testID="edit-routine-screen" contentStyle={styles.content}>
       <NavBar
         onBack={vm.onBack}
         right={
@@ -79,17 +79,14 @@ function Ready({ vm }: { vm: EditRoutineViewModel }) {
 
       <View style={styles.group}>
         <SectionLabel>{vm.section}</SectionLabel>
-        <Card tight divided>
-          {vm.rows.length === 0 ? (
-            <Text variant="footnote" tone="secondary" style={styles.empty}>
-              No exercises yet
-            </Text>
-          ) : (
-            vm.rows.map((row) => (
-              <RoutineItemRow key={row.key} row={row} onMove={vm.onMove} onRemove={vm.onRemove} />
-            ))
-          )}
-        </Card>
+        <RoutineItemList
+          rows={vm.rows}
+          onMove={vm.onMove}
+          onMoveTo={vm.onMoveTo}
+          onRemove={vm.onRemove}
+          onStep={vm.onStep}
+          onType={vm.onType}
+        />
       </View>
 
       <Button
@@ -116,5 +113,4 @@ function Ready({ vm }: { vm: EditRoutineViewModel }) {
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
   group: { gap: theme.spacing.sm },
-  empty: { paddingVertical: theme.spacing.lg, textAlign: 'center' },
 }));

@@ -26,6 +26,17 @@ export function dayLabel(day: ISODate, today: ISODate): string {
   return shortDay(day, today);
 }
 
+/**
+ * When something last happened, mid-sentence: "today", "yesterday", the weekday within the past week
+ * ("Wednesday"), else "Tue, 22 Sep".
+ */
+export function recentDay(day: ISODate, today: ISODate): string {
+  if (day === today) return 'today';
+  if (day === addDays(today, -1)) return 'yesterday';
+  if (day >= addDays(today, -6) && day < today) return weekdayLong(fromISODate(day).getDay());
+  return shortDay(day, today);
+}
+
 /** A stored timestamp as the local time on a 24-hour clock: "18:20". Blank if it cannot be read. */
 export function clockTime(timestamp: string): string {
   const date = new Date(timestamp);

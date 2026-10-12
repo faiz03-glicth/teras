@@ -113,7 +113,9 @@ describe('the tabs under the workout', () => {
     const tab = counted(useWorkoutViewModel);
     const { result: homeView } = renderHook(home.run, { wrapper: Wrapper });
     const { result: tabView } = renderHook(tab.run, { wrapper: Wrapper });
-    await waitFor(() => expect(homeView.current.active).not.toBeNull());
+    // With one running, Home has settled once it no longer offers to start another.
+    await waitFor(() => expect(homeView.current.status).toBe('ready'));
+    expect(homeView.current.canStart).toBe(false);
     await waitFor(() => expect(tabView.current.inProgress).not.toBeNull());
     const key = workoutKeys.active('user-1');
 
@@ -125,6 +127,6 @@ describe('the tabs under the workout', () => {
     expect(tab.counter.renders).toBe(0);
 
     act(() => queryClient.setQueryData(key, workoutWith(set({ weightKg: 62.5, status: 'done' }))));
-    expect(homeView.current.active?.meta).toContain('1 set done');
+    expect(tabView.current.inProgress?.setsDone).toBe(1);
   });
 });

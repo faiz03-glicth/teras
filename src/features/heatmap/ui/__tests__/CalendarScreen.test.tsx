@@ -154,7 +154,7 @@ describe('the full wave', () => {
   it('marks a day checked in on Streak with nothing logged here', async () => {
     calendar({ prepare: (fakes) => void fakes.streakDays.list.mockResolvedValue(['2026-09-28' as ISODate]) });
 
-    expect(await screen.findByRole('button', { name: 'Sep 28: Checked in on Streak' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Sep 28: Logged, no details' })).toBeTruthy();
   });
 
   it('lets a logged workout win over a Streak check-in on the same day', async () => {

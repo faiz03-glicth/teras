@@ -47,6 +47,20 @@ export interface SetWithType {
   type: ExerciseType;
 }
 
+/** A set of one lift in one workout, with when that workout was: what progressive overload compares. */
+export interface LiftSetRow {
+  workoutId: string;
+  date: string;
+  startedAt: string;
+  exerciseId: string;
+  type: ExerciseType;
+  status: SetStatus;
+  setType: SetType;
+  weightKg: number | null;
+  reps: number | null;
+  seconds: number | null;
+}
+
 /** A workout's exercise, with the bits of the exercise itself the screen needs. */
 export interface WorkoutExerciseWithName {
   id: string;
@@ -126,6 +140,11 @@ export interface WorkoutDao {
   routineExerciseNames(routineIds: readonly string[]): Promise<{ routineId: string; name: string }[]>;
   /** A routine's exercises, in the order they are performed. */
   routineItems(routineId: string): Promise<RoutineExerciseRow[]>;
+  /** The date each routine was last done by the owner (a finished workout with something completed). */
+  lastRoutineDates(
+    owner: WorkoutOwner,
+    routineIds: readonly string[],
+  ): Promise<{ routineId: string; date: string }[]>;
 
   insertExercise(row: NewWorkoutExerciseRow): Promise<void>;
   deleteExercise(id: string): Promise<void>;
@@ -139,6 +158,16 @@ export interface WorkoutDao {
   /** The same sets, carrying how each one is measured. */
   setsWithTypeFor(workoutId: string): Promise<SetWithType[]>;
   /**
+   * Every set of these lifts in the owner's workouts dated `from`..`to` (inclusive), the one in progress
+   * included: the weeks a day's lifts are judged against.
+   */
+  liftSetsBetween(
+    owner: WorkoutOwner,
+    exerciseIds: readonly string[],
+    from: string,
+    to: string,
+  ): Promise<LiftSetRow[]>;
+  /**
    * The exercises and the sets of many workouts, each in one read, so a list of summaries costs the same
    * few queries however long it is.
    */
@@ -146,6 +175,10 @@ export interface WorkoutDao {
   setsOf(workoutIds: readonly string[]): Promise<SetOfWorkout[]>;
   updateSet(id: string, patch: Partial<NewWorkoutSetRow>, updatedAt: string): Promise<void>;
   deleteSet(id: string): Promise<void>;
+  /** One set's whole row, or null if there is none: what a deleted set is put back from. */
+  getSet(id: string): Promise<WorkoutSetRow | null>;
+  /** Moves an exercise's sets at `position` and below down one, freeing that place for a set put back. */
+  makeRoomForSet(workoutExerciseId: string, position: number, updatedAt: string): Promise<void>;
   nextSetPosition(workoutExerciseId: string): Promise<number>;
 
   /**
@@ -247,6 +280,25 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
         .where(and(visible, isNull(routines.deletedAt)))
         .orderBy(asc(routines.position))
         .all();
+    },
+
+    async lastRoutineDates(owner, routineIds) {
+      if (routineIds.length === 0) return [];
+      return db
+        .select({ routineId: workouts.routineId, date: max(workouts.date) })
+        .from(workouts)
+        .where(
+          and(
+            ownedBy(owner),
+            inArray(workouts.routineId, [...routineIds]),
+            isNotNull(workouts.endedAt),
+            live,
+            somethingDone(),
+          ),
+        )
+        .groupBy(workouts.routineId)
+        .all()
+        .flatMap((row) => (row.routineId && row.date ? [{ routineId: row.routineId, date: row.date }] : []));
     },
 
     async routineExerciseNames(routineIds) {
@@ -392,6 +444,38 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
       );
     },
 
+    async liftSetsBetween(owner, exerciseIds, from, to) {
+      if (exerciseIds.length === 0) return [];
+      return db
+        .select({
+          workoutId: workouts.id,
+          date: workouts.date,
+          startedAt: workouts.startedAt,
+          exerciseId: workoutExercises.exerciseId,
+          type: exercises.type,
+          status: workoutSets.status,
+          setType: workoutSets.setType,
+          weightKg: workoutSets.weightKg,
+          reps: workoutSets.reps,
+          seconds: workoutSets.seconds,
+        })
+        .from(workoutSets)
+        .innerJoin(workoutExercises, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+        .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+        .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+        .where(
+          and(
+            ownedBy(owner),
+            live,
+            gte(workouts.date, from),
+            lte(workouts.date, to),
+            inArray(workoutExercises.exerciseId, [...exerciseIds]),
+          ),
+        )
+        .orderBy(asc(workouts.startedAt), asc(workoutExercises.position), asc(workoutSets.position))
+        .all();
+    },
+
     async setsWithTypeFor(workoutId) {
       return db
         .select({
@@ -416,6 +500,17 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
 
     async deleteSet(id) {
       db.delete(workoutSets).where(eq(workoutSets.id, id)).run();
+    },
+
+    async getSet(id) {
+      return db.select().from(workoutSets).where(eq(workoutSets.id, id)).get() ?? null;
+    },
+
+    async makeRoomForSet(workoutExerciseId, position, updatedAt) {
+      db.update(workoutSets)
+        .set({ position: sql`${workoutSets.position} + 1`, updatedAt })
+        .where(and(eq(workoutSets.workoutExerciseId, workoutExerciseId), gte(workoutSets.position, position)))
+        .run();
     },
 
     async nextSetPosition(workoutExerciseId) {

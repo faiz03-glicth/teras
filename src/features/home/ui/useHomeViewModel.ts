@@ -18,13 +18,14 @@ import type { WorkoutSummary } from '@/features/workouts/data/WorkoutRepository'
 import { formatMinutes } from '@/features/workouts/domain/duration';
 import { countSets, countWorkouts, exercisePreview } from '@/features/workouts/domain/labels';
 import {
+  liveWorkout,
   useActiveWorkoutSummary,
   useRecentWorkouts,
   useWorkoutOwner,
-  type ActiveWorkoutSummary,
 } from '@/features/workouts/hooks/useWorkoutQueries';
-import { goTab, openActiveWorkout, openCalendar, openDay, openSession } from '@/shared/actions';
-import { firstOfMonth, monthOf, weekdayLetters } from '@/shared/lib/date/calendar';
+import { useStartWorkout } from '@/features/workouts/hooks/useStartWorkout';
+import { openCalendar, openDay, openSession } from '@/shared/actions';
+import { eachDay, firstOfMonth, monthOf, startOfWeek, weekdayLetters } from '@/shared/lib/date/calendar';
 import { isISODate, type ISODate } from '@/shared/lib/date/isoDate';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, dayLabel, longDate } from '@/shared/lib/format/dates';
@@ -53,14 +54,6 @@ export interface FeedEntry {
   accessibilityLabel: string;
 }
 
-/** The workout in progress, as the top of the feed shows it. */
-export interface ActiveEntry {
-  name: string;
-  /** "Started 18:20 · 5 sets done". */
-  meta: string;
-  accessibilityLabel: string;
-}
-
 export type LoadStatus = 'loading' | 'error' | 'ready';
 
 function feedEntry(summary: WorkoutSummary, today: ISODate, unit: WeightUnit): FeedEntry {
@@ -85,12 +78,6 @@ function feedEntry(summary: WorkoutSummary, today: ISODate, unit: WeightUnit): F
   };
 }
 
-function activeEntry(workout: ActiveWorkoutSummary): ActiveEntry {
-  const started = `Started ${clockTime(workout.startedAt)}`;
-  const meta = workout.setsDone > 0 ? `${started} · ${countSets(workout.setsDone)} done` : started;
-  return { name: workout.name, meta, accessibilityLabel: `In progress: ${workout.name}. ${meta}.` };
-}
-
 /**
  * Home: the training wave, then what was logged. Everything reads from the device, so Home works
  * offline and as a guest; nothing here waits on Supabase. The wave shows each day's level exactly as it
@@ -109,6 +96,7 @@ export function useHomeViewModel() {
   const streakDays = useStreakDays(owner, from, today);
   const feed = useRecentWorkouts(owner, FEED_LIMIT);
   const active = useActiveWorkoutSummary(owner);
+  const { start, starting } = useStartWorkout();
 
   const levels = useMemo(() => new Map((days.data ?? []).map((day) => [day.date, day.level])), [days.data]);
   const streakSet = useMemo(() => new Set(streakDays.data ?? []), [streakDays.data]);
@@ -132,6 +120,11 @@ export function useHomeViewModel() {
     () => (feed.data ?? []).map((summary) => feedEntry(summary, today, unit)),
     [feed.data, today, unit],
   );
+
+  // Days trained so far this week (Monday on), from the same days the wave draws.
+  const daysThisWeek = eachDay(startOfWeek(today, WEEK_START), today).filter(
+    (day) => (levels.get(day) ?? 0) > 0,
+  ).length;
 
   const range = monthRangeLabel(months);
   const workouts = days.data?.reduce((sum, day) => sum + day.workouts, 0);
@@ -166,22 +159,31 @@ export function useHomeViewModel() {
 
   return {
     dateLine: longDate(today),
+    /** "2 this week", beside the title: days trained since Monday. */
+    week: {
+      label: `${daysThisWeek} this week`,
+      accessibilityLabel: `Trained ${daysThisWeek === 1 ? '1 day' : `${daysThisWeek} days`} this week`,
+    },
     waveHeader,
     waveRows,
     selected,
     dayLabels: DAY_LABELS,
-    legendCaption: 'vs your last 90 days',
+    legendCaption: 'vs the same lifts last week',
 
     status,
     entries,
-    active: active.data ? activeEntry(active.data) : null,
-    /** Nothing logged and nothing running: Home offers the first workout instead of an empty list. */
-    empty: status === 'ready' && entries.length === 0 && !active.data,
+    /**
+     * Nothing logged: Home says so instead of showing an empty list. A workout running has no card of its
+     * own here (the Resume bar over the tabs is its way back), so it doesn't fill the list either.
+     */
+    empty: status === 'ready' && entries.length === 0,
+    /** Nothing running: Home starts one in a tap. Running, the Resume bar over the tabs leads back to it. */
+    canStart: !active.isPending && !liveWorkout(active.data),
+    starting,
 
     onDayPress,
     onOpenWorkout,
-    onResume: () => openActiveWorkout(),
-    onStartWorkout: () => goTab('workout'),
+    onStartWorkout: () => void start(),
     onRetry,
   };
 }

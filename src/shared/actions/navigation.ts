@@ -95,6 +95,11 @@ export function openRoutine(id: string): void {
   router.push(routes.routine(id));
 }
 
+/** A routine before it starts: what each exercise has to beat from last week, then Start. */
+export function openRoutinePreview(id: string): void {
+  router.push(routes.routinePreview(id));
+}
+
 /** Every exercise, to browse and open one (from the Workout tab). */
 export function openExerciseLibrary(): void {
   router.push(routes.exerciseLibrary());

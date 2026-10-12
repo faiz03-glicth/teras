@@ -131,6 +131,8 @@ export function useSessionViewModel(id: string | null) {
         query.queryKey.length !== own.length || query.queryKey.some((part, index) => part !== own[index]),
     });
     void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
+    // A routine's card says when it was last done: that may have been this workout.
+    void queryClient.invalidateQueries({ queryKey: workoutKeys.routines(owner) });
     // The rewritten day reaches the server (and Streak) now, not at the next time the app is opened.
     pushDaysNow(workoutDays, owner);
     haptics.success();

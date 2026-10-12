@@ -16,5 +16,5 @@ appId: com.faiz.teras.local
 - tapOn: { id: 'workout-library' }
 - assertVisible: { id: 'exercise-library-screen' }
 - back
-- tapOn: { id: 'workout-resume', optional: true }
+- tapOn: { id: 'resume-bar', optional: true }
 - assertVisible: { id: 'active-workout-screen', optional: true }

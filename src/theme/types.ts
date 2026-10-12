@@ -30,6 +30,8 @@ export interface SemanticColors {
   onAccent: string;
   danger: string;
   dangerSoft: string;
+  /** Text and icons on a `danger` fill (an armed Delete). */
+  onDanger: string;
   scrim: string;
   /** Switch knob: white in both schemes, like the platform's own switches. */
   thumb: string;

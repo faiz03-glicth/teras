@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
@@ -19,7 +19,7 @@ export interface SetRowProps {
   previousLabel: string;
   onChange: (setId: string, patch: SetPatch) => void;
   onTick: (setId: string, done: boolean) => void;
-  /** Swiped away (or asked for by a screen reader, on the tick). */
+  /** Swiped away, or asked for by a screen reader from any part of the row. */
   onDelete: (setId: string) => void;
 }
 
@@ -91,7 +91,30 @@ export const SetRow = memo(function SetRow({
   const [reps, setReps] = useState(() => asText(set.reps));
   const [seconds, setSeconds] = useState(() => asText(set.seconds));
   const done = set.status === 'done';
+  // A tick can fill an empty set (tickFill), so a locked (done) field shows what is stored, not what was
+  // typed; un-ticked, the fields take the stored values once to edit from (no cursor to move: it was locked).
+  const [wasDone, setWasDone] = useState(done);
+  if (wasDone !== done) {
+    setWasDone(done);
+    if (!done) {
+      setWeight(setWeightText(set.weightKg, unit));
+      setReps(asText(set.reps));
+      setSeconds(asText(set.seconds));
+    }
+  }
+  const shown = {
+    weight: done ? setWeightText(set.weightKg, unit) : weight,
+    reps: done ? asText(set.reps) : reps,
+    seconds: done ? asText(set.seconds) : seconds,
+  };
   const remove = useCallback(() => onDelete(set.id), [onDelete, set.id]);
+  // A screen reader can't swipe: wherever it is on the row, the row offers Delete.
+  const deletable = {
+    accessibilityActions: DELETE_ACTIONS,
+    onAccessibilityAction: (event: AccessibilityActionEvent) => {
+      if (event.nativeEvent.actionName === 'delete') remove();
+    },
+  };
 
   const field = (
     value: string,
@@ -112,6 +135,7 @@ export const SetRow = memo(function SetRow({
       placeholder="–"
       placeholderTextColor={theme.colors.text3}
       accessibilityLabel={`${label}, set ${index + 1}`}
+      {...deletable}
       style={styles.input(done)}
       // The well (its fill and inset shadow, drawn inside it) is kept as a texture while the table
       // scrolls; only a field being typed in is redrawn.
@@ -127,7 +151,7 @@ export const SetRow = memo(function SetRow({
       testID={`set-${set.id}-swipe`}
     >
       <View style={styles.row} testID={`set-${set.id}`}>
-        <Text variant="sub" tone="secondary" style={styles.number}>
+        <Text variant="sub" tone="secondary" style={styles.number} {...deletable}>
           {index + 1}
         </Text>
         <Text
@@ -137,6 +161,7 @@ export const SetRow = memo(function SetRow({
           adjustsFontSizeToFit
           minimumFontScale={0.75}
           accessibilityLabel={previousLabel}
+          {...deletable}
           style={styles.previous}
           testID={`set-${set.id}-previous`}
         >
@@ -145,12 +170,12 @@ export const SetRow = memo(function SetRow({
 
         {type === 'timed' ? (
           <View style={styles.fields}>
-            {field(seconds, setSeconds, (text) => ({ seconds: asNumber(text) }), 'seconds')}
+            {field(shown.seconds, setSeconds, (text) => ({ seconds: asNumber(text) }), 'seconds')}
           </View>
         ) : (
           <View style={styles.fields}>
-            {field(weight, setWeight, (text) => ({ weightKg: parseSetWeight(text, unit) }), 'weight')}
-            {field(reps, setReps, (text) => ({ reps: asNumber(text) }), 'reps')}
+            {field(shown.weight, setWeight, (text) => ({ weightKg: parseSetWeight(text, unit) }), 'weight')}
+            {field(shown.reps, setReps, (text) => ({ reps: asNumber(text) }), 'reps')}
           </View>
         )}
 
@@ -159,8 +184,7 @@ export const SetRow = memo(function SetRow({
           accessibilityRole="checkbox"
           accessibilityState={{ checked: done }}
           accessibilityLabel={`Set ${index + 1} done`}
-          accessibilityActions={DELETE_ACTIONS}
-          onAccessibilityAction={(event) => event.nativeEvent.actionName === 'delete' && remove()}
+          {...deletable}
           style={styles.tick}
           testID={`set-${set.id}-tick`}
         >

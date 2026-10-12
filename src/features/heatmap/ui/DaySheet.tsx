@@ -1,12 +1,11 @@
 import { View } from 'react-native';
-import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
 
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import {
   Card,
   ErrorState,
   HeatCell,
-  IconBadge,
   ListRow,
   LoadingState,
   SectionLabel,
@@ -23,7 +22,6 @@ import { useDaySheetViewModel } from './useDaySheetViewModel';
  */
 export function DaySheet({ date }: { date: ISODate | null }) {
   const vm = useDaySheetViewModel(date);
-  const { theme } = useUnistyles();
 
   return (
     <SheetLayout eyebrow={vm.eyebrow} title={vm.title} onClose={vm.onClose} testID="day-sheet">
@@ -35,38 +33,19 @@ export function DaySheet({ date }: { date: ISODate | null }) {
       )}
       {vm.status === 'ready' && (
         <>
-          {vm.streak ? (
-            <Card>
-              <View
-                style={styles.level}
-                accessible
-                accessibilityLabel={`${vm.streak.title}. ${vm.streak.body}.`}
-                testID="day-streak"
-              >
-                <IconBadge icon="check" color={theme.colors.accentText} size={36} />
-                <View style={styles.levelText}>
-                  <Text variant="headline">{vm.streak.title}</Text>
-                  <Text variant="footnote" tone="secondary">
-                    {vm.streak.body}
-                  </Text>
-                </View>
+          <Card>
+            <View style={styles.level} accessible accessibilityLabel={vm.summaryLabel} testID="day-level">
+              <HeatCell level={vm.level} size={36} radius={10} outlined={vm.level === 0} marked={vm.marked} />
+              <View style={styles.levelText}>
+                <Text variant="headline">{vm.levelName}</Text>
+                <Text variant="footnote" tone="secondary">
+                  {vm.standing}
+                </Text>
               </View>
-            </Card>
-          ) : (
-            <Card>
-              <View style={styles.level} accessible accessibilityLabel={vm.summaryLabel} testID="day-level">
-                <HeatCell level={vm.level} size={36} radius={10} outlined={vm.level === 0} />
-                <View style={styles.levelText}>
-                  <Text variant="headline">{vm.levelName}</Text>
-                  <Text variant="footnote" tone="secondary">
-                    {vm.standing}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          )}
+            </View>
+          </Card>
 
-          {(vm.inProgress || vm.rows.length > 0) && (
+          {(vm.inProgress || vm.unsaved || vm.rows.length > 0) && (
             <View style={styles.group}>
               <SectionLabel>Workouts</SectionLabel>
               <Card tight divided>
@@ -78,6 +57,16 @@ export function DaySheet({ date }: { date: ISODate | null }) {
                     onPress={vm.onResume}
                     accessibilityHint="Opens the workout in progress"
                     testID="day-in-progress"
+                  />
+                )}
+                {vm.unsaved && (
+                  <ListRow
+                    title={vm.unsaved.title}
+                    description={vm.unsaved.meta}
+                    trailing="chevron"
+                    onPress={vm.onResume}
+                    accessibilityHint="Opens the log to save or discard it"
+                    testID="day-unsaved-log"
                   />
                 )}
                 {vm.rows.map((row) => (
@@ -104,7 +93,7 @@ export function DaySheet({ date }: { date: ISODate | null }) {
                     title={vm.log.blockedBy}
                     trailing="chevron"
                     onPress={vm.onResume}
-                    accessibilityHint="Opens the workout in progress"
+                    accessibilityHint="Opens the workout to finish it"
                     testID="day-log-blocked"
                   />
                 ) : (
@@ -121,7 +110,27 @@ export function DaySheet({ date }: { date: ISODate | null }) {
                   ))
                 )}
               </Card>
+              {vm.log.note && (
+                <Text variant="footnote" tone="secondary" style={styles.note}>
+                  {vm.log.note}
+                </Text>
+              )}
             </View>
+          )}
+
+          {vm.noDetails && (
+            <Card tight>
+              <ListRow
+                title="Log the day, no details"
+                description={vm.noDetails.logging ? 'Logging…' : 'Counts toward your Streak'}
+                icon="check"
+                trailing="none"
+                onPress={vm.onLogNoDetails}
+                accessibilityHint="Logs this day without its workout"
+                busy={vm.noDetails.logging}
+                testID="day-log-no-details"
+              />
+            </Card>
           )}
         </>
       )}
@@ -133,4 +142,5 @@ const styles = StyleSheet.create((theme) => ({
   level: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   levelText: { flex: 1, gap: 2 },
   group: { gap: theme.spacing.md },
+  note: { textAlign: 'center' },
 }));

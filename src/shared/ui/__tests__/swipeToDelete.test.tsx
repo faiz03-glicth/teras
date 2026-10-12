@@ -107,6 +107,16 @@ describe('a row that can be swiped away', () => {
     expect(onDelete).not.toHaveBeenCalled();
   });
 
+  it('closes up its place after sliding off, before it is deleted', () => {
+    const onDelete = row();
+
+    swipe(-240);
+
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    // Only the room kept for its shadows is left: the rows below have moved up into its place.
+    expect(screen.getByTestId('row')).toHaveAnimatedStyle({ height: 24 });
+  });
+
   it('comes back if it is still there a moment after being deleted (the delete failed)', () => {
     const onDelete = row();
     swipe(-240);
@@ -115,5 +125,96 @@ describe('a row that can be swiped away', () => {
 
     expect(onDelete).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('row-content')).toHaveAnimatedStyle({ transform: [{ translateX: 0 }] });
+    expect(screen.getByTestId('row')).toHaveAnimatedStyle({ height: 52 + 24 });
+  });
+});
+
+describe('the line past which letting go deletes', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  function row(testID = 'row') {
+    const onDelete = jest.fn();
+    render(
+      <SwipeToDelete onDelete={onDelete} accessibilityLabel="Delete set 2" testID={testID}>
+        <Text>Set 2</Text>
+      </SwipeToDelete>,
+    );
+    fireEvent(screen.getByTestId(`${testID}-content`), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: WIDTH, height: 52 } },
+    });
+    return onDelete;
+  }
+
+  it('reads "Release to delete" once crossed', () => {
+    row();
+
+    fireGestureHandler(getByGestureTestId('row'), [
+      { state: State.BEGAN, translationX: 0 },
+      { state: State.ACTIVE, translationX: -SLOP },
+      { state: State.ACTIVE, translationX: -240 },
+      { state: State.END, translationX: -240 },
+    ]);
+    act(() => jest.advanceTimersByTime(100));
+
+    // Still moving, the key is shown but not yet one a screen reader can reach.
+    expect(screen.getByText('Release to delete', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('disarms when the finger draws back, and the row only opens', () => {
+    const onDelete = row();
+
+    fireGestureHandler(getByGestureTestId('row'), [
+      { state: State.BEGAN, translationX: 0 },
+      { state: State.ACTIVE, translationX: -SLOP },
+      { state: State.ACTIVE, translationX: -240 },
+      { state: State.ACTIVE, translationX: -80 },
+      { state: State.END, translationX: -80 },
+    ]);
+    act(() => jest.advanceTimersByTime(600));
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.queryByText('Release to delete', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByText('Delete')).toBeTruthy();
+  });
+});
+
+describe('several rows', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('keeps only one open: swiping another shuts the first', () => {
+    render(
+      <>
+        <SwipeToDelete onDelete={jest.fn()} accessibilityLabel="Delete set 1" testID="a">
+          <Text>Set 1</Text>
+        </SwipeToDelete>
+        <SwipeToDelete onDelete={jest.fn()} accessibilityLabel="Delete set 2" testID="b">
+          <Text>Set 2</Text>
+        </SwipeToDelete>
+      </>,
+    );
+    for (const id of ['a', 'b']) {
+      fireEvent(screen.getByTestId(`${id}-content`), 'layout', {
+        nativeEvent: { layout: { x: 0, y: 0, width: WIDTH, height: 52 } },
+      });
+    }
+    const open = (id: string) => {
+      fireGestureHandler(getByGestureTestId(id), [
+        { state: State.BEGAN, translationX: 0 },
+        { state: State.ACTIVE, translationX: -SLOP },
+        { state: State.ACTIVE, translationX: -80 },
+        { state: State.END, translationX: -80 },
+      ]);
+      act(() => jest.advanceTimersByTime(600));
+    };
+
+    open('a');
+    expect(screen.getByRole('button', { name: 'Delete set 1' })).toBeTruthy();
+    open('b');
+
+    expect(screen.queryByRole('button', { name: 'Delete set 1' })).toBeNull();
+    expect(screen.queryByTestId('a-close')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete set 2' })).toBeTruthy();
   });
 });

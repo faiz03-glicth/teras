@@ -1,5 +1,6 @@
 # WRITES then removes: every active-workout button (add exercise, add set, rest −15/+15/Skip,
-# remove exercise), then discard. Needs no workout in progress.
+# remove exercise), then discard. Needs no workout in progress. The workout's clock ticks every second,
+# so the screen never settles: the taps on its options don't wait for it (or retry).
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
@@ -15,6 +16,7 @@ appId: com.faiz.teras.local
 - tapOn: { text: 'Skip', optional: true }
 - tapOn: { id: 'remove-bench-press-barbell', optional: true }
 - tapOn: { text: 'REMOVE', optional: true }
-- tapOn: { id: 'discard-workout' }
-- tapOn: 'DISCARD'
+- tapOn: { id: 'workout-options', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
+- tapOn: { id: 'discard-workout', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
+- tapOn: { id: 'confirm-discard', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
 - assertVisible: { id: 'workout-start-empty' }

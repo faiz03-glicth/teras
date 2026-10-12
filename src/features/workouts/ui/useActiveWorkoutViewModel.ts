@@ -6,12 +6,15 @@ import { useRepositories } from '@/core/DiProvider';
 import { formatVolume, REST_SECONDS } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
-import { goBack, openAddExercise, openWorkoutSaved } from '@/shared/actions';
+import { goBack, openAddExercise, openWorkoutSaved, useLeaveGuard } from '@/shared/actions';
+import { useToday } from '@/shared/lib/date/useToday';
+import { shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
 import { showInfo } from '@/shared/ui/toast';
 
-import type { SetPatch, Workout } from '../data/WorkoutRepository';
+import type { RemovedSet, SetPatch, Workout } from '../data/WorkoutRepository';
 import { previousText } from '../domain/setUnits';
+import { NothingToTickError } from '../domain/tickFill';
 import { workoutTotals } from '../domain/totals';
 import {
   useActiveWorkout,
@@ -21,6 +24,18 @@ import {
   workoutKeys,
 } from '../hooks/useWorkoutQueries';
 import { useRestTimerStore } from '../state/restTimerStore';
+
+/** How long a deleted set can be brought back. */
+export const UNDO_MS = 5000;
+
+/** A set just deleted, which the Undo bar can still bring back. */
+interface Undoable {
+  /** Keys the bar, so a second delete replaces the first one's. */
+  id: string;
+  /** "Set 2 deleted". */
+  label: string;
+  removed: RemovedSet;
+}
 
 /** A rest that ended this long before it was seen (the app was closed) is cleared without a word. */
 const STALE_REST_MS = 5000;
@@ -98,12 +113,13 @@ export function useActiveWorkoutViewModel() {
     showInfo({ title: "Couldn't save", sub: 'Try again.' });
   }, []);
 
-  /** Queues a change behind every earlier one, then shows whatever the repository hands back. */
+  /** Queues a change behind every earlier one, then shows whatever the repository hands back (if anything). */
   const change = useCallback(
-    (what: string, run: () => Promise<Workout>) => {
+    (what: string, run: () => Promise<Workout | null>) => {
       writes.current = writes.current.then(async () => {
         try {
-          cacheWorkout(await run());
+          const after = await run();
+          if (after) cacheWorkout(after);
         } catch (cause) {
           report(what, cause);
         }
@@ -113,22 +129,30 @@ export function useActiveWorkoutViewModel() {
   );
 
   /**
-   * Ticking rests for as long as the set's exercise asks. The workout is read from the cache rather than
-   * closed over, so this stays the same function and the set rows are not redrawn on every change.
+   * Ticking rests for as long as the set's exercise asks, once the set is stored as done: a tick with nothing
+   * typed in and nothing to copy is refused (tickFill), and a refused tick never starts a rest. Read from
+   * what the repository hands back, so this stays the same function and the set rows are not redrawn.
    */
   const onTickSet = useCallback(
     (setId: string, done: boolean) => {
       haptics.selection();
-      if (done) {
-        const current = queryClient.getQueryData<Workout | null>(workoutKeys.active(owner));
-        const exercise = current?.exercises.find((one) => one.sets.some((set) => set.id === setId));
-        startRest(exercise?.restSeconds ?? REST_SECONDS.default);
-      } else {
-        stopRest();
-      }
-      change('Could not tick a set', () => workouts.setStatus(setId, done ? 'done' : 'pending'));
+      if (!done) stopRest();
+      change('Could not tick a set', async () => {
+        try {
+          const after = await workouts.setStatus(setId, done ? 'done' : 'pending');
+          const exercise = after.exercises.find((one) => one.sets.some((set) => set.id === setId));
+          // A past day's log is typed in after the fact: there is nothing to rest for.
+          if (done && !after.pastLog) startRest(exercise?.restSeconds ?? REST_SECONDS.default);
+          return after;
+        } catch (cause) {
+          if (!(cause instanceof NothingToTickError)) throw cause;
+          haptics.warning();
+          showInfo({ title: 'Nothing to tick yet', sub: 'Type what you lifted first.' });
+          return null;
+        }
+      });
     },
-    [change, owner, queryClient, startRest, stopRest, workouts],
+    [change, startRest, stopRest, workouts],
   );
 
   const onChangeSet = useCallback(
@@ -137,10 +161,41 @@ export function useActiveWorkoutViewModel() {
     [change, workouts],
   );
 
+  const [undoable, setUndoable] = useState<Undoable | null>(null);
+
+  // The Undo bar stays up for UNDO_MS, then the delete is for good.
+  useEffect(() => {
+    if (!undoable) return;
+    const timer = setTimeout(() => setUndoable(null), UNDO_MS);
+    return () => clearTimeout(timer);
+  }, [undoable]);
+
+  /**
+   * The set goes at once; the Undo bar (on this screen, above the rest bar while resting) can put it back
+   * exactly, in its place, for a few seconds. Both go through the write queue, so a value typed just before
+   * the swipe is in the set that comes back.
+   */
   const onRemoveSet = useCallback(
-    (setId: string) => change('Could not delete a set', () => workouts.removeSet(setId)),
-    [change, workouts],
+    (setId: string) => {
+      const current = queryClient.getQueryData<Workout | null>(workoutKeys.active(owner));
+      const number = (
+        current?.exercises.find((one) => one.sets.some((set) => set.id === setId))?.sets ?? []
+      ).findIndex((set) => set.id === setId);
+      change('Could not delete a set', async () => {
+        const { workout: after, removed } = await workouts.removeSet(setId);
+        setUndoable({ id: setId, label: number >= 0 ? `Set ${number + 1} deleted` : 'Set deleted', removed });
+        return after;
+      });
+    },
+    [change, owner, queryClient, workouts],
   );
+
+  const onUndoRemoveSet = useCallback(() => {
+    if (!undoable || leaving.current) return;
+    setUndoable(null);
+    haptics.light();
+    change('Could not bring the set back', () => workouts.restoreSet(undoable.removed));
+  }, [change, undoable, workouts]);
 
   /** Each exercise's sets, each beside the set of the same number from last time. */
   const exercises = useMemo(
@@ -165,6 +220,7 @@ export function useActiveWorkoutViewModel() {
     try {
       await writes.current;
       await workouts.discard(workout.id);
+      setUndoable(null);
       stopRest();
       cacheWorkout(null);
       leaving.current = true;
@@ -181,11 +237,14 @@ export function useActiveWorkoutViewModel() {
       // Every edit typed before Finish is in the workout that is saved.
       await writes.current;
       await workouts.finish(workout.id);
+      setUndoable(null);
       stopRest();
       cacheWorkout(null);
       // Home lists this workout and lights its day: both were read before it existed.
       void queryClient.invalidateQueries({ queryKey: workoutKeys.history });
       void queryClient.invalidateQueries({ queryKey: workoutKeys.days });
+      // Its routine's card says when it was last done, and how that day stood.
+      void queryClient.invalidateQueries({ queryKey: workoutKeys.routines(owner) });
       // The day it lit reaches the server (and Streak) now, not at the next time the app is opened.
       pushDaysNow(workoutDays, owner);
       leaving.current = true;
@@ -227,17 +286,24 @@ export function useActiveWorkoutViewModel() {
     );
   }, [discard, done, save, unticked, workout]);
 
-  const onDiscard = useCallback(() => {
-    if (!workout) return;
-    Alert.alert(
-      'Discard workout?',
-      done > 0 ? `Your ${plural(done, 'completed set')} will be deleted.` : 'Nothing has been logged yet.',
-      [
-        { text: 'Keep training', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => void discard() },
-      ],
-    );
-  }, [discard, done, workout]);
+  /** Discard is confirmed on the screen itself (the workout options' Keep / Discard), then this runs. */
+  const onDiscardNow = useCallback(() => void discard(), [discard]);
+
+  // A past day's log is never left running in the background: leaving it any way asks to save or discard.
+  const pastLog = workout?.pastLog === true;
+  const today = useToday();
+  useLeaveGuard(pastLog, (leave) => {
+    // Saving or discarding is already taking it away.
+    if (leaving.current || !workout) {
+      leave();
+      return;
+    }
+    Alert.alert('Save this log?', `Your workout for ${shortDay(workout.date, today)} isn't saved yet.`, [
+      { text: 'Keep logging', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => void discard() },
+      { text: 'Save', onPress: onFinish },
+    ]);
+  });
 
   // Opened with nothing running (a stale link, or it was finished elsewhere): go back rather than
   // showing an empty screen.
@@ -260,8 +326,10 @@ export function useActiveWorkoutViewModel() {
       { label: 'Volume', value: formatVolume(totals?.volumeKg ?? 0, unit) },
       { label: 'Sets', value: String(done) },
     ],
-    /** When the rest under way ends, or null with none. */
-    restEndsAt: rest.endsAt,
+    /** Logged after its day: no clock, no rest, and Finish saves it. */
+    pastLog,
+    /** When the rest under way ends, or null with none (never, for a past day's log). */
+    restEndsAt: pastLog ? null : rest.endsAt,
     onRestOver: rest.over,
     onRestLess: () => rest.adjust(-1),
     onRestMore: () => rest.adjust(1),
@@ -269,6 +337,9 @@ export function useActiveWorkoutViewModel() {
     onTickSet,
     onChangeSet,
     onRemoveSet,
+    /** The set just deleted, while it can still be brought back: the Undo bar. */
+    undo: undoable ? { key: undoable.id, label: undoable.label } : null,
+    onUndoRemoveSet,
     onAddSet: (workoutExerciseId: string) =>
       change('Could not add a set', () => workouts.addSet(workoutExerciseId)),
     onRemoveExercise: (workoutExerciseId: string) =>
@@ -277,7 +348,10 @@ export function useActiveWorkoutViewModel() {
     /** The back chevron puts the workout away; it keeps running, a tap on Resume away. */
     onMinimize: () => goBack(),
     onFinish,
-    onDiscard,
+    /** What discarding would lose, for its confirm. */
+    discardLine:
+      done > 0 ? `Your ${plural(done, 'completed set')} will be deleted.` : 'Nothing has been logged yet.',
+    onDiscardNow,
   };
 }
 

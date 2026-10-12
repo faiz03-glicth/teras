@@ -2,7 +2,7 @@ import type { HeatLevel } from '@/features/heatmap/domain/grid';
 import { addDays } from '@/shared/lib/date/calendar';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 
-import { HEAT_WINDOW_DAYS, heatLevel } from '../domain/heatLevel';
+import { HEAT_WINDOW_DAYS } from '../domain/heatLevel';
 import type { DayTotals, WorkoutDay } from '../domain/WorkoutDay';
 import type { WorkoutDayDao, WorkoutDayOwner } from './local/workoutDayDao';
 import type { WorkoutDayApi } from './remote/workoutDayApi';
@@ -14,13 +14,15 @@ export type { WorkoutDayOwner } from './local/workoutDayDao';
  * a copy. Workout logging calls `recordDay` whenever a day's completed sets change.
  */
 export interface WorkoutDayRepository {
-  /** Stores the day's totals with its level (judged against the 90 days before it) and marks it to be sent. */
-  recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals): Promise<WorkoutDay>;
+  /**
+   * Stores the day's totals with its level and marks it to be sent. The level is worked out by whoever
+   * logged the training (progressive overload against the same lifts last week, in workouts) and frozen here.
+   */
+  recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals, level: HeatLevel): Promise<WorkoutDay>;
   /** Days in the range (inclusive), oldest first. */
   list(owner: WorkoutDayOwner, from: ISODate, to: ISODate): Promise<WorkoutDay[]>;
   /**
-   * The volumes of the training days in the 90 days before `date`: what that day's level was judged
-   * against. The Day detail shows a day against them; recordDay reads the very same window.
+   * The volumes of the training days in the 90 days before `date`, for the Day detail's comparison.
    */
   windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]>;
   /** Sends the signed-in user's days that aren't on the server yet. Returns how many were sent. */
@@ -33,6 +35,9 @@ export interface LocalFirstWorkoutDayDeps {
   uuid: () => string;
   now: () => string;
 }
+
+/** Days per request when pushing: small enough for the server's per-row Streak trigger to finish in time. */
+export const PUSH_PAGE = 200;
 
 const toDay = (row: {
   date: string;
@@ -54,9 +59,13 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
 
   constructor(private readonly deps: LocalFirstWorkoutDayDeps) {}
 
-  async recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals): Promise<WorkoutDay> {
+  async recordDay(
+    owner: WorkoutDayOwner,
+    date: ISODate,
+    totals: DayTotals,
+    level: HeatLevel,
+  ): Promise<WorkoutDay> {
     const { dao, uuid, now } = this.deps;
-    const level = heatLevel(totals, await this.windowBefore(owner, date));
     const existing = await dao.getByDate(owner, date);
     const timestamp = now();
     const row = {
@@ -92,21 +101,28 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
     return push;
   }
 
+  /**
+   * Sends the dirty days a page at a time: each row starts Streak's check-in trigger on the server, so a
+   * large backlog (an import of years) in one request could outlast the statement timeout. Each page is
+   * marked clean as it lands, so a failure part-way leaves only the unsent pages to retry.
+   */
   private async push(userId: string): Promise<number> {
     const { dao, api } = this.deps;
     const rows = await dao.listDirty(userId);
-    if (rows.length === 0) return 0;
-    await api.upsert(
-      userId,
-      rows.map((row) => ({
-        date: row.date,
-        volume_kg: row.volumeKg,
-        sets: row.sets,
-        workouts: row.workouts,
-        level: row.level,
-      })),
-    );
-    for (const row of rows) await dao.markClean(row.id, row.updatedAt);
+    for (let start = 0; start < rows.length; start += PUSH_PAGE) {
+      const page = rows.slice(start, start + PUSH_PAGE);
+      await api.upsert(
+        userId,
+        page.map((row) => ({
+          date: row.date,
+          volume_kg: row.volumeKg,
+          sets: row.sets,
+          workouts: row.workouts,
+          level: row.level,
+        })),
+      );
+      for (const row of page) await dao.markClean(row.id, row.updatedAt);
+    }
     return rows.length;
   }
 }

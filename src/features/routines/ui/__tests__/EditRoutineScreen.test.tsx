@@ -1,6 +1,8 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { Activity } from 'react';
 import { Alert, type AlertButton } from 'react-native';
+import { State } from 'react-native-gesture-handler';
+import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { toast } from 'sonner-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
@@ -63,6 +65,19 @@ function edit(routineId: string | null, prepare: (repositories: Repositories) =>
 const names = () =>
   screen.getAllByTestId(/^routine-item-name-/).map((node) => (node.props as { children: string }).children);
 
+/** The row of exercise `key`: the part that opens its targets, and is held to drag it. */
+const rowHead = (key: string) => screen.getByTestId(`routine-item-open-${key}`);
+
+/** A screen reader's Move up / Move down on the row of exercise `key`. */
+function moveAction(key: string, actionName: 'moveUp' | 'moveDown') {
+  fireEvent(rowHead(key), 'accessibilityAction', { nativeEvent: { actionName } });
+}
+
+const actionNames = (key: string) =>
+  ((rowHead(key).props as { accessibilityActions?: { name: string }[] }).accessibilityActions ?? []).map(
+    (one) => one.name,
+  );
+
 /** Presses the alert button labelled `label` on the last alert shown. */
 function answerAlert(label: string) {
   const buttons = jest.mocked(Alert.alert).mock.calls.at(-1)?.[2] as AlertButton[] | undefined;
@@ -123,6 +138,76 @@ describe('a new routine', () => {
   });
 });
 
+describe("an exercise's targets", () => {
+  it('opens from its row, one row at a time', async () => {
+    edit('push');
+    await screen.findByRole('header', { name: 'Edit routine' });
+    expect(screen.queryByTestId('routine-item-editor-i1')).toBeNull();
+
+    fireEvent.press(rowHead('i1'));
+    expect(screen.getByTestId('routine-item-editor-i1')).toBeTruthy();
+    expect(screen.getByTestId('routine-item-sets-i1-value').props.children).toBe('4');
+    expect(screen.getByTestId('routine-item-each-i1-value').props.children).toBe('8');
+    expect(screen.getByTestId('routine-item-weight-i1-value').props.children).toBe('None');
+
+    fireEvent.press(rowHead('i2'));
+    expect(screen.queryByTestId('routine-item-editor-i1')).toBeNull();
+    expect(screen.getByTestId('routine-item-editor-i2')).toBeTruthy();
+  });
+
+  it('steps sets, reps and the starting weight, and shows them in the row', async () => {
+    edit('push');
+    await screen.findByRole('header', { name: 'Edit routine' });
+    fireEvent.press(rowHead('i1'));
+
+    fireEvent.press(screen.getByRole('button', { name: 'More sets for Bench Press (Barbell)' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Less reps for Bench Press (Barbell)' }));
+    fireEvent.press(screen.getByRole('button', { name: 'More starting weight for Bench Press (Barbell)' }));
+
+    expect(screen.getByTestId('routine-item-sets-i1-value').props.children).toBe('5');
+    expect(screen.getByTestId('routine-item-each-i1-value').props.children).toBe('7');
+    expect(screen.getByTestId('routine-item-weight-i1-value').props.children).toBe('2.5 kg');
+    expect(screen.getByText('5 sets × 7 reps · 2.5 kg · Chest')).toBeTruthy();
+  });
+
+  it('counts every tap, even two before the screen redraws', async () => {
+    edit('push');
+    await screen.findByRole('header', { name: 'Edit routine' });
+    fireEvent.press(rowHead('i1'));
+    const more = screen.getByRole('button', { name: 'More sets for Bench Press (Barbell)' });
+
+    act(() => {
+      fireEvent.press(more);
+      fireEvent.press(more);
+    });
+
+    expect(screen.getByTestId('routine-item-sets-i1-value').props.children).toBe('6');
+  });
+
+  it('saves the changed targets', async () => {
+    const { repositories } = edit('push');
+    await screen.findByRole('header', { name: 'Edit routine' });
+    act(() => useRoutineDraftStore.getState().update('i2', { targetSets: 5, startWeightKg: 22.5 }));
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    const saved = repositories.routines.save.mock.calls[0]?.[1] as { items: RoutineDraftItem[] };
+    expect(saved.items[1]).toEqual(expect.objectContaining({ targetSets: 5, startWeightKg: 22.5 }));
+  });
+
+  it('counts a new starting weight alone as a change worth asking about', async () => {
+    edit('push');
+    await screen.findByRole('header', { name: 'Edit routine' });
+    act(() => useRoutineDraftStore.getState().update('i1', { startWeightKg: 60 }));
+
+    fireEvent.press(screen.getByLabelText('Back'));
+
+    expect(Alert.alert).toHaveBeenCalledWith('Discard changes?', expect.any(String), expect.any(Array));
+    expect(actions.goBack).not.toHaveBeenCalled();
+  });
+});
+
 describe('a saved routine', () => {
   it('opens to edit, its exercises in order with what each asks for', async () => {
     edit('push');
@@ -137,18 +222,69 @@ describe('a saved routine', () => {
     edit('push');
     await screen.findByRole('header', { name: 'Edit routine' });
 
-    expect(screen.getByRole('button', { name: 'Move Bench Press (Barbell) up' })).toBeDisabled();
-    fireEvent.press(screen.getByRole('button', { name: 'Move Incline Bench Press (Dumbbell) up' }));
+    // The first can only go down, the last only up.
+    expect(actionNames('i1')).toEqual(['moveDown']);
+    expect(actionNames('i2')).toEqual(['moveUp']);
+    moveAction('i2', 'moveUp');
     expect(names()).toEqual(['Incline Bench Press (Dumbbell)', 'Bench Press (Barbell)']);
 
     fireEvent.press(screen.getByRole('button', { name: 'Remove Bench Press (Barbell)' }));
     expect(names()).toEqual(['Incline Bench Press (Dumbbell)']);
   });
 
+  it('moves an exercise held and dragged past the next one, once it is let go', async () => {
+    jest.useFakeTimers();
+    try {
+      edit('push');
+      await screen.findByRole('header', { name: 'Edit routine' });
+      for (const key of ['i1', 'i2']) {
+        fireEvent(screen.getByTestId(`routine-item-${key}`), 'layout', {
+          nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 56 } },
+        });
+      }
+
+      fireGestureHandler(getByGestureTestId('routine-drag-i1'), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: 0 },
+        { state: State.ACTIVE, translationY: 70 },
+        { state: State.END, translationY: 70 },
+      ]);
+      act(() => jest.advanceTimersByTime(600));
+
+      expect(names()).toEqual(['Incline Bench Press (Dumbbell)', 'Bench Press (Barbell)']);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('stays in place when let go before passing the middle of the next one', async () => {
+    jest.useFakeTimers();
+    try {
+      edit('push');
+      await screen.findByRole('header', { name: 'Edit routine' });
+      for (const key of ['i1', 'i2']) {
+        fireEvent(screen.getByTestId(`routine-item-${key}`), 'layout', {
+          nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 56 } },
+        });
+      }
+
+      fireGestureHandler(getByGestureTestId('routine-drag-i1'), [
+        { state: State.BEGAN, translationY: 0 },
+        { state: State.ACTIVE, translationY: 20 },
+        { state: State.END, translationY: 20 },
+      ]);
+      act(() => jest.advanceTimersByTime(600));
+
+      expect(names()).toEqual(['Bench Press (Barbell)', 'Incline Bench Press (Dumbbell)']);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('saves what was changed, in the new order', async () => {
     const { repositories } = edit('push');
     await screen.findByRole('header', { name: 'Edit routine' });
-    fireEvent.press(screen.getByRole('button', { name: 'Move Bench Press (Barbell) down' }));
+    moveAction('i1', 'moveDown');
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -213,7 +349,7 @@ describe('a draft that outlives its screen', () => {
   it('keeps what was changed while another screen is over the editor', async () => {
     const { rerender } = edit('push');
     await screen.findByRole('header', { name: 'Edit routine' });
-    fireEvent.press(screen.getByRole('button', { name: 'Move Bench Press (Barbell) down' }));
+    moveAction('i1', 'moveDown');
 
     rerender(editor('push', 'hidden'));
     rerender(editor('push'));

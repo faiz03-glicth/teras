@@ -5,13 +5,17 @@
 export const goHome = jest.fn();
 export const openNewRoutine = jest.fn();
 export const openRoutine = jest.fn();
+export const openRoutinePreview = jest.fn();
 export const goTab = jest.fn();
 export const openOnboarding = jest.fn();
 export const showOnboardingStep = jest.fn();
 export const openLogin = jest.fn();
 export const goBack = jest.fn();
-/** No navigator to guard in these tests: the screen's own way out is just going back. */
-export const useLeaveGuard = () => goBack;
+/**
+ * No navigator to guard in these tests: the screen's own way out is just going back. A jest.fn, so a test
+ * can take the `ask` a screen passes and answer it as if the person had tried to leave.
+ */
+export const useLeaveGuard = jest.fn((_guarded: boolean, _ask: (leave: () => void) => void) => goBack);
 export const openActiveWorkout = jest.fn();
 export const openAddExercise = jest.fn();
 export const openExerciseLibrary = jest.fn();

@@ -14,7 +14,8 @@ import {
 import { mockFn } from '@test/fakes/mockFn';
 
 import { createWorkoutDao } from '../local/workoutDao';
-import { LocalWorkoutRepository, type WorkoutRepository } from '../WorkoutRepository';
+import { NothingToTickError } from '../../domain/tickFill';
+import { LocalWorkoutRepository, type Workout, type WorkoutRepository } from '../WorkoutRepository';
 
 const DATE = '2026-10-01' as ISODate;
 const USER = 'user-1';
@@ -69,6 +70,33 @@ describe('starting a workout', () => {
 
     expect(workout).toMatchObject({ name: 'Workout', routineId: null, date: DATE, bodyweightKg: 70 });
     expect(workout.exercises).toEqual([]);
+    // Started on its own day: a live workout, timed from now.
+    expect(workout.pastLog).toBeUndefined();
+  });
+
+  describe('on a past day (a log, not a live workout)', () => {
+    const PAST = '2026-09-28' as ISODate;
+
+    it('is a past log that starts on its own day', async () => {
+      const { repo } = await setup();
+
+      const workout = await repo.start(USER, { date: PAST, bodyweightKg: 70, restSeconds: 90 });
+
+      expect(workout.pastLog).toBe(true);
+      expect((await repo.active(USER))?.pastLog).toBe(true);
+      expect(new Date(workout.startedAt).getDate()).toBe(28);
+    });
+
+    it('is saved as 1 h 40 min, however long it took to type in', async () => {
+      const { repo } = await setup();
+      const started = await repo.start(USER, { date: PAST, bodyweightKg: 70, restSeconds: 90 });
+      await logSet(repo, started.id, 'squat-barbell', { weightKg: 100, reps: 5 });
+
+      await repo.finish(started.id);
+
+      const [saved] = await repo.historyBetween(USER, PAST, PAST);
+      expect(saved?.durationSeconds).toBe(100 * 60);
+    });
   });
 
   it('fills a workout from a routine, in order, with its targets', async () => {
@@ -206,12 +234,87 @@ describe('building up a workout', () => {
     await repo.addSet(squat);
     const sets = first((await repo.addSet(squat)).exercises, 'exercise').sets;
 
-    const workout = await repo.removeSet(at(sets, 1, 'set').id);
+    const { workout } = await repo.removeSet(at(sets, 1, 'set').id);
 
     expect(first(workout.exercises, 'exercise').sets.map((one) => one.id)).toEqual([
       at(sets, 0, 'set').id,
       at(sets, 2, 'set').id,
     ]);
+  });
+
+  it('puts a deleted set back exactly as it was, in its place', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const squat = first(added.exercises, 'exercise').id;
+    await repo.addSet(squat);
+    await repo.addSet(squat);
+    const middle = at(first((await repo.get(started.id))!.exercises, 'exercise').sets, 1, 'set').id;
+    await repo.updateSet(middle, { weightKg: 102.5, reps: 7 });
+    const before = first((await repo.setStatus(middle, 'done')).exercises, 'exercise').sets;
+    const { removed } = await repo.removeSet(middle);
+
+    const workout = await repo.restoreSet(removed);
+
+    const after = first(workout.exercises, 'exercise').sets;
+    expect(after.map((one) => one.id)).toEqual(before.map((one) => one.id));
+    expect(at(after, 1, 'set')).toEqual(at(before, 1, 'set'));
+  });
+
+  it('puts a set back above one added after it was deleted', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const squat = first(added.exercises, 'exercise').id;
+    const sets = first((await repo.addSet(squat)).exercises, 'exercise').sets;
+    const { removed } = await repo.removeSet(at(sets, 1, 'set').id);
+    const fresh = at(first((await repo.addSet(squat)).exercises, 'exercise').sets, 1, 'set').id;
+
+    const workout = await repo.restoreSet(removed);
+
+    expect(first(workout.exercises, 'exercise').sets.map((one) => one.id)).toEqual([
+      at(sets, 0, 'set').id,
+      at(sets, 1, 'set').id,
+      fresh,
+    ]);
+  });
+
+  it('puts a set back only once', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const squat = first(added.exercises, 'exercise').id;
+    const sets = first((await repo.addSet(squat)).exercises, 'exercise').sets;
+    const { removed } = await repo.removeSet(at(sets, 1, 'set').id);
+    await repo.restoreSet(removed);
+
+    const workout = await repo.restoreSet(removed);
+
+    expect(first(workout.exercises, 'exercise').sets).toHaveLength(2);
+  });
+
+  it('refuses to put a set back once its exercise is gone', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const squat = first(added.exercises, 'exercise');
+    const { removed } = await repo.removeSet(first(squat.sets, 'set').id);
+    await repo.removeExercise(squat.id);
+
+    await expect(repo.restoreSet(removed)).rejects.toThrow('No workout exercise');
+  });
+
+  it('refuses to put a set back into a finished workout', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, 'squat-barbell', 90);
+    const sets = first((await repo.addSet(first(added.exercises, 'exercise').id)).exercises, 'exercise').sets;
+    await repo.updateSet(at(sets, 0, 'set').id, { weightKg: 100, reps: 5 });
+    await repo.setStatus(at(sets, 0, 'set').id, 'done');
+    const { removed } = await repo.removeSet(at(sets, 1, 'set').id);
+    await repo.finish(started.id);
+
+    await expect(repo.restoreSet(removed)).rejects.toThrow('is not running');
   });
 
   it('refuses to remove a set that is not there', async () => {
@@ -229,9 +332,96 @@ describe('finishing a workout', () => {
 
     const day = await repo.finish(started.id);
 
-    // No training history behind it, so the level is the "not enough days to judge" one.
-    expect(day).toMatchObject({ date: DATE, volumeKg: 500, sets: 1, workouts: 1, level: 2 });
+    // Nothing last week to beat or match: a first week is Light.
+    expect(day).toMatchObject({ date: DATE, volumeKg: 500, sets: 1, workouts: 1, level: 1 });
     expect(await repo.active(USER)).toBeNull();
+  });
+
+  describe('the day level: the same lifts against last week', () => {
+    /** One finished workout on `date` with one completed squat set. */
+    async function squatOn(repo: WorkoutRepository, date: string, weightKg: number, reps: number) {
+      const started = await repo.start(USER, { date: date as ISODate, bodyweightKg: 70, restSeconds: 90 });
+      await logSet(repo, started.id, 'squat-barbell', { weightKg, reps });
+      return repo.finish(started.id);
+    }
+
+    it('is Moderate when last week was matched', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+
+      expect((await squatOn(repo, '2026-10-08', 100, 5)).level).toBe(2);
+    });
+
+    it('is Strong when last week was beaten, Light when it was not', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+
+      expect((await squatOn(repo, '2026-10-08', 100, 6)).level).toBe(3);
+      expect((await squatOn(repo, '2026-10-15', 95, 6)).level).toBe(1);
+    });
+
+    it('is Peak when a lift beat last week for the second week running', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+      await squatOn(repo, '2026-10-08', 100, 6);
+
+      expect((await squatOn(repo, '2026-10-15', 102.5, 5)).level).toBe(4);
+    });
+
+    it('stays as it was stored when a later week is logged', async () => {
+      const { repo, days } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+      const before = await squatOn(repo, '2026-10-08', 100, 6);
+      await squatOn(repo, '2026-10-15', 90, 5);
+
+      expect((await days.list(USER, '2026-10-08' as ISODate, '2026-10-08' as ISODate))[0]?.level).toBe(
+        before.level,
+      );
+    });
+
+    it('is worked out again without a deleted workout', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+      const morning = await repo.start(USER, {
+        date: '2026-10-08' as ISODate,
+        bodyweightKg: 70,
+        restSeconds: 90,
+      });
+      await logSet(repo, morning.id, 'squat-barbell', { weightKg: 110, reps: 5 });
+      await repo.finish(morning.id);
+      await squatOn(repo, '2026-10-08', 100, 5);
+
+      expect((await repo.deleteLogged(USER, morning.id)).level).toBe(2);
+    });
+
+    it('says what the next workout has to beat: last week’s matching session', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+      await squatOn(repo, '2026-10-03', 105, 5);
+      await squatOn(repo, '2026-10-08', 100, 6);
+
+      // This week's second squat session is set against last week's second.
+      expect(
+        await repo.toBeat(USER, ['squat-barbell', 'bench-press-barbell'], '2026-10-10' as ISODate),
+      ).toEqual({
+        'squat-barbell': { weightKg: 105, reps: 5, seconds: 0 },
+      });
+    });
+
+    it('leaves the workout still running out of what is to beat', async () => {
+      const { repo } = await setup();
+      await squatOn(repo, '2026-10-01', 100, 5);
+      const running = await repo.start(USER, {
+        date: '2026-10-08' as ISODate,
+        bodyweightKg: 70,
+        restSeconds: 90,
+      });
+      await logSet(repo, running.id, 'squat-barbell', { weightKg: 120, reps: 5 });
+
+      expect(await repo.toBeat(USER, ['squat-barbell'], '2026-10-08' as ISODate)).toEqual({
+        'squat-barbell': { weightKg: 100, reps: 5, seconds: 0 },
+      });
+    });
   });
 
   it('counts every workout of the same day together', async () => {
@@ -447,6 +637,27 @@ describe('the routines on offer', () => {
     const { repo } = await setup();
 
     expect(await repo.routines(null)).toHaveLength(3);
+  });
+
+  it('says when each was last done and how that day stood, and nothing for one never done', async () => {
+    const { repo } = await setup();
+    const started = await repo.start(USER, {
+      date: DATE,
+      bodyweightKg: 70,
+      restSeconds: 90,
+      routineId: 'push',
+    });
+    const firstSet = first(first(started.exercises, 'exercise').sets, 'set');
+    await repo.updateSet(firstSet.id, { weightKg: 60, reps: 8 });
+    await repo.setStatus(firstSet.id, 'done');
+    const day = await repo.finish(started.id);
+
+    const routines = await repo.routines(USER);
+
+    expect(routines.find((routine) => routine.id === 'push')?.last).toEqual({ date: DATE, level: day.level });
+    expect(routines.find((routine) => routine.id === 'pull')?.last).toBeNull();
+    // Someone else's workouts never count.
+    expect((await repo.routines(null)).find((routine) => routine.id === 'push')?.last).toBeNull();
   });
 });
 
@@ -1066,5 +1277,76 @@ describe('every record', () => {
 
     expect(await repo.records(USER)).toEqual([]);
     expect(await repo.records(null)).toMatchObject([{ exerciseId: BENCH, value: 100 }]);
+  });
+});
+
+describe('ticking a set with nothing typed in (S21)', () => {
+  const values = (workout: Workout, index: number) => {
+    const set = at(at(workout.exercises, workout.exercises.length - 1, 'exercise').sets, index, 'set');
+    return { weightKg: set.weightKg, reps: set.reps, seconds: set.seconds, status: set.status };
+  };
+
+  it('fills it from the set above', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const workout = await logExercise(repo, started.id, BENCH, [{ weightKg: 60, reps: 8 }, {}]);
+
+    expect(values(workout, 1)).toEqual({ weightKg: 60, reps: 8, seconds: null, status: 'done' });
+  });
+
+  it('refuses an empty first set with no last time: it stays pending and nothing counts', async () => {
+    const { repo, api } = await setup();
+    const started = await startEmpty(repo);
+    const added = await repo.addExercise(started.id, BENCH, 90);
+    const set = first(first(added.exercises, 'exercise').sets, 'set');
+
+    await expect(repo.setStatus(set.id, 'done')).rejects.toBeInstanceOf(NothingToTickError);
+
+    const after = await repo.active(USER);
+    expect(after && values(after, 0)).toEqual({
+      weightKg: null,
+      reps: null,
+      seconds: null,
+      status: 'pending',
+    });
+    expect(api.upsert).not.toHaveBeenCalled();
+  });
+
+  it("fills an exercise's first set from last time's set of the same number", async () => {
+    const { repo } = await setup();
+    await logged(repo, [
+      [
+        BENCH,
+        [
+          { weightKg: 60, reps: 8 },
+          { weightKg: 62.5, reps: 6 },
+        ],
+      ],
+    ]);
+    const next = await startEmpty(repo);
+    // Cleared, so neither set has anything typed: the first takes last time's first.
+    const workout = await logExercise(repo, next.id, BENCH, [{}, { done: false }]);
+
+    expect(values(workout, 0)).toEqual({ weightKg: 60, reps: 8, seconds: null, status: 'done' });
+  });
+
+  it('leaves a set with anything typed in exactly as typed', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const workout = await logExercise(repo, started.id, 'pull-up', [{ weightKg: 10, reps: 8 }, { reps: 12 }]);
+
+    // A bodyweight set's empty kg means nothing added: it is not filled from the set above.
+    expect(values(workout, 1)).toEqual({ weightKg: null, reps: 12, seconds: null, status: 'done' });
+  });
+
+  it('keeps what a tick filled in when the set is un-ticked', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const workout = await logExercise(repo, started.id, BENCH, [{ weightKg: 60, reps: 8 }, {}]);
+    const set = at(first(workout.exercises, 'exercise').sets, 1, 'set');
+
+    const after = await repo.setStatus(set.id, 'pending');
+
+    expect(values(after, 1)).toEqual({ weightKg: 60, reps: 8, seconds: null, status: 'pending' });
   });
 });

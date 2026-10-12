@@ -43,6 +43,7 @@ export { StatTile } from './StatTile';
 export { StepperRow, type StepperField } from './StepperRow';
 export { SwipeToDelete } from './SwipeToDelete';
 export { TabBar } from './TabBar';
+export { TabBarClearance, useTabBarClearance } from './tabBarClearance';
 export { TabMotionProvider, TabScene, type TabMotion } from './TabScene';
 export { Text } from './Text';
 export { TextField } from './TextField';

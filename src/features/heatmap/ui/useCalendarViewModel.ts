@@ -118,7 +118,7 @@ export function useCalendarViewModel() {
     rows,
     selected,
     dayLabels: DAY_LABELS,
-    legendCaption: 'vs your last 90 days',
+    legendCaption: 'vs the same lifts last week',
     months,
     status:
       days.isError || workouts.isError

@@ -1,4 +1,4 @@
-# Edit routine without saving: reorder, add from the library, then Discard (header Back and Android Back).
+# Edit routine without saving: change a target, add from the library, then Discard (header Back and Android Back).
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
@@ -6,7 +6,8 @@ appId: com.faiz.teras.local
 - tapOn: 'Edit Push Day'
 - assertVisible: 'Edit routine'
 - assertVisible: '5 EXERCISES'
-- tapOn: 'Move Overhead Press (Barbell) up'
+- tapOn: 'Overhead Press \(Barbell\), .*'
+- tapOn: 'More sets for Overhead Press (Barbell)'
 - tapOn: 'Add exercise'
 - tapOn:
     id: 'all-ab-wheel-rollout'

@@ -5,8 +5,8 @@ appId: com.faiz.teras.local
 - tapOn: { id: 'tab-workout' }
 - tapOn:
     id: 'workout-start-empty'
-- tapOn:
-    id: 'discard-workout'
-- tapOn: 'DISCARD'
+- tapOn: { id: 'workout-options', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
+- tapOn: { id: 'discard-workout', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
+- tapOn: { id: 'confirm-discard', waitToSettleTimeoutMs: 500, retryTapIfNoChange: false }
 - assertVisible:
     id: 'workout-start-empty'

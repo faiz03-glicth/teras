@@ -131,6 +131,7 @@ export const motion = {
    * `fullAt` of the row's own width, letting go does the action outright and the row slides away
    * (`goneMs`). A haptic tick marks crossing `fullAt`, so the finger knows before it lets go. Only distance
    * does the action: a flick (`flickSpeed` pt/s) left at most opens the row, and a flick right closes it.
+   * Once slid away, the row's place closes up (`closeMs`) and the rows below move up into it.
    */
   swipeAction: {
     actionWidth: 88,
@@ -139,6 +140,7 @@ export const motion = {
     flickSpeed: 800,
     slopPt: 12,
     goneMs: DURATION.normal,
+    closeMs: DURATION.normal,
     spring: {
       damping: 26,
       stiffness: 300,
@@ -147,6 +149,11 @@ export const motion = {
       reduceMotion: ReduceMotion.System,
     } satisfies WithSpringConfig,
   },
+  /**
+   * reorder: hold a row (`holdMs`) and it lifts (`liftScale`) to be dragged up or down its list; the rows
+   * it passes glide aside (`shiftMs`), and on release it eases into its new place (`dropMs`).
+   */
+  reorder: { holdMs: 250, liftScale: 1.02, shiftMs: DURATION.fast, dropMs: DURATION.fast },
   /** settle: something in a fixed frame moving to make room (a button gliding as the one below it goes). */
   settle: { durationMs: DURATION.normal },
   /** fadeUp: something appearing in place (a banner, a status line) rises a little as it fades in. */

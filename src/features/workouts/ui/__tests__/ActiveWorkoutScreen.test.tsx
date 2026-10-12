@@ -6,7 +6,13 @@ import { toast } from 'sonner-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
-import type { Workout, WorkoutExercise, WorkoutSet } from '@/features/workouts/data/WorkoutRepository';
+import type {
+  RemovedSet,
+  Workout,
+  WorkoutExercise,
+  WorkoutSet,
+} from '@/features/workouts/data/WorkoutRepository';
+import { useRoutines } from '@/features/workouts/hooks/useWorkoutQueries';
 import { useRestTimerStore } from '@/features/workouts/state/restTimerStore';
 import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
@@ -14,9 +20,13 @@ import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
 import { renderInScheme } from '@test/render';
 
+import { NothingToTickError } from '../../domain/tickFill';
 import { ActiveWorkoutScreen } from '../ActiveWorkoutScreen';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
+
+// Whole screens render slowly when the full suite runs in parallel; alone each test takes well under 5 s.
+jest.setTimeout(15_000);
 
 type Repositories = ReturnType<typeof createFakeRepositories>;
 
@@ -113,17 +123,19 @@ afterEach(() => {
 describe('the rest timer', () => {
   it("starts when a set is ticked, at that exercise's rest", async () => {
     log(running([bench([set('s1', 'pending')])]));
+    const tick = await screen.findByTestId('set-s1-tick');
 
-    fireEvent.press(await screen.findByTestId('set-s1-tick'));
+    // The rest starts once the tick is stored; settled here without the clock moving on.
+    await act(async () => fireEvent.press(tick));
 
-    expect(await screen.findByTestId('rest-bar')).toBeTruthy();
+    expect(screen.getByTestId('rest-bar')).toBeTruthy();
     expect(screen.getByText('1:30')).toBeTruthy();
   });
 
   it('moves by 15 seconds either way, and Skip ends it', async () => {
     log(running([bench([set('s1', 'pending')])]));
-    fireEvent.press(await screen.findByTestId('set-s1-tick'));
-    await screen.findByTestId('rest-bar');
+    const tick = await screen.findByTestId('set-s1-tick');
+    await act(async () => fireEvent.press(tick));
 
     fireEvent.press(screen.getByRole('button', { name: 'Add 15 seconds' }));
     expect(screen.getByText('1:45')).toBeTruthy();
@@ -240,8 +252,14 @@ describe('the set table', () => {
 
 describe('deleting a set', () => {
   const twoSets = () => running([bench([set('s1', 'done'), set('s2', 'pending', { position: 1 })])]);
-  const withoutSecond = (fakes: Repositories) =>
-    void fakes.workouts.removeSet.mockResolvedValue(running([bench([set('s1', 'done')])]));
+  const removedRow = { row: { id: 's2' } } as unknown as RemovedSet;
+  const withoutSecond = (fakes: Repositories) => {
+    fakes.workouts.removeSet.mockResolvedValue({
+      workout: running([bench([set('s1', 'done')])]),
+      removed: removedRow,
+    });
+    fakes.workouts.restoreSet.mockResolvedValue(twoSets());
+  };
 
   it('deletes the set whose row is swiped away', async () => {
     const { repositories } = log(twoSets(), withoutSecond);
@@ -262,15 +280,59 @@ describe('deleting a set', () => {
     expect(screen.getByTestId('set-s1')).toBeTruthy();
   });
 
-  it('can be deleted from its tick with a screen reader', async () => {
-    const { repositories } = log(twoSets(), withoutSecond);
+  it.each(['tick', 'weight', 'reps', 'previous'])(
+    'can be deleted with a screen reader from anywhere on its row (%s)',
+    async (part) => {
+      const { repositories } = log(twoSets(), withoutSecond);
+
+      fireEvent(await screen.findByTestId(`set-s2-${part}`), 'accessibilityAction', {
+        nativeEvent: { actionName: 'delete' },
+      });
+
+      await waitFor(() => expect(screen.queryByTestId('set-s2')).toBeNull());
+      expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
+    },
+  );
+
+  it('offers the Undo while resting too', async () => {
+    log(twoSets(), withoutSecond);
+    act(() => useRestTimerStore.getState().start('w1', 90, Date.now()));
+    expect(await screen.findByTestId('rest-bar')).toBeTruthy();
 
     fireEvent(await screen.findByTestId('set-s2-tick'), 'accessibilityAction', {
       nativeEvent: { actionName: 'delete' },
     });
 
     await waitFor(() => expect(screen.queryByTestId('set-s2')).toBeNull());
-    expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
+    expect(screen.getByText('Set 2 deleted')).toBeTruthy();
+    expect(screen.getByTestId('rest-bar')).toBeTruthy();
+  });
+
+  it('offers an Undo that puts the set back exactly where it was', async () => {
+    const { repositories } = log(twoSets(), withoutSecond);
+    fireEvent(await screen.findByTestId('set-s2-tick'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'delete' },
+    });
+    await waitFor(() => expect(screen.queryByTestId('set-s2')).toBeNull());
+
+    expect(screen.getByText('Set 2 deleted')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Undo: Set 2 deleted' }));
+
+    expect(await screen.findByTestId('set-s2')).toBeTruthy();
+    expect(repositories.workouts.restoreSet).toHaveBeenCalledWith(removedRow);
+    expect(screen.queryByTestId('undo-bar')).toBeNull();
+  });
+
+  it('lets the Undo go after five seconds: the delete is then for good', async () => {
+    log(twoSets(), withoutSecond);
+    fireEvent(await screen.findByTestId('set-s2-tick'), 'accessibilityAction', {
+      nativeEvent: { actionName: 'delete' },
+    });
+    await waitFor(() => expect(screen.getByTestId('undo-bar')).toBeTruthy());
+
+    act(() => jest.advanceTimersByTime(5000));
+
+    await waitFor(() => expect(screen.queryByTestId('undo-bar')).toBeNull());
   });
 });
 
@@ -309,6 +371,68 @@ describe('an empty workout', () => {
   });
 });
 
+describe("a past day's log (not a live workout)", () => {
+  const pastLog = (exercises: WorkoutExercise[]): Workout => ({
+    ...running(exercises),
+    date: '2026-09-29' as ISODate,
+    pastLog: true,
+  });
+  /** The `ask` the screen last handed its leave guard while guarded. */
+  const lastAsk = () => {
+    const call = jest
+      .mocked(actions.useLeaveGuard)
+      .mock.calls.filter(([guarded]) => guarded)
+      .at(-1);
+    if (!call) throw new Error('The log was never guarded');
+    return call[1];
+  };
+
+  it('starts no rest timer when a set is ticked, and shows no running clock', async () => {
+    const { repositories } = log(pastLog([bench([set('s1', 'pending')])]));
+
+    fireEvent.press(await screen.findByTestId('set-s1-tick'));
+
+    await waitFor(() => expect(repositories.workouts.setStatus).toHaveBeenCalledWith('s1', 'done'));
+    expect(screen.queryByTestId('rest-bar')).toBeNull();
+    expect(useRestTimerStore.getState().endsAt).toBeNull();
+    // Its Time is what it is saved with, 1 h 40 min, and it does not count.
+    expect(screen.getByText('100 min')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(5000));
+    expect(screen.getByText('100 min')).toBeTruthy();
+    expect(screen.getByText('Save')).toBeTruthy();
+  });
+
+  it('asks to save or discard it when it is left, and discards it on Discard', async () => {
+    const { repositories } = log(pastLog([bench([set('s1', 'done')])]));
+    await screen.findByTestId('set-s1-tick');
+
+    act(() => lastAsk()(jest.fn()));
+
+    expect(jest.mocked(Alert.alert).mock.calls.at(-1)?.[0]).toBe('Save this log?');
+    answerAlert('Discard');
+    await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));
+  });
+
+  it('saves it on Save', async () => {
+    const { repositories } = log(pastLog([bench([set('s1', 'done')])]));
+    await screen.findByTestId('set-s1-tick');
+
+    act(() => lastAsk()(jest.fn()));
+    answerAlert('Save');
+
+    await waitFor(() => expect(repositories.workouts.finish).toHaveBeenCalledWith('w1'));
+  });
+
+  it("leaves today's workout live: a ticked set still starts the rest timer", async () => {
+    log(running([bench([set('s1', 'pending')])]));
+
+    fireEvent.press(await screen.findByTestId('set-s1-tick'));
+
+    expect(await screen.findByTestId('rest-bar')).toBeTruthy();
+    expect(jest.mocked(actions.useLeaveGuard).mock.calls.some(([guarded]) => guarded)).toBe(false);
+  });
+});
+
 describe('leaving', () => {
   it('minimises with the back chevron: the workout keeps running', async () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
@@ -319,22 +443,77 @@ describe('leaving', () => {
     expect(repositories.workouts.discard).not.toHaveBeenCalled();
   });
 
-  it('asks before discarding, naming what would be lost', async () => {
+  it('keeps Discard in the workout options, confirmed in place, naming what would be lost', async () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Discard workout' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Workout options' }));
+    fireEvent.press(screen.getByTestId('discard-workout'));
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Discard workout?',
-      'Your 1 completed set will be deleted.',
-      expect.any(Array),
-    );
-    answerAlert('Discard');
+    // Its own confirm, not a system alert: one stray tap never throws a workout away.
+    expect(screen.getByText('Discard this workout?')).toBeTruthy();
+    expect(screen.getByText('Your 1 completed set will be deleted.')).toBeTruthy();
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(repositories.workouts.discard).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByTestId('confirm-discard'));
     await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));
+  });
+
+  it('keeps the workout when Keep is chosen', async () => {
+    const { repositories } = log(running([bench([set('s1', 'done')])]));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Workout options' }));
+    fireEvent.press(screen.getByTestId('discard-workout'));
+    fireEvent.press(screen.getByTestId('keep-workout'));
+
+    await act(async () => undefined);
+    expect(repositories.workouts.discard).not.toHaveBeenCalled();
+  });
+
+  it('adds an exercise from the workout options too', async () => {
+    log(running([bench([set('s1', 'done')])]));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Workout options' }));
+    fireEvent.press(screen.getByTestId('options-add-exercise'));
+
+    expect(actions.openAddExercise).toHaveBeenCalled();
   });
 });
 
 describe('finishing', () => {
+  it('has the routine cards read their last-done line again once it is saved (S4)', async () => {
+    const workout = running([bench([set('s1', 'done')])]);
+    const repositories = createFakeRepositories();
+    repositories.workouts.active.mockResolvedValue(workout);
+    repositories.workouts.finish.mockResolvedValue({
+      date: workout.date,
+      volumeKg: 480,
+      sets: 1,
+      workouts: 1,
+      level: 2,
+    });
+    const { Wrapper } = createWrapper(repositories);
+    // The Workout tab's routine cards, still mounted under the workout.
+    function RoutineCards() {
+      useRoutines(testUser().id);
+      return null;
+    }
+    renderInScheme(
+      <>
+        <ActiveWorkoutScreen />
+        <RoutineCards />
+      </>,
+      'light',
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(1));
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+
+    await waitFor(() => expect(repositories.workouts.finish).toHaveBeenCalledWith('w1'));
+    await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(2));
+  });
+
   it('saves straight away when every set is ticked, then shows what was saved', async () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
 
@@ -418,5 +597,46 @@ describe('finishing', () => {
 
     await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));
     expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
+  });
+});
+
+describe('ticking a set with nothing typed in (S21)', () => {
+  const blank = { weightKg: null, reps: null };
+
+  it('shows what the tick filled in, and keeps it to edit once un-ticked', async () => {
+    const { repositories } = log(running([bench([set('s1', 'pending', blank)])]));
+    // As the repository hands it back: filled from the set above or from last time.
+    repositories.workouts.setStatus.mockImplementation(async (_, status) =>
+      running([bench([set('s1', status, { weightKg: 60, reps: 8 })])]),
+    );
+    const tick = await screen.findByTestId('set-s1-tick');
+
+    await act(async () => fireEvent.press(tick));
+
+    expect(screen.getByTestId('set-s1-weight').props.value).toBe('60');
+    expect(screen.getByTestId('set-s1-reps').props.value).toBe('8');
+    expect(screen.getByTestId('set-s1-weight').props.editable).toBe(false);
+
+    await act(async () => fireEvent.press(screen.getByTestId('set-s1-tick')));
+
+    expect(screen.getByTestId('set-s1-weight').props.value).toBe('60');
+    expect(screen.getByTestId('set-s1-reps').props.value).toBe('8');
+    expect(screen.getByTestId('set-s1-weight').props.editable).toBe(true);
+  });
+
+  it('refuses a tick with nothing to copy: no rest, the set stays open, and it says why', async () => {
+    const { repositories } = log(running([bench([set('s1', 'pending', blank)])]));
+    repositories.workouts.setStatus.mockRejectedValue(new NothingToTickError('s1'));
+    const tick = await screen.findByTestId('set-s1-tick');
+
+    await act(async () => fireEvent.press(tick));
+
+    expect(screen.queryByTestId('rest-bar')).toBeNull();
+    expect(screen.getByTestId('set-s1-tick').props.accessibilityState).toMatchObject({ checked: false });
+    expect(toast.info).toHaveBeenCalledWith(
+      'Nothing to tick yet',
+      expect.objectContaining({ description: 'Type what you lifted first.' }),
+    );
+    expect(toast.info).not.toHaveBeenCalledWith("Couldn't save", expect.anything());
   });
 });

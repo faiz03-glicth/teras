@@ -18,8 +18,8 @@ a multi-heatmap app.
 | 3 | Code sharing | **Separate repos, no monorepo (for now)** | Avoids migrating Streak and disrupting its branches and parallel sessions. The small heatmap UI is copied once. Revisit a monorepo only if duplicating the sync engine starts to hurt. |
 | 4 | What to design first | **Teras (the producer)** | Streak's multi-heatmap (the consumer) comes after. |
 | 5 | Workout model | **Session → exercises → sets** | The classic strength logger. |
-| 6 | Heat metric | **Training volume (reps × weight)**, relative to your own history | Absolute volume varies too much between people, so levels are personal. |
-| 7 | Level stability | **Frozen at the time.** A day is compared with the ~90 days before it, and the result is stored | Matches Streak: "the heatmap you built is the heatmap you see". |
+| 6 | Heat metric | **Progressive overload: the same lifts against last week** (changed 2026-10-11; it was volume against the 90-day quartiles). Each lift's best set (heaviest at 5+ reps) is set against its matching session last week: up, held, down or new. The day: 0 no workout, 1 Light (nothing held or beaten; a first week), 2 Moderate (matched), 3 Strong (beat a lift), 4 Peak (a lift beat last week two weeks running). The rule lives in `src/features/workouts/domain/overload.ts` | The owner wants the wave to darken only when they get stronger, not when they simply do more. |
+| 7 | Level stability | **Frozen at the time.** A day is judged only against the weeks before it, and the result is stored | Matches Streak: "the heatmap you built is the heatmap you see". |
 | 8 | Data approach | **Local-first + push only the daily summary** | Works offline in the gym. Streak's sync engine is not built yet (its Phase 5), so there is nothing to copy. |
 | 9 | Workout library | **Curated starter workouts + your own routines** | Required by the workout-discovery requirement. |
 | 10 | Primary user | **The owner (a personal tool)** | Decisions can follow the owner's own training habits. |
@@ -95,7 +95,8 @@ Every table carries Streak's `syncColumns`: `id`, `user_id`, timestamps, soft-de
 
 ## Still to design
 
-3. The heat level logic: volume, percentiles over the trailing window, cold start, frozen levels, backfills.
+3. The heat level logic, what's left (the rule itself is decision 6): backfilling levels for days logged before
+   2026-10-11, which still carry their volume levels.
 4. The contract + push flow: the Supabase `workout_days` table + RLS, when the push runs, guest → sign-in catch-up,
    and the same-account requirement.
 5. Screens and v1 scope, split into phases like Streak's roadmap.

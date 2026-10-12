@@ -6,7 +6,7 @@ import { mockFn } from '@test/fakes/mockFn';
 
 import { createWorkoutDayDao } from '../local/workoutDayDao';
 import type { WorkoutDayApi } from '../remote/workoutDayApi';
-import { LocalFirstWorkoutDayRepository } from '../WorkoutDayRepository';
+import { LocalFirstWorkoutDayRepository, PUSH_PAGE } from '../WorkoutDayRepository';
 
 const START = '2026-06-01' as ISODate;
 const day = (offset: number) => addDays(START, offset);
@@ -31,52 +31,31 @@ async function setup() {
 }
 
 describe('recordDay', () => {
-  it('stores a first training day as Moderate: there is no history to judge against yet', async () => {
+  it('stores a day with the level it is given', async () => {
     const { repo } = await setup();
-    const saved = await repo.recordDay(USER, day(0), totals(5000));
-    expect(saved).toEqual({ date: day(0), volumeKg: 5000, sets: 12, workouts: 1, level: 2 });
+    const saved = await repo.recordDay(USER, day(0), totals(5000), 3);
+    expect(saved).toEqual({ date: day(0), volumeKg: 5000, sets: 12, workouts: 1, level: 3 });
     expect(await repo.list(USER, day(0), day(0))).toEqual([saved]);
-  });
-
-  it('judges a day against the training days in the 90 days before it', async () => {
-    const { repo } = await setup();
-    const volumes = [4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000];
-    for (const [i, volume] of volumes.entries()) await repo.recordDay(USER, day(i), totals(volume));
-
-    expect((await repo.recordDay(USER, day(10), totals(12000))).level).toBe(4);
-    expect((await repo.recordDay(USER, day(11), totals(3000))).level).toBe(1);
-  });
-
-  it('does not count days older than 90 days', async () => {
-    const { repo } = await setup();
-    for (let i = 0; i < 6; i += 1) await repo.recordDay(USER, day(i), totals(5000 + i * 500));
-    // Far later: the window is empty again, so there is nothing to compare with.
-    expect((await repo.recordDay(USER, day(200), totals(100))).level).toBe(2);
-  });
-
-  it('gives a day with sets but no volume level 1', async () => {
-    const { repo } = await setup();
-    expect((await repo.recordDay(USER, day(0), { volumeKg: 0, sets: 3, workouts: 1 })).level).toBe(1);
   });
 
   it('replaces a day recorded again, and leaves every other day as it was', async () => {
     const { repo } = await setup();
-    for (let i = 0; i < 6; i += 1) await repo.recordDay(USER, day(i), totals(5000));
-    const later = await repo.recordDay(USER, day(6), totals(5000));
+    for (let i = 0; i < 6; i += 1) await repo.recordDay(USER, day(i), totals(5000), 2);
+    const later = await repo.recordDay(USER, day(6), totals(5000), 2);
 
-    await repo.recordDay(USER, day(2), totals(9000, 20));
+    await repo.recordDay(USER, day(2), totals(9000, 20), 4);
 
     const days = await repo.list(USER, day(0), day(6));
     expect(days).toHaveLength(7);
-    expect(days[2]).toMatchObject({ date: day(2), volumeKg: 9000, sets: 20 });
+    expect(days[2]).toMatchObject({ date: day(2), volumeKg: 9000, sets: 20, level: 4 });
     // Frozen: a later day is not re-judged because an earlier one changed.
     expect(days[6]).toEqual(later);
   });
 
   it("keeps guest days apart from a signed-in person's", async () => {
     const { repo } = await setup();
-    await repo.recordDay(null, day(0), totals(4000));
-    await repo.recordDay(USER, day(0), totals(6000));
+    await repo.recordDay(null, day(0), totals(4000), 1);
+    await repo.recordDay(USER, day(0), totals(6000), 1);
     expect(await repo.list(null, day(0), day(0))).toMatchObject([{ volumeKg: 4000 }]);
     expect(await repo.list(USER, day(0), day(0))).toMatchObject([{ volumeKg: 6000 }]);
   });
@@ -85,37 +64,26 @@ describe('recordDay', () => {
 describe('windowBefore', () => {
   it('is the volumes of the training days in the 90 days before a day: what it was judged against', async () => {
     const { repo } = await setup();
-    await repo.recordDay(USER, day(0), totals(4000));
-    await repo.recordDay(USER, day(5), totals(6000));
-    await repo.recordDay(USER, day(10), totals(9000));
+    await repo.recordDay(USER, day(0), totals(4000), 2);
+    await repo.recordDay(USER, day(5), totals(6000), 2);
+    await repo.recordDay(USER, day(10), totals(9000), 2);
 
     expect((await repo.windowBefore(USER, day(10))).sort()).toEqual([4000, 6000]);
   });
 
   it('leaves out days without volume, the day itself, and days more than 90 days back', async () => {
     const { repo } = await setup();
-    await repo.recordDay(USER, day(0), totals(4000));
-    await repo.recordDay(USER, day(50), { volumeKg: 0, sets: 3, workouts: 1 });
-    await repo.recordDay(USER, day(95), totals(7000));
+    await repo.recordDay(USER, day(0), totals(4000), 2);
+    await repo.recordDay(USER, day(50), { volumeKg: 0, sets: 3, workouts: 1 }, 1);
+    await repo.recordDay(USER, day(95), totals(7000), 2);
 
     expect(await repo.windowBefore(USER, day(95))).toEqual([]);
     expect(await repo.windowBefore(USER, day(96))).toEqual([7000]);
   });
 
-  it('agrees with the level a day was recorded at', async () => {
-    const { repo } = await setup();
-    for (let i = 0; i < 5; i += 1) await repo.recordDay(USER, day(i), totals(5000 + i * 1000));
-
-    const recorded = await repo.recordDay(USER, day(6), totals(4500));
-
-    // Five earlier days, all heavier: the window that put it in the bottom quartile is the one returned.
-    expect(recorded.level).toBe(1);
-    expect(await repo.windowBefore(USER, day(6))).toHaveLength(5);
-  });
-
   it("keeps a guest's days apart from a signed-in person's", async () => {
     const { repo } = await setup();
-    await repo.recordDay(null, day(0), totals(4000));
+    await repo.recordDay(null, day(0), totals(4000), 2);
 
     expect(await repo.windowBefore(USER, day(1))).toEqual([]);
     expect(await repo.windowBefore(null, day(1))).toEqual([4000]);
@@ -125,8 +93,8 @@ describe('windowBefore', () => {
 describe('pushPending', () => {
   it('sends the days that are not on the server yet, once', async () => {
     const { repo, api } = await setup();
-    await repo.recordDay(USER, day(0), totals(5000));
-    await repo.recordDay(USER, day(1), totals(6000, 15));
+    await repo.recordDay(USER, day(0), totals(5000), 2);
+    await repo.recordDay(USER, day(1), totals(6000, 15), 2);
 
     expect(await repo.pushPending(USER)).toBe(2);
     expect(api.upsert).toHaveBeenCalledWith(USER, [
@@ -140,26 +108,41 @@ describe('pushPending', () => {
 
   it('sends a day again after it changes', async () => {
     const { repo, api } = await setup();
-    await repo.recordDay(USER, day(0), totals(5000));
+    await repo.recordDay(USER, day(0), totals(5000), 2);
     await repo.pushPending(USER);
 
-    await repo.recordDay(USER, day(0), totals(7500));
+    await repo.recordDay(USER, day(0), totals(7500), 2);
     expect(await repo.pushPending(USER)).toBe(1);
     expect(api.upsert).toHaveBeenLastCalledWith(USER, [expect.objectContaining({ volume_kg: 7500 })]);
   });
 
   it('keeps the days to retry when the push fails', async () => {
     const { repo, api } = await setup();
-    await repo.recordDay(USER, day(0), totals(5000));
+    await repo.recordDay(USER, day(0), totals(5000), 2);
     api.upsert.mockRejectedValueOnce(new Error('offline'));
 
     await expect(repo.pushPending(USER)).rejects.toThrow('offline');
     expect(await repo.pushPending(USER)).toBe(1);
   });
 
+  it('sends a long backlog a page at a time, and keeps only the unsent pages when one fails', async () => {
+    const { repo, api } = await setup();
+    const backlog = PUSH_PAGE * 2 + 50;
+    for (let offset = 0; offset < backlog; offset += 1)
+      await repo.recordDay(USER, day(offset), totals(5000), 2);
+    api.upsert.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('timeout'));
+
+    await expect(repo.pushPending(USER)).rejects.toThrow('timeout');
+    expect(api.upsert.mock.calls.map(([, days]) => days.length)).toEqual([PUSH_PAGE, PUSH_PAGE]);
+
+    expect(await repo.pushPending(USER)).toBe(PUSH_PAGE + 50);
+    expect(api.upsert.mock.calls.slice(2).map(([, days]) => days.length)).toEqual([PUSH_PAGE, 50]);
+    expect(await repo.pushPending(USER)).toBe(0);
+  });
+
   it('sends days logged as a guest once that person signs in', async () => {
     const { repo, db } = await setup();
-    await repo.recordDay(null, day(0), totals(5000));
+    await repo.recordDay(null, day(0), totals(5000), 2);
     expect(await repo.pushPending(USER)).toBe(0);
 
     await createGuestDataDao(db).reassignGuestData('guest-1', USER, '2026-09-30T01:00:00.000Z');

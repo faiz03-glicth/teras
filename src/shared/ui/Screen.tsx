@@ -1,12 +1,15 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Keyboard, Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView as GestureScrollView } from 'react-native-gesture-handler';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { motion } from '@/theme';
 
 import { PressDelay } from './pressDelay';
+import { useTabBarClearance } from './tabBarClearance';
 
 export interface ScreenProps {
   children: ReactNode;
@@ -22,6 +25,12 @@ export interface ScreenProps {
    * screens pay for keyboard tracking; every other screen scrolls on the plain native scroll view.
    */
   keyboard?: boolean;
+  /**
+   * Rows on it are held and dragged (a reorderable list): it scrolls on gesture-handler's scroll view, so
+   * a row's drag, once held, takes the touch from the scroll. On the plain native scroll view the scroll
+   * takes it instead: a drag upward scrolls the page, and one downward is let go before the finger is.
+   */
+  dragRows?: boolean;
   /** Leaves room for the floating tab bar and FAB. */
   withTabBar?: boolean;
   edges?: readonly Edge[];
@@ -35,11 +44,21 @@ export interface ScreenProps {
 
 const TAB_BAR_CLEARANCE = 104;
 
+/**
+ * Gesture-handler's scroll view, animated as the keyboard-aware scroll view expects its scroll view to be.
+ * Its type names Reanimated's own ScrollView; this is the same animated scroll view with gesture-handler's
+ * props added, hence the cast.
+ */
+const GestureAnimatedScrollView = Animated.createAnimatedComponent(
+  GestureScrollView,
+) as unknown as NonNullable<ComponentProps<typeof KeyboardAwareScrollView>['ScrollViewComponent']>;
+
 export function Screen({
   children,
   scroll = false,
   list = false,
   keyboard = false,
+  dragRows = false,
   withTabBar = false,
   edges = ['top', 'bottom'],
   inset = 'default',
@@ -47,7 +66,9 @@ export function Screen({
   footer,
   testID,
 }: ScreenProps) {
-  const content = [styles.content(inset, withTabBar), contentStyle];
+  // A bar docked above the tab bar (Resume) adds its own height to the room left under the content.
+  const extra = useTabBarClearance();
+  const content = [styles.content(inset, withTabBar ? TAB_BAR_CLEARANCE + extra : 0), contentStyle];
   return (
     <SafeAreaView edges={edges} style={styles.root} testID={testID}>
       {list ? (
@@ -58,6 +79,7 @@ export function Screen({
         <PressDelay value={motion.scroll.pressDelayMs}>
           {keyboard ? (
             <KeyboardAwareScrollView
+              ScrollViewComponent={dragRows ? GestureAnimatedScrollView : undefined}
               bottomOffset={24}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="interactive"
@@ -65,6 +87,13 @@ export function Screen({
             >
               {children}
             </KeyboardAwareScrollView>
+          ) : dragRows ? (
+            <GestureScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={[styles.grow, content]}
+            >
+              {children}
+            </GestureScrollView>
           ) : (
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.grow, content]}>
               {children}
@@ -87,9 +116,9 @@ const styles = StyleSheet.create((theme) => ({
   // each extra full-screen fill is drawn again on every frame (GPU overdraw).
   root: { flex: 1 },
   grow: { flexGrow: 1 },
-  content: (inset: 'default' | 'wide', withTabBar: boolean) => ({
+  content: (inset: 'default' | 'wide', clearance: number) => ({
     paddingHorizontal: inset === 'wide' ? theme.spacing.xxl : theme.spacing.gutter,
-    paddingBottom: withTabBar ? TAB_BAR_CLEARANCE : theme.spacing.lg,
+    paddingBottom: clearance > 0 ? clearance : theme.spacing.lg,
     gap: theme.spacing.stack,
   }),
 }));

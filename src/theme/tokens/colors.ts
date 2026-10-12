@@ -28,6 +28,7 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     onAccent: ON_BRAND,
     danger: '#984527',
     dangerSoft: '#F6DCCB',
+    onDanger: '#FFF4EC',
     scrim: 'rgba(30,18,6,0.42)',
     thumb: '#FFFFFF',
     // The raised card, subtle and border: on parchment the drawing already reads.
@@ -54,6 +55,7 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     onAccent: ON_BRAND,
     danger: '#EC9068',
     dangerSoft: '#45291E',
+    onDanger: '#2A140A',
     scrim: 'rgba(0,0,0,0.55)',
     thumb: '#FFFFFF',
     // A lighter walnut card, so the figure and its muscles read: muscles 4.4:1 on it, the body 1.5:1.

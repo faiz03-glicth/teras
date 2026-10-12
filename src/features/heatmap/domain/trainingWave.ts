@@ -51,7 +51,7 @@ export function dayCell(day: ISODate, options: WaveOptions): HeatGridCell {
     level,
     state: isToday ? 'today' : 'default',
     marked,
-    label: `${shortDate(day, options.today)}${isToday ? ', today' : ''}: ${marked ? 'Checked in on Streak' : LEVEL_NAMES[level]}`,
+    label: `${shortDate(day, options.today)}${isToday ? ', today' : ''}: ${marked ? 'Logged, no details' : LEVEL_NAMES[level]}`,
   };
 }
 

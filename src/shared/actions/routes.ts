@@ -20,6 +20,7 @@ export const routes = {
       ? '/workout/add-exercise'
       : { pathname: '/workout/add-exercise', params: { target } },
   routine: (id: string): Href => ({ pathname: '/routine/[id]', params: { id } }),
+  routinePreview: (id: string): Href => ({ pathname: '/routine-preview/[id]', params: { id } }),
   exerciseLibrary: (): Href => '/exercises',
   exercise: (id: string): Href => ({ pathname: '/exercise/[id]', params: { id } }),
   equipmentFilter: (): Href => '/equipment-filter',

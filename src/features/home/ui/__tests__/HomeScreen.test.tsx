@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
@@ -10,11 +10,14 @@ import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
-import { renderInScheme, styleOf } from '@test/render';
+import { renderInScheme } from '@test/render';
 
 import { HomeScreen } from '../HomeScreen';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
+
+// Whole screens render slowly when the full suite runs in parallel; alone each test takes well under 5 s.
+jest.setTimeout(15_000);
 // Friday 2 October 2026: the wave shows August to October.
 jest.mock('@/shared/lib/date/useToday', () => ({ useToday: () => '2026-10-02' }));
 
@@ -149,7 +152,7 @@ describe('the training wave', () => {
   it('marks a day checked in on Streak with nothing logged here', async () => {
     home({ prepare: (fakes) => void fakes.streakDays.list.mockResolvedValue(['2026-09-28' as ISODate]) });
 
-    expect(await screen.findByRole('button', { name: 'Sep 28: Checked in on Streak' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Sep 28: Logged, no details' })).toBeTruthy();
   });
 
   it('lets a logged workout win over a Streak check-in on the same day', async () => {
@@ -250,33 +253,30 @@ describe('the workout feed', () => {
 });
 
 describe('the workout in progress', () => {
-  it('leads the feed, with the way back to it', async () => {
+  /** Home has read everything, the workout in progress included. */
+  const settled = () => waitFor(() => expect(screen.queryByLabelText('Loading workouts')).toBeNull());
+
+  it('is left to the Resume bar over the tabs: Home adds no card of its own', async () => {
     home({ active: running() });
+    await settled();
 
-    expect(await screen.findByText('Leg Day')).toBeTruthy();
-    expect(screen.getByText('In progress')).toBeTruthy();
-    expect(screen.getByText('Started 19:05 · 1 set done')).toBeTruthy();
-    // Its well is a texture behind the text (a cached surface), never an inner shadow blurred live.
-    const card = screen.getByTestId('home-in-progress');
-    expect(styleOf(card).boxShadow).toBeUndefined();
-    expect(within(card).getByTestId('cached-surface').props.renderToHardwareTextureAndroid).toBe(true);
-
-    fireEvent.press(screen.getByTestId('home-in-progress'));
-    expect(actions.openActiveWorkout).toHaveBeenCalled();
+    expect(screen.queryByTestId('home-in-progress')).toBeNull();
+    expect(screen.queryByText('Leg Day')).toBeNull();
   });
 
   it('does not light today until it is finished: the level is only ever the recorded one', async () => {
     home({ active: running() });
-    await screen.findByText('Leg Day');
+    await settled();
 
     expect(screen.getByRole('button', { name: 'Oct 2, today: No workout' })).toBeTruthy();
   });
 
-  it('is not mistaken for an empty Home', async () => {
+  it('still says nothing is logged yet, without a Start: the Resume bar is its way back', async () => {
     home({ active: running() });
-    await screen.findByText('Leg Day');
+    await settled();
 
-    expect(screen.queryByText('No workouts yet')).toBeNull();
+    expect(screen.getByText('No workouts yet')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Start workout' })).toBeNull();
   });
 });
 
@@ -286,8 +286,7 @@ describe('states', () => {
 
     expect(await screen.findByText('No workouts yet')).toBeTruthy();
     expect(screen.getByTestId('training-wave')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Start workout' }));
-    expect(actions.goTab).toHaveBeenCalledWith('workout');
+    expect(screen.getAllByRole('button', { name: 'Start workout' })).toHaveLength(1);
   });
 
   it('shows that workouts are loading, never an empty list in the meantime', async () => {
@@ -322,5 +321,35 @@ describe('states', () => {
 
     expect(await screen.findByText('Push Day')).toBeTruthy();
     expect(screen.queryByText("Couldn't load workouts")).toBeNull();
+  });
+});
+
+describe('starting a workout', () => {
+  it('starts an empty workout in one tap and opens it', async () => {
+    const { repositories } = home();
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Start workout' }));
+
+    await waitFor(() => expect(actions.openActiveWorkout).toHaveBeenCalledTimes(1));
+    expect(repositories.workouts.start).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ date: '2026-10-02', routineId: undefined }),
+    );
+  });
+
+  it('is not offered while a workout is running: the Resume bar leads back to it instead', async () => {
+    home({ active: running() });
+    await waitFor(() => expect(screen.queryByLabelText('Loading workouts')).toBeNull());
+
+    expect(screen.queryByRole('button', { name: 'Start workout' })).toBeNull();
+  });
+});
+
+describe('the week so far', () => {
+  it('counts the days trained since Monday beside the title', async () => {
+    home({ days: [day('2026-09-27', 1), day('2026-09-28', 3), day('2026-09-30', 2, 2)] });
+
+    expect(await screen.findByText('2 this week')).toBeTruthy();
+    expect(screen.getByLabelText('Trained 2 days this week')).toBeTruthy();
   });
 });

@@ -9,7 +9,7 @@ import { Text } from './Text';
 const LEVELS: readonly HeatLevel[] = [0, 1, 2, 3, 4];
 
 export interface LegendProps {
-  /** What "more" is measured against, at the far end ("vs your last 90 days"). */
+  /** What "more" is measured against, at the far end ("vs the same lifts last week"). */
   caption?: string;
 }
 

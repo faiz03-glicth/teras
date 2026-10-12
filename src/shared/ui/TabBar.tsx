@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,8 @@ export interface TabBarProps {
   items: readonly TabItem[];
   active: TabId;
   onTabPress: (tab: TabId) => void;
+  /** Docked just above the bar, on every tab (the workout in progress: Resume). */
+  accessory?: ReactNode;
 }
 
 const TAB_ICON = 24;
@@ -41,7 +43,7 @@ export function tabCenters(count: number, width: number): number[] {
  * which tab that is, so colour is never the only signal. Only a real change of tab is felt (a selection
  * tick); tapping the tab you are on is silent.
  */
-export function TabBar({ items, active, onTabPress }: TabBarProps) {
+export function TabBar({ items, active, onTabPress, accessory }: TabBarProps) {
   const { theme } = useUnistyles();
   const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState(0);
@@ -83,58 +85,60 @@ export function TabBar({ items, active, onTabPress }: TabBarProps) {
   });
 
   return (
-    <View
-      testID="tab-bar"
-      style={[styles.bar, { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }]}
-      onLayout={(event: LayoutChangeEvent) => setBarWidth(event.nativeEvent.layout.width)}
-    >
-      {barWidth > 0 && (
-        <Animated.View
-          pointerEvents="none"
-          testID="tab-liquid"
-          style={[styles.liquid, { width: wellWidth }, liquidStyle]}
-        >
-          <CachedSurface style={styles.liquidSurface} bleed="none" />
-        </Animated.View>
-      )}
-      {items.map((item) => {
-        const on = item.id === active;
-        return (
-          <PressableScale
-            key={item.id}
-            onPress={() => {
-              if (!on) haptics.selection();
-              onTabPress(item.id);
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={item.label}
-            style={styles.tab}
-            testID={`tab-${item.id}`}
+    <View style={styles.dock} pointerEvents="box-none">
+      {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
+      <View
+        testID="tab-bar"
+        style={[styles.bar, { paddingBottom: Math.max(insets.bottom, theme.spacing.sm) }]}
+        onLayout={(event: LayoutChangeEvent) => setBarWidth(event.nativeEvent.layout.width)}
+      >
+        {barWidth > 0 && (
+          <Animated.View
+            pointerEvents="none"
+            testID="tab-liquid"
+            style={[styles.liquid, { width: wellWidth }, liquidStyle]}
           >
-            <View style={styles.well} testID={`tab-${item.id}-well`}>
-              <Icon
-                name={item.icon}
-                size={TAB_ICON}
-                color={on ? theme.colors.accentText : theme.colors.text2}
-              />
-              <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
-                {item.label}
-              </Text>
-            </View>
-          </PressableScale>
-        );
-      })}
+            <CachedSurface style={styles.liquidSurface} bleed="none" />
+          </Animated.View>
+        )}
+        {items.map((item) => {
+          const on = item.id === active;
+          return (
+            <PressableScale
+              key={item.id}
+              onPress={() => {
+                if (!on) haptics.selection();
+                onTabPress(item.id);
+              }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={item.label}
+              style={styles.tab}
+              testID={`tab-${item.id}`}
+            >
+              <View style={styles.well} testID={`tab-${item.id}-well`}>
+                <Icon
+                  name={item.icon}
+                  size={TAB_ICON}
+                  color={on ? theme.colors.accentText : theme.colors.text2}
+                />
+                <Text variant="mini" weight={on ? 'semibold' : 'medium'} tone={on ? 'accent' : 'secondary'}>
+                  {item.label}
+                </Text>
+              </View>
+            </PressableScale>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
+  // The bar and whatever docks above it, pinned to the bottom together; touches between them fall through.
+  dock: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  accessory: { paddingHorizontal: 12, paddingBottom: 10 },
   bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     flexDirection: 'row',
     paddingTop: theme.spacing.sm,
     backgroundColor: theme.material.bar.background,

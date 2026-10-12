@@ -4,8 +4,8 @@ import { StyleSheet } from 'react-native-unistyles';
 import { TrainingWave } from '@/features/heatmap/ui/components/TrainingWave';
 import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, SectionLabel, Text } from '@/shared/ui';
 
-import { ActiveWorkoutCard } from './components/ActiveWorkoutCard';
 import { FeedCard } from './components/FeedCard';
+import { WeekChip } from './components/WeekChip';
 
 import { useHomeViewModel } from './useHomeViewModel';
 
@@ -15,13 +15,16 @@ export function HomeScreen() {
 
   return (
     <Screen scroll withTabBar testID="home-screen" contentStyle={styles.content}>
-      <View style={styles.head}>
-        <Text variant="title" accessibilityRole="header">
-          Home
-        </Text>
-        <Text variant="footnote" tone="secondary">
-          {vm.dateLine}
-        </Text>
+      <View style={styles.headRow}>
+        <View style={styles.head}>
+          <Text variant="title" accessibilityRole="header">
+            Home
+          </Text>
+          <Text variant="footnote" tone="secondary">
+            {vm.dateLine}
+          </Text>
+        </View>
+        <WeekChip label={vm.week.label} accessibilityLabel={vm.week.accessibilityLabel} />
       </View>
 
       <TrainingWave
@@ -34,9 +37,20 @@ export function HomeScreen() {
         header={vm.waveHeader}
       />
 
+      {vm.canStart && (
+        <Button
+          label="Start workout"
+          icon="plus"
+          size="lg"
+          onPress={vm.onStartWorkout}
+          loading={vm.starting}
+          loadingLabel="Starting"
+          testID="home-start-workout"
+        />
+      )}
+
       <View style={styles.group}>
         <SectionLabel>Workouts</SectionLabel>
-        {vm.active && <ActiveWorkoutCard entry={vm.active} onPress={vm.onResume} />}
         {vm.status === 'loading' && <LoadingState label="Loading workouts" testID="home-loading" />}
         {vm.status === 'error' && (
           <Card>
@@ -45,10 +59,7 @@ export function HomeScreen() {
         )}
         {vm.empty && (
           <Card>
-            <View style={styles.empty}>
-              <EmptyState icon="dumbbell" title="No workouts yet" />
-              <Button label="Start workout" onPress={vm.onStartWorkout} testID="home-start-workout" />
-            </View>
+            <EmptyState icon="dumbbell" title="No workouts yet" />
           </Card>
         )}
         {vm.entries.map((entry) => (
@@ -61,7 +72,12 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
-  head: { gap: 2 },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+  },
+  head: { gap: 2, flexShrink: 1 },
   group: { gap: theme.spacing.md },
-  empty: { gap: theme.spacing.lg },
 }));

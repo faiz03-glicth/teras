@@ -1,5 +1,5 @@
 import type { ISODate } from '../../date/isoDate';
-import { clockTime, dayLabel, shortDate, shortDay } from '../dates';
+import { clockTime, dayLabel, recentDay, shortDate, shortDay } from '../dates';
 
 const TODAY = '2026-10-02' as ISODate; // a Friday
 
@@ -44,5 +44,18 @@ describe('clockTime', () => {
 
   it('reads nothing for a timestamp it cannot understand', () => {
     expect(clockTime('not a time')).toBe('');
+  });
+});
+
+describe('recentDay', () => {
+  it('says today, yesterday, then the weekday for the past week', () => {
+    expect(recentDay(TODAY, TODAY)).toBe('today');
+    expect(recentDay('2026-10-01' as ISODate, TODAY)).toBe('yesterday');
+    expect(recentDay('2026-09-28' as ISODate, TODAY)).toBe('Monday');
+    expect(recentDay('2026-09-26' as ISODate, TODAY)).toBe('Saturday');
+  });
+
+  it('gives the date once it is more than a week back', () => {
+    expect(recentDay('2026-09-25' as ISODate, TODAY)).toBe('Fri, 25 Sep');
   });
 });

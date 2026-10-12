@@ -1,20 +1,51 @@
-import type { ExerciseType, SetStatus, SetType, WorkoutRow } from '@/core/db/schema';
+import type { ExerciseType, SetStatus, SetType, WorkoutRow, WorkoutSetRow } from '@/core/db/schema';
 import type { HeatLevel } from '@/features/heatmap/domain/grid';
-import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
+import type { DayTotals, WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
 import type { WorkoutDayRepository } from '@/features/workoutDays/data/WorkoutDayRepository';
+import { addDays, startOfWeek } from '@/shared/lib/date/calendar';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 
 import { sessionSeconds } from '../domain/duration';
 import type { ExerciseSession } from '../domain/progress';
 import { newRecords, recordValue, type PersonalRecord, type SetBests } from '../domain/records';
 import type { PreviousSet } from '../domain/setUnits';
+import { liftStanding, nextMatch, overloadLevel, type BestSet, type LiftSession } from '../domain/overload';
+import { isPastLog, pastLogEnd, pastLogStart } from '../domain/pastLog';
+import { isEmptySet, NothingToTickError, tickFill, type SetValues } from '../domain/tickFill';
 import { dayTotals } from '../domain/totals';
-import type { WorkoutDao, WorkoutOwner } from './local/workoutDao';
+import type { LiftSetRow, WorkoutDao, WorkoutOwner } from './local/workoutDao';
 
 export type { WorkoutOwner } from './local/workoutDao';
+
+/** A lift's sets, one session (workout) each, in the order they were done. */
+function liftSessions(rows: readonly LiftSetRow[]): LiftSession[] {
+  const byKey = new Map<string, LiftSession & { sets: LiftSetRow[] }>();
+  for (const row of rows) {
+    const key = `${row.workoutId}:${row.exerciseId}`;
+    const session = byKey.get(key);
+    if (session) {
+      session.sets.push(row);
+      continue;
+    }
+    byKey.set(key, {
+      exerciseId: row.exerciseId,
+      type: row.type,
+      workoutId: row.workoutId,
+      date: row.date as ISODate,
+      startedAt: row.startedAt,
+      sets: [row],
+    });
+  }
+  return [...byKey.values()];
+}
 export type { PersonalRecord } from '../domain/records';
 export type { ExerciseSession } from '../domain/progress';
 export type { PreviousSet } from '../domain/setUnits';
+
+/** A set as it was the moment it was deleted, whole: what an Undo puts back. Only `restoreSet` reads it. */
+export interface RemovedSet {
+  readonly row: WorkoutSetRow;
+}
 
 /** One row of the set table. `weightKg` is the added weight for a bodyweight exercise. */
 export interface WorkoutSet {
@@ -49,6 +80,8 @@ export interface Workout {
   endedAt: string | null;
   bodyweightKg: number;
   exercises: WorkoutExercise[];
+  /** Logged after its day (`isPastLog`): a plain log, with no clock and no rest. Absent for a live one. */
+  pastLog?: boolean;
 }
 
 /** A routine as the Workout tab shows it: enough to recognise and start it, nothing more. */
@@ -58,6 +91,8 @@ export interface RoutineSummary {
   exerciseCount: number;
   /** The exercise names in order, for the card's preview line. */
   exercises: string[];
+  /** The last time the owner did it, and how that day stood: "Peak · yesterday". Null if never. */
+  last: { date: ISODate; level: HeatLevel } | null;
 }
 
 /** An exercise of a finished workout, with how many of its sets were completed. */
@@ -129,6 +164,16 @@ export interface WorkoutRepository {
     exerciseIds: readonly string[],
   ): Promise<Partial<Record<string, PreviousSet[]>>>;
   /**
+   * What each exercise has to beat in a workout started on `date`: the best set of the session it will be
+   * judged against (its matching session last week, see `nextMatch`). An exercise with nothing last week has
+   * no entry. A workout still running is left out: it has set nothing yet.
+   */
+  toBeat(
+    owner: WorkoutOwner,
+    exerciseIds: readonly string[],
+    date: ISODate,
+  ): Promise<Partial<Record<string, BestSet>>>;
+  /**
    * The personal records a finished workout set, judged against the owner's earlier workouts. Empty for a
    * workout that is not theirs.
    */
@@ -157,9 +202,20 @@ export interface WorkoutRepository {
   /** A new set below the last, with its numbers, so the next set is usually one tick. */
   addSet(workoutExerciseId: string): Promise<Workout>;
   updateSet(setId: string, patch: SetPatch): Promise<Workout>;
+  /**
+   * Ticking a set with nothing typed in fills it from the set above, or from last time's set of the same
+   * number; with nothing to copy it throws NothingToTickError and the set stays as it was.
+   */
   setStatus(setId: string, status: SetStatus): Promise<Workout>;
-  /** Deletes one set; the sets around it keep their order. */
-  removeSet(setId: string): Promise<Workout>;
+  /** Deletes one set; the sets around it keep their order. Hands back the set too, for an Undo. */
+  removeSet(setId: string): Promise<{ workout: Workout; removed: RemovedSet }>;
+  /**
+   * Puts a deleted set back exactly as it was (its numbers, ticked or not) in the place it left, the sets
+   * below moving down one. Throws once its exercise is gone or its workout is no longer running, so a
+   * finished workout never changes behind the day it wrote. Putting back a set that is there already
+   * changes nothing.
+   */
+  restoreSet(removed: RemovedSet): Promise<Workout>;
   /**
    * Ends the workout and writes the day it belongs to: the totals cover every workout of that date, and
    * the heat level is computed from them. This is the only path by which training reaches Streak.
@@ -233,7 +289,8 @@ export class LocalWorkoutRepository implements WorkoutRepository {
       name: routine?.name ?? DEFAULT_NAME,
       routineId: routine?.id ?? null,
       date: input.date,
-      startedAt: timestamp,
+      // A past day's log starts on that day, so its history and last week's lifts read in order.
+      startedAt: isPastLog(input.date, timestamp) ? pastLogStart(input.date, timestamp) : timestamp,
       bodyweightKg: input.bodyweightKg,
     });
 
@@ -259,16 +316,34 @@ export class LocalWorkoutRepository implements WorkoutRepository {
   }
 
   async routines(owner: WorkoutOwner): Promise<RoutineSummary[]> {
-    const { dao } = this.deps;
+    const { dao, workoutDays } = this.deps;
     const rows = await dao.listRoutines(owner);
-    // Every routine's names in one read, not one read per routine.
+    const ids = rows.map((row) => row.id);
+    // Every routine's names and last day in a few reads, not a few per routine.
+    const [named, lastDates] = await Promise.all([
+      dao.routineExerciseNames(ids),
+      dao.lastRoutineDates(owner, ids),
+    ]);
     const names = new Map<string, string[]>();
-    for (const { routineId, name } of await dao.routineExerciseNames(rows.map((row) => row.id))) {
+    for (const { routineId, name } of named) {
       names.set(routineId, [...(names.get(routineId) ?? []), name]);
     }
+    const lastOf = new Map(lastDates.map((row) => [row.routineId, row.date as ISODate]));
+    const dates = [...lastOf.values()].sort();
+    const oldest = dates[0];
+    const newest = dates.at(-1);
+    const days = oldest && newest ? await workoutDays.list(owner, oldest, newest) : [];
+    const levels = new Map(days.map((day) => [day.date, day.level]));
     return rows.map((row) => {
       const exercises = names.get(row.id) ?? [];
-      return { id: row.id, name: row.name, exerciseCount: exercises.length, exercises };
+      const date = lastOf.get(row.id);
+      return {
+        id: row.id,
+        name: row.name,
+        exerciseCount: exercises.length,
+        exercises,
+        last: date ? { date, level: levels.get(date) ?? 0 } : null,
+      };
     });
   }
 
@@ -414,17 +489,55 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     const { dao, now } = this.deps;
     const workoutId = await dao.workoutIdForSet(setId);
     if (!workoutId) throw new Error(`No set ${setId}`);
+    const fill = status === 'done' ? await this.tickFillFor(workoutId, setId) : {};
+    if (!fill) throw new NothingToTickError(setId);
     const timestamp = now();
-    // `completedAt` is when it was ticked; un-ticking clears it.
-    await dao.updateSet(setId, { status, completedAt: status === 'done' ? timestamp : null }, timestamp);
+    // `completedAt` is when it was ticked; un-ticking clears it (and keeps what a tick filled in).
+    await dao.updateSet(
+      setId,
+      { ...fill, status, completedAt: status === 'done' ? timestamp : null },
+      timestamp,
+    );
     return this.require(workoutId);
   }
 
-  async removeSet(setId: string): Promise<Workout> {
+  /**
+   * What ticking a set with nothing typed in fills it with: the set above, or last time's; null when there
+   * is nothing to copy and the tick is refused (tickFill).
+   */
+  private async tickFillFor(workoutId: string, setId: string): Promise<Partial<SetValues> | null> {
+    const workout = await this.require(workoutId);
+    const exercise = workout.exercises.find((one) => one.sets.some((set) => set.id === setId));
+    const index = exercise?.sets.findIndex((set) => set.id === setId) ?? -1;
+    const set = exercise?.sets[index];
+    if (!exercise || !set || !isEmptySet(set)) return {};
+    const above = exercise.sets[index - 1];
+    // Last time is only read when it can matter: nothing typed in the set above either.
+    if (above && !isEmptySet(above)) return tickFill(set, above, undefined);
+    const owner = (await this.deps.dao.getWorkout(workoutId))?.userId ?? null;
+    const lastTime = (await this.previousSets(owner, [exercise.exerciseId]))[exercise.exerciseId]?.[index];
+    return tickFill(set, above, lastTime);
+  }
+
+  async removeSet(setId: string): Promise<{ workout: Workout; removed: RemovedSet }> {
     const { dao } = this.deps;
     const workoutId = await dao.workoutIdForSet(setId);
-    if (!workoutId) throw new Error(`No set ${setId}`);
+    const row = await dao.getSet(setId);
+    if (!workoutId || !row) throw new Error(`No set ${setId}`);
     await dao.deleteSet(setId);
+    return { workout: await this.require(workoutId), removed: { row } };
+  }
+
+  async restoreSet({ row }: RemovedSet): Promise<Workout> {
+    const { dao, now } = this.deps;
+    const workoutId = await dao.workoutIdForExercise(row.workoutExerciseId);
+    if (!workoutId) throw new Error(`No workout exercise ${row.workoutExerciseId}`);
+    const workout = await dao.getWorkout(workoutId);
+    if (!workout || workout.endedAt) throw new Error(`Workout ${workoutId} is not running`);
+    if (await dao.getSet(row.id)) return this.require(workoutId);
+    const timestamp = now();
+    await dao.makeRoomForSet(row.workoutExerciseId, row.position, timestamp);
+    await dao.insertSets([{ ...row, updatedAt: timestamp }]);
     return this.require(workoutId);
   }
 
@@ -437,12 +550,15 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     // The day is the unit Streak sees, so it is recomputed from every workout of that date, not just
     // this one (which `workoutsOn` includes while it is still running). A second session simply adds to it.
     const totals = await this.totalsOn(row.userId, row.date);
+    const level = await this.levelOn(row.userId, row.date as ISODate, totals);
 
     // The day is written before the workout is closed: if writing it fails, the workout is still
     // running and Finish can be pressed again, instead of a closed workout whose day never arrives.
-    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals);
+    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals, level);
     const timestamp = now();
-    await dao.finishWorkout(workoutId, timestamp, timestamp);
+    // A past day's log was never timed: it is saved as a typical session, never as nothing.
+    const endedAt = isPastLog(row.date as ISODate, row.createdAt) ? pastLogEnd(row.startedAt) : timestamp;
+    await dao.finishWorkout(workoutId, endedAt, timestamp);
     return day;
   }
 
@@ -460,9 +576,51 @@ export class LocalWorkoutRepository implements WorkoutRepository {
     // As in finish, the day is written first, from the workouts that stay: if that fails nothing has been
     // deleted and deleting can be tried again; if only the delete fails, trying again writes the same day.
     const totals = await this.totalsOn(row.userId, row.date, workoutId);
-    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals);
+    const level = await this.levelOn(row.userId, row.date as ISODate, totals, workoutId);
+    const day = await workoutDays.recordDay(row.userId, row.date as ISODate, totals, level);
     await dao.deleteWorkout(workoutId);
     return day;
+  }
+
+  async toBeat(owner: WorkoutOwner, exerciseIds: readonly string[], date: ISODate) {
+    const { dao } = this.deps;
+    const running = await dao.getActive(owner);
+    const from = addDays(startOfWeek(date, 'mon'), -7);
+    const rows = (await dao.liftSetsBetween(owner, exerciseIds, from, date)).filter(
+      (one) => one.workoutId !== running?.id,
+    );
+    const sessions = liftSessions(rows);
+    const result: Partial<Record<string, BestSet>> = {};
+    for (const id of exerciseIds) {
+      const then = nextMatch(id, date, sessions);
+      if (then) result[id] = then;
+    }
+    return result;
+  }
+
+  /**
+   * How dark a day is: how its lifts stood against the same lifts last week (progressive overload), over
+   * every workout of that date but `without`. Only the weeks up to that day are read, so a day's level never
+   * depends on what came after it, and once stored it stays.
+   */
+  private async levelOn(
+    owner: WorkoutOwner,
+    date: ISODate,
+    totals: DayTotals,
+    without?: string,
+  ): Promise<HeatLevel> {
+    const { dao } = this.deps;
+    const ids = (await dao.workoutsOn(owner, date)).map((one) => one.id).filter((id) => id !== without);
+    const lifts = [...new Set((await dao.exercisesOf(ids)).map((exercise) => exercise.exerciseId))];
+    const from = addDays(startOfWeek(date, 'mon'), -14);
+    const rows = (await dao.liftSetsBetween(owner, lifts, from, date)).filter(
+      (one) => one.workoutId !== without,
+    );
+    const sessions = liftSessions(rows);
+    const standings = sessions
+      .filter((session) => session.date === date)
+      .flatMap((session) => liftStanding(session, sessions) ?? []);
+    return overloadLevel(standings, totals.sets > 0);
   }
 
   /** What a day's workouts add up to, leaving out `without` (a workout about to be deleted). */
@@ -610,6 +768,7 @@ export class LocalWorkoutRepository implements WorkoutRepository {
       startedAt: row.startedAt,
       endedAt: row.endedAt,
       bodyweightKg: row.bodyweightKg,
+      ...(isPastLog(row.date as ISODate, row.createdAt) && { pastLog: true }),
       exercises: exercises.map((exercise) => ({
         id: exercise.id,
         exerciseId: exercise.exerciseId,

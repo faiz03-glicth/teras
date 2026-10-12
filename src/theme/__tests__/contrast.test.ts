@@ -34,6 +34,7 @@ describe.each(['light', 'dark'] as const)('%s colours', (scheme) => {
     ['gold text on the active surface (selected tab)', c.accentText, c.accentSoft],
     ['errors on cards', c.danger, c.surface],
     ['errors on the error banner', c.danger, c.dangerSoft],
+    ['an armed Delete key', c.onDanger, c.danger],
   ])('%s meets AA (≥ 4.5:1)', (_name, foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });

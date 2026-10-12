@@ -32,6 +32,8 @@ export interface ListRowProps {
   /** 9pt vertical padding instead of 12 (login benefits). */
   compact?: boolean;
   onPress?: () => void;
+  /** Its press is under way: a screen reader hears it as busy, and not to be pressed again. */
+  busy?: boolean;
   accessibilityHint?: string;
   testID?: string;
 }
@@ -58,6 +60,7 @@ export function ListRow({
   centered = false,
   compact = false,
   onPress,
+  busy = false,
   accessibilityHint,
   testID,
 }: ListRowProps) {
@@ -107,6 +110,7 @@ export function ListRow({
         accessibilityRole="button"
         accessibilityLabel={description ? `${title}, ${description}` : title}
         accessibilityHint={accessibilityHint}
+        accessibilityState={busy ? { busy: true, disabled: true } : undefined}
         style={styles.row(compact)}
       >
         {body}

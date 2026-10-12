@@ -55,6 +55,8 @@ export interface ActiveWorkoutSummary {
   startedAt: string;
   exerciseCount: number;
   setsDone: number;
+  /** Logged after its day: not ongoing, so no Resume bar, clock or in-progress card shows it. */
+  pastLog: boolean;
 }
 
 function summariseActive(workout: Workout | null): ActiveWorkoutSummary | null {
@@ -67,8 +69,13 @@ function summariseActive(workout: Workout | null): ActiveWorkoutSummary | null {
     startedAt: workout.startedAt,
     exerciseCount: workout.exercises.length,
     setsDone: sets.filter((set) => set.status === 'done').length,
+    pastLog: workout.pastLog === true,
   };
 }
+
+/** PURE: the workout in progress, if it is one being trained now rather than a past day's log. */
+export const liveWorkout = (summary: ActiveWorkoutSummary | null | undefined) =>
+  summary && !summary.pastLog ? summary : null;
 
 /**
  * The workout in progress, summarised. Every digit typed into a set replaces the workout in the cache;
@@ -140,6 +147,21 @@ export function useLoggedWorkout(owner: WorkoutOwner, id: string | null) {
  * key, so finishing a workout refreshes it. While an added exercise is being looked up, the rows already
  * shown keep their values rather than blinking back to dashes.
  */
+/**
+ * What each exercise has to beat today: last week's matching session's best set (none in a first week).
+ * Under the history prefix, so finishing or deleting a workout reads it again.
+ */
+export function useToBeat(owner: WorkoutOwner, exerciseIds: readonly string[], date: ISODate) {
+  const { workouts } = useRepositories();
+  const ids = [...new Set(exerciseIds)].sort();
+  return useQuery({
+    queryKey: [...workoutKeys.history, owner, 'toBeat', date, ids],
+    queryFn: () => workouts.toBeat(owner, ids, date),
+    enabled: ids.length > 0,
+    networkMode: 'always',
+  });
+}
+
 export function usePreviousSets(owner: WorkoutOwner, exerciseIds: readonly string[]) {
   const { workouts } = useRepositories();
   const ids = [...new Set(exerciseIds)].sort();

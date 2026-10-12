@@ -73,7 +73,7 @@ describe('dayCell', () => {
     const cell = dayCell('2026-09-29' as ISODate, options({ streakOn: () => true }));
 
     expect(cell).toMatchObject({ level: 0, marked: true });
-    expect(cell.label).toBe('Sep 29: Checked in on Streak');
+    expect(cell.label).toBe('Sep 29: Logged, no details');
   });
 
   it('never marks a trained day: a logged workout is always the day’s own story', () => {

@@ -1,11 +1,15 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { Button, Card, EmptyState, IconButton, ListRow, Screen, SectionLabel, Text } from '@/shared/ui';
+import { Button, Card, EmptyState, ListRow, Screen, SectionLabel, Text } from '@/shared/ui';
 
+import { RoutineCard } from './components/RoutineCard';
 import { useWorkoutViewModel } from './useWorkoutViewModel';
 
-/** Workout: resume what is running, start from nothing, or start from one of your routines. */
+/**
+ * Workout: the gold key leads (start from nothing; while one runs, the Resume bar leads back), then each routine as a card
+ * of its own (open it to see what to beat, or Start it straight away), then the exercise library.
+ */
 export function WorkoutScreen() {
   const vm = useWorkoutViewModel();
 
@@ -15,25 +19,12 @@ export function WorkoutScreen() {
         Workout
       </Text>
 
-      {vm.inProgress && (
-        <View style={styles.group}>
-          <SectionLabel>In progress</SectionLabel>
-          <Card>
-            <View style={styles.resume}>
-              <Text variant="headline">{vm.inProgress.name}</Text>
-              <Text variant="footnote" tone="secondary">
-                {summarise(vm.inProgress.exerciseCount)}
-              </Text>
-              <Button label="Resume" onPress={vm.onResume} testID="workout-resume" />
-            </View>
-          </Card>
-        </View>
-      )}
-
+      {/* While one is running, the Resume bar over the tabs is the way back to it: no second key here. */}
       {!vm.inProgress && (
         <Button
           label="Start empty workout"
           icon="plus"
+          size="lg"
           onPress={vm.onStartEmpty}
           loading={vm.starting}
           loadingLabel="Starting"
@@ -58,30 +49,18 @@ export function WorkoutScreen() {
             <EmptyState icon="dumbbell" title="No routines yet" />
           </Card>
         ) : (
-          <Card tight divided>
-            {vm.routines.map((routine) => (
-              <View key={routine.id} style={styles.routine}>
-                <View style={styles.routineMain}>
-                  <ListRow
-                    title={routine.name}
-                    description={routineLine(routine.exerciseCount, routine.exercises)}
-                    descriptionLines={1}
-                    trailing="none"
-                    onPress={() => vm.onStartRoutine(routine.id)}
-                    accessibilityHint={routine.exerciseCount === 0 ? 'Opens it to fill' : 'Starts a workout'}
-                    testID={`routine-${routine.id}`}
-                  />
-                </View>
-                <IconButton
-                  icon="pencil"
-                  plain
-                  onPress={() => vm.onEditRoutine(routine.id)}
-                  accessibilityLabel={`Edit ${routine.name}`}
-                  testID={`routine-edit-${routine.id}`}
-                />
-              </View>
-            ))}
-          </Card>
+          vm.routines.map((routine) => (
+            <RoutineCard
+              key={routine.id}
+              id={routine.id}
+              name={routine.name}
+              line={routine.line}
+              last={routine.last}
+              onOpen={() => vm.onOpenRoutine(routine.id)}
+              onEdit={() => vm.onEditRoutine(routine.id)}
+              onStart={() => vm.onStartRoutine(routine.id)}
+            />
+          ))
         )}
       </View>
 
@@ -99,18 +78,8 @@ export function WorkoutScreen() {
   );
 }
 
-/** "5 exercises · Bench Press, Overhead Press, …": the count is labelled, and the names cut to one line. */
-const routineLine = (count: number, names: readonly string[]) =>
-  count === 0 ? 'No exercises yet' : `${count} exercise${count === 1 ? '' : 's'} · ${names.join(', ')}`;
-
-const summarise = (count: number) =>
-  count === 0 ? 'Nothing logged yet' : `${count} exercise${count === 1 ? '' : 's'}`;
-
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },
-  group: { gap: theme.spacing.sm },
+  group: { gap: theme.spacing.md },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  routine: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
-  routineMain: { flex: 1 },
-  resume: { gap: theme.spacing.md },
 }));

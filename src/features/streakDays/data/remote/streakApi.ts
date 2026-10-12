@@ -33,10 +33,18 @@ export interface StreakBookmark {
 
 export type StreakApiErrorCode = 'Network' | 'Unavailable' | 'Unknown';
 
-/** Data source: Supabase `streak_workout_dates` only (it runs as the caller, so RLS keeps it to their rows). */
+/**
+ * Data source: Supabase `streak_workout_dates` (it runs as the caller, so RLS keeps it to their rows) and
+ * `teras_log_day`.
+ */
 export interface StreakApi {
   /** The dates changed after the bookmark (`null`: from the beginning), oldest change first. */
   workoutDates(bookmark: StreakBookmark | null): Promise<StreakDateRow[]>;
+  /**
+   * A day logged with no details: the caller's Workout check-in for `date` on Streak, so it counts toward
+   * the Streak. Logging a day already checked in changes nothing.
+   */
+  logDay(date: string): Promise<void>;
 }
 
 function toAppError(error: { message: string; code?: string }): AppError<StreakApiErrorCode> {
@@ -45,7 +53,7 @@ function toAppError(error: { message: string; code?: string }): AppError<StreakA
   }
   // PGRST202: the function is not on this server (the Streak link has not been set up there).
   if (error.code === 'PGRST202') return new AppError('Unavailable', 'Streak link is not set up');
-  return new AppError('Unknown', 'Streak dates request failed');
+  return new AppError('Unknown', 'Streak request failed');
 }
 
 export function createStreakApi(supabase: SupabaseClient): StreakApi {
@@ -63,6 +71,11 @@ export function createStreakApi(supabase: SupabaseClient): StreakApi {
         checkedIn: row.checked_in,
         changedAt: row.changed_at,
       }));
+    },
+
+    async logDay(date) {
+      const { error } = await supabase.rpc('teras_log_day', { day: date });
+      if (error) throw toAppError(error);
     },
   };
 }

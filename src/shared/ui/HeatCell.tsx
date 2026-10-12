@@ -24,8 +24,9 @@ export interface HeatCellProps {
    */
   outlined?: boolean;
   /**
-   * Checked in on Streak, nothing logged here: a small gold mark sits in the dent. Only ever drawn on a
-   * carved cell (level 0, happened, not blank) — a trained fill never carries it.
+   * Logged with no details (a Workout check-in on Streak, nothing logged here): a small gold mark sits in
+   * the dent. Only ever drawn on a carved cell (level 0, happened, not blank) — a trained fill never
+   * carries it.
    */
   marked?: boolean;
   onPress?: () => void;
@@ -57,7 +58,7 @@ export const HeatCell = memo(function HeatCell({
     styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state, carved),
     outlined && !carved && styles.outline,
   ];
-  // Decorative: the cell's own accessibilityLabel already says "Checked in on Streak" for a marked day.
+  // Decorative: the cell's own accessibilityLabel already says "Logged, no details" for a marked day.
   const dot = carved && marked ? <View style={styles.dot(size)} /> : null;
   const cell = appear ? (
     <Animated.View style={[style, appear]}>{dot}</Animated.View>

@@ -21,6 +21,7 @@ async function setup() {
   const pages: StreakDateRow[][] = [];
   const api: jest.Mocked<StreakApi> = {
     workoutDates: mockFn<StreakApi['workoutDates']>(async () => pages.shift() ?? []),
+    logDay: mockFn<StreakApi['logDay']>(async () => undefined),
   };
   let clock = Date.UTC(2026, 9, 6, 9, 30);
   const repo = new LocalStreakDayRepository({
@@ -129,5 +130,46 @@ describe('list', () => {
       '2026-10-01',
       '2026-10-09',
     ]);
+  });
+});
+
+describe('logDay', () => {
+  const DAY = '2026-09-22' as ISODate;
+
+  it('logs the day on Streak, then lists it at once, before any pull', async () => {
+    const { api, repo } = await setup();
+
+    await repo.logDay(USER, DAY);
+
+    expect(api.logDay).toHaveBeenCalledWith(DAY);
+    expect(await repo.list(USER, FROM, TO)).toEqual([DAY]);
+    expect(api.workoutDates).not.toHaveBeenCalled();
+  });
+
+  it('lists a day logged twice once, and a pull that brings it back changes nothing', async () => {
+    const { repo, pages } = await setup();
+    await repo.logDay(USER, DAY);
+    await repo.logDay(USER, DAY);
+
+    pages.push([checked(DAY, 1)]);
+    expect(await repo.pull(USER)).toBe(0);
+    expect(await repo.list(USER, FROM, TO)).toEqual([DAY]);
+  });
+
+  it('leaves where the pulls got to alone, so the next one still starts from the beginning', async () => {
+    const { api, repo } = await setup();
+    await repo.logDay(USER, DAY);
+
+    await repo.pull(USER);
+
+    expect(api.workoutDates).toHaveBeenCalledWith(null);
+  });
+
+  it('keeps nothing when Streak could not log it', async () => {
+    const { api, repo } = await setup();
+    api.logDay.mockRejectedValueOnce(new Error('offline'));
+
+    await expect(repo.logDay(USER, DAY)).rejects.toThrow('offline');
+    expect(await repo.list(USER, FROM, TO)).toEqual([]);
   });
 });

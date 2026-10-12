@@ -21,6 +21,8 @@ export interface StreakDayDao {
   apply(userId: string, changes: readonly StreakDayChange[], sync: StreakSync): Promise<number>;
   /** Replaces all of the user's dates (a pull from the beginning) and the bookmark. Returns how many changed. */
   replace(userId: string, dates: readonly string[], sync: StreakSync): Promise<number>;
+  /** One date checked in, the bookmark left where it is (the next pull brings the same date back). */
+  add(userId: string, date: string): Promise<void>;
 }
 
 /** Rows per statement: far below SQLite's limit on bound values, whatever the build. */
@@ -100,6 +102,12 @@ export function createStreakDayDao(db: AppDatabase): StreakDayDao {
         }
         saveSync(tx, userId, sync);
         return added.length + gone.length;
+      });
+    },
+
+    async add(userId, date) {
+      db.transaction((tx) => {
+        if (!existing(tx, userId, [date]).has(date)) insert(tx, userId, [date]);
       });
     },
 

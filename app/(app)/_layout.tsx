@@ -33,6 +33,7 @@ export default function AppLayout() {
       <Stack.Screen name="exercises" />
       <Stack.Screen name="exercise/[id]" />
       <Stack.Screen name="routine/[id]" />
+      <Stack.Screen name="routine-preview/[id]" />
       <Stack.Screen name="calendar" />
       <Stack.Screen name="records" />
       <Stack.Screen name="session/[id]" />

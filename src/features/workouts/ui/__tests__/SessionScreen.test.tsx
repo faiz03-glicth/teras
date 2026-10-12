@@ -5,6 +5,7 @@ import { toast } from 'sonner-native';
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { Workout, WorkoutSet } from '@/features/workouts/data/WorkoutRepository';
+import { useRoutines } from '@/features/workouts/hooks/useWorkoutQueries';
 import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
@@ -203,6 +204,40 @@ describe('deleting a workout', () => {
     await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
     // The day reaches the server (and Streak) now, not at the next foreground.
     expect(repositories.workoutDays.pushPending).toHaveBeenCalledWith('user-1');
+  });
+
+  it('has the routine cards read their last-done line again once it is gone (S4)', async () => {
+    const repositories = createFakeRepositories();
+    repositories.workouts.logged.mockResolvedValue(logged());
+    const { Wrapper } = createWrapper(repositories);
+    // The Workout tab's routine cards, still mounted under the workout.
+    function RoutineCards() {
+      useRoutines(testUser().id);
+      return null;
+    }
+    const view = renderInScheme(
+      <>
+        <SessionScreen id="w1" />
+        <RoutineCards />
+      </>,
+      'light',
+      { wrapper: Wrapper },
+    );
+    await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(1));
+    fireEvent.press(await screen.findByRole('button', { name: 'Delete workout' }));
+
+    answerAlert('Delete');
+    await waitFor(() => expect(actions.goBack).toHaveBeenCalled());
+    // The screen has closed (a refresh may wait for that); the cards stay mounted where they were, so a
+    // read now can only come from the refresh, not from mounting again.
+    view.rerender(
+      <>
+        {null}
+        <RoutineCards />
+      </>,
+    );
+
+    await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(2));
   });
 
   it('never says the workout was not found while the screen slides away', async () => {

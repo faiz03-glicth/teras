@@ -88,11 +88,12 @@ export function createFakeWorkoutDayRepository(): FakeWorkoutDayRepository {
 type Streak = StreakDayRepository;
 export type FakeStreakDayRepository = { [K in keyof Streak]: jest.Mock };
 
-/** Streak has nothing new and no days checked in. */
+/** Streak has nothing new and no days checked in; logging a day succeeds. */
 export function createFakeStreakDayRepository(): FakeStreakDayRepository {
   return {
     pull: mockFn<Streak['pull']>(async () => 0),
     list: mockFn<Streak['list']>(async () => []),
+    logDay: mockFn<Streak['logDay']>(async () => undefined),
   };
 }
 
@@ -136,6 +137,7 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
     get: mockFn<Workouts['get']>(async () => null),
     logged: mockFn<Workouts['logged']>(async () => null),
     previousSets: mockFn<Workouts['previousSets']>(async () => ({})),
+    toBeat: mockFn<Workouts['toBeat']>(async () => ({})),
     newRecords: mockFn<Workouts['newRecords']>(async () => []),
     bests: mockFn<Workouts['bests']>(async () => ({})),
     records: mockFn<Workouts['records']>(async () => []),
@@ -145,7 +147,30 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
     addSet: mockFn<Workouts['addSet']>(async () => empty),
     updateSet: mockFn<Workouts['updateSet']>(async () => empty),
     setStatus: mockFn<Workouts['setStatus']>(async () => empty),
-    removeSet: mockFn<Workouts['removeSet']>(async () => empty),
+    removeSet: mockFn<Workouts['removeSet']>(async (setId) => ({
+      workout: empty,
+      removed: {
+        row: {
+          id: setId,
+          userId: null,
+          createdAt: empty.startedAt,
+          updatedAt: empty.startedAt,
+          deletedAt: null,
+          dirty: false,
+          workoutExerciseId: 'we-1',
+          position: 0,
+          weightKg: null,
+          reps: null,
+          seconds: null,
+          status: 'pending',
+          setType: 'normal',
+          rpe: null,
+          note: null,
+          completedAt: null,
+        },
+      },
+    })),
+    restoreSet: mockFn<Workouts['restoreSet']>(async () => empty),
     finish: mockFn<Workouts['finish']>(async (): Promise<WorkoutDay> => ({
       date,
       volumeKg: 0,
