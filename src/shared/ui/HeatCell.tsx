@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { memo, useState, type ComponentProps } from 'react';
+import { Pressable, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -28,10 +28,35 @@ export interface HeatCellProps {
   testID?: string;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** What makes a cell a button: everything a Pressable takes but its style. */
+type PressProps = Omit<ComponentProps<typeof Pressable>, 'style'>;
+
+/** An animated cell's style: the cell's look plus a CSS animation (reveal or pulse). */
+type CellStyle = ComponentProps<typeof Animated.View>['style'];
+
+/**
+ * A pressable cell that is also animated (revealing or pulsing): still the one view, the Pressable itself.
+ * An animated view can't take Pressable's style function, so being held is its own state here.
+ */
+function AnimatedCellButton({ style, press }: { style: CellStyle; press: PressProps }) {
+  const [held, setHeld] = useState(false);
+  return (
+    <AnimatedPressable
+      {...press}
+      onPressIn={() => setHeld(true)}
+      onPressOut={() => setHeld(false)}
+      style={[style, held && styles.pressed]}
+    />
+  );
+}
+
 /** Only cells that pulse subscribe to the motion system. */
-function PulsingCell({ style }: { style: StyleProp<ViewStyle> }) {
+function PulsingCell({ style, press }: { style: CellStyle; press?: PressProps }) {
   const { pulse } = useMotion();
-  return <Animated.View style={[style, pulse(true)]} />;
+  const pulsing = [style, pulse(true)];
+  return press ? <AnimatedCellButton style={pulsing} press={press} /> : <Animated.View style={pulsing} />;
 }
 
 /** One day on the heatmap. Knows how a level looks, not which counts produce it. */
@@ -53,29 +78,32 @@ export const HeatCell = memo(function HeatCell({
     styles.cell(level, size, radius ?? Math.max(2, Math.round(size / 3.5)), state),
     outlined && styles.outline,
   ];
-  // A pressable cell is the one view itself (no wrapper), dimmed at once while held: no animation per cell.
-  if (onPress) {
-    return (
-      <Pressable
-        onPress={onPress}
-        hitSlop={hitSlop}
-        unstable_pressDelay={pressDelay || undefined}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ selected: state === 'selected' }}
-        style={({ pressed }) => (pressed ? [...style, styles.pressed] : style)}
-        testID={testID}
-      />
+  const press: PressProps | undefined = onPress
+    ? {
+        onPress,
+        hitSlop,
+        unstable_pressDelay: pressDelay || undefined,
+        accessibilityRole: 'button',
+        accessibilityLabel,
+        accessibilityState: { selected: state === 'selected' },
+        testID,
+      }
+    : undefined;
+  // Every cell is one view, pressable or not; a pressable one keeps its reveal and pulse.
+  if (appear) {
+    const revealing = [style, appear];
+    return press ? (
+      <AnimatedCellButton style={revealing} press={press} />
+    ) : (
+      <Animated.View style={revealing} />
     );
   }
-  const cell = appear ? (
-    <Animated.View style={[style, appear]} />
-  ) : pulse ? (
-    <PulsingCell style={style} />
-  ) : (
-    <View style={style} />
-  );
-  return cell;
+  if (pulse) return <PulsingCell style={style} press={press} />;
+  // A still pressable cell is dimmed at once while held, by Pressable itself: no state, no animation.
+  if (press) {
+    return <Pressable {...press} style={({ pressed }) => (pressed ? [...style, styles.pressed] : style)} />;
+  }
+  return <View style={style} />;
 });
 
 const styles = StyleSheet.create((theme) => ({
