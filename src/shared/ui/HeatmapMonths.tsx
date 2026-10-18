@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { memo, useCallback, useState } from 'react';
+import { Pressable, useWindowDimensions, View, type GestureResponderEvent } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import type { HeatCellState, HeatGrid } from '@/features/heatmap/domain/grid';
@@ -50,8 +50,9 @@ const CACHE_BLEED = 4;
  * scrolling sideways.
  *
  * Every day that has happened opens on a tap. Cells stay flat and still — no shadow, no animation per
- * cell — and are memoised on their own values, so ringing a day re-renders only its month. Each tap
- * target is widened across half the gap on every side, so a tap never falls between two days.
+ * cell — and are memoised on their own values, so ringing a day re-renders only its month. A month takes
+ * its touches as one target and finds the day under the finger (a gap belongs to the day before it), so
+ * six months are six touch handlers, not 184; each day stays a button a screen reader can activate.
  */
 export const HeatmapMonths = memo(function HeatmapMonths({
   months,
@@ -121,6 +122,29 @@ const MonthGrid = memo(function MonthGrid({
   pressDelay,
   onDayPress,
 }: MonthGridProps) {
+  const [held, setHeld] = useState<string | null>(null);
+  const { columns } = month.grid;
+  // The cells don't take touches, so the finger's place is measured from the month's own box.
+  const dayAt = useCallback(
+    (event: GestureResponderEvent) => {
+      const step = cell + gap;
+      const { locationX, locationY } = event.nativeEvent;
+      const column = columns[clamp(Math.floor((locationX - CACHE_BLEED) / step), columns.length - 1)];
+      const day = column?.[clamp(Math.floor((locationY - CACHE_BLEED) / step), column.length - 1)];
+      // Only a day that has happened carries a label, and only it opens.
+      return day?.label ? day.key : null;
+    },
+    [cell, columns, gap],
+  );
+  const onPressIn = useCallback((event: GestureResponderEvent) => setHeld(dayAt(event)), [dayAt]);
+  const onPressOut = useCallback(() => setHeld(null), []);
+  const onPress = useCallback(
+    (event: GestureResponderEvent) => {
+      const day = dayAt(event);
+      if (day) onDayPress?.(day);
+    },
+    [dayAt, onDayPress],
+  );
   return (
     <View style={styles.month}>
       {/* Every day's own label already names its month, so the heading is for the eye only. */}
@@ -139,13 +163,19 @@ const MonthGrid = memo(function MonthGrid({
        * phone otherwise rasterises again, in software, for every cell on every frame. collapsable={false}
        * keeps the view, so the cache isn't flattened away. No effect on iOS.
        */}
-      <View
+      <Pressable
+        onPress={onDayPress && onPress}
+        onPressIn={onDayPress && onPressIn}
+        onPressOut={onDayPress && onPressOut}
+        // On a scrolling screen, a touch that becomes a scroll neither dims the day nor opens it.
+        unstable_pressDelay={pressDelay || undefined}
+        accessible={false}
         style={[styles.row(gap), styles.cached]}
         collapsable={false}
         renderToHardwareTextureAndroid
         testID={`month-cells-${month.key}`}
       >
-        {month.grid.columns.map((column, columnIndex) => (
+        {columns.map((column, columnIndex) => (
           <View key={columnIndex} style={styles.column(gap)}>
             {column.map((day) => (
               <DayCell
@@ -155,16 +185,15 @@ const MonthGrid = memo(function MonthGrid({
                 state={day.key === selected ? 'selected' : day.state}
                 marked={day.marked}
                 label={day.label}
+                held={day.key === held}
                 size={cell}
                 radius={radius}
-                gap={gap}
-                pressDelay={pressDelay}
                 onDayPress={onDayPress}
               />
             ))}
           </View>
         ))}
-      </View>
+      </Pressable>
     </View>
   );
 });
@@ -176,10 +205,9 @@ interface DayCellProps {
   /** Checked in on Streak, nothing logged here (always false on a trained day). */
   marked?: boolean;
   label?: string;
+  held: boolean;
   size: number;
   radius: number;
-  gap: number;
-  pressDelay: number;
   onDayPress?: (day: string) => void;
 }
 
@@ -189,16 +217,15 @@ const DayCell = memo(function DayCell({
   state,
   marked,
   label,
+  held,
   size,
   radius,
-  gap,
-  pressDelay,
   onDayPress,
 }: DayCellProps) {
   // An empty day that has happened keeps a hairline edge: its pale swatch alone barely parts from the
   // card, and the wave's shape must read even before anything is logged.
   const pressable = onDayPress && label;
-  // One native view per day: a pressable day is the cell itself, not a Pressable around a View.
+  // One plain native view per day; its month takes the touches.
   return (
     <HeatCell
       level={level}
@@ -207,19 +234,21 @@ const DayCell = memo(function DayCell({
       size={size}
       radius={radius}
       outlined={level === 0 && state !== 'future' && state !== 'blank'}
-      onPress={pressable ? () => onDayPress(day) : undefined}
-      hitSlop={gap / 2}
-      // On a scrolling screen, a touch that becomes a scroll neither dims the day nor opens it.
-      pressDelay={pressDelay}
+      onActivate={pressable ? () => onDayPress(day) : undefined}
+      held={held}
       accessibilityLabel={label}
       testID={pressable ? `day-${day}` : undefined}
     />
   );
 });
 
+const clamp = (index: number, last: number) => Math.max(0, Math.min(last, index));
+
 const styles = StyleSheet.create({
   row: (gap: number) => ({ flexDirection: 'row' as const, gap }),
-  column: (gap: number) => ({ gap }),
+  // The cells never take a touch themselves: the month's box is always the target, so the finger's place
+  // (locationX/Y) is measured from it, on Android too.
+  column: (gap: number) => ({ gap, pointerEvents: 'none' as const }),
   // Bleed room that takes no space: the cells sit exactly where they did.
   cached: { margin: -CACHE_BLEED, padding: CACHE_BLEED },
   month: { gap: MONTH_LABEL_GAP },

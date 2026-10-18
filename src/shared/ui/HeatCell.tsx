@@ -30,6 +30,13 @@ export interface HeatCellProps {
    */
   marked?: boolean;
   onPress?: () => void;
+  /**
+   * A day in a grid that takes its touches as a whole (one handler per month): the cell stays a plain view,
+   * yet a screen reader still reads it as a button and can activate it.
+   */
+  onActivate?: () => void;
+  /** Held under the finger, for a grid that takes the touches itself. */
+  held?: boolean;
   accessibilityLabel?: string;
   /** Pressable cells only: widens the tap target, delays the press on scrolling screens, names the cell. */
   hitSlop?: number;
@@ -103,6 +110,8 @@ export const HeatCell = memo(function HeatCell({
   outlined = false,
   marked = false,
   onPress,
+  onActivate,
+  held = false,
   accessibilityLabel,
   hitSlop,
   pressDelay,
@@ -154,8 +163,28 @@ export const HeatCell = memo(function HeatCell({
       </Pressable>
     );
   }
+  if (onActivate) {
+    return (
+      <View
+        style={[...style, held && styles.pressed]}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ selected: state === 'selected' }}
+        accessibilityActions={ACTIVATE}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'activate') onActivate();
+        }}
+        testID={testID}
+      >
+        {dot}
+      </View>
+    );
+  }
   return <View style={style}>{dot}</View>;
 });
+
+const ACTIVATE = [{ name: 'activate' as const }];
 
 const styles = StyleSheet.create((theme) => ({
   cell: (level: HeatLevel, size: number, radius: number, state: HeatCellState, carved: boolean) => ({

@@ -144,7 +144,11 @@ describe('the training wave', () => {
   it('opens the day that was tapped', async () => {
     home({ days: [day('2026-09-30', 3)] });
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Sep 30: Strong' }));
+    // The month takes the touch and finds the day under the finger (covered with HeatmapMonths); each day
+    // is also its own button for a screen reader.
+    fireEvent(await screen.findByRole('button', { name: 'Sep 30: Strong' }), 'accessibilityAction', {
+      nativeEvent: { actionName: 'activate' },
+    });
 
     expect(actions.openDay).toHaveBeenCalledWith('2026-09-30');
   });
