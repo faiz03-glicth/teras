@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useRepositories } from '@/core/DiProvider';
-import { useLogDayNoDetails } from '@/features/streakDays/hooks/useLogDayNoDetails';
 import { useStreakDays } from '@/features/streakDays/hooks/useStreakDays';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { dayStanding } from '@/features/workoutDays/domain/heatLevel';
@@ -27,13 +26,6 @@ import { showInfo } from '@/shared/ui/toast';
 import { standingLine } from '../domain/standing';
 import { useDayWindow, useTrainingDays } from '../hooks/useTrainingDays';
 import { useSelectedDayStore } from '../state/selectedDayStore';
-
-/** Why a day couldn't be logged with no details, in a few words. */
-const NOT_LOGGED = {
-  offline: 'Check your connection and try again.',
-  unavailable: "Logging a day without its workout isn't available yet.",
-  failed: 'Try again.',
-} as const;
 
 /** A workout listed in a day's sheet. */
 export interface DayWorkoutRow {
@@ -73,7 +65,6 @@ export function useDaySheetViewModel(date: ISODate | null) {
   const workouts = useWorkoutsBetween(owner, day, day);
   const active = useActiveWorkoutSummary(owner);
   const streakDays = useStreakDays(owner, day, day);
-  const noDetails = useLogDayNoDetails();
 
   const row = record.data?.[0] ?? null;
   const level = row?.level ?? 0;
@@ -169,17 +160,7 @@ export function useDaySheetViewModel(date: ISODate | null) {
   );
   const onLog = useCallback((key: string) => void logWorkout(key), [logWorkout]);
 
-  const { logDay } = noDetails;
-  const onLogNoDetails = useCallback(async () => {
-    const result = await logDay(day);
-    if (result === 'logged') {
-      haptics.success();
-      goBack();
-    } else if (result !== 'busy') {
-      showInfo({ title: "Couldn't log the day", sub: NOT_LOGGED[result] });
-    }
-  }, [day, logDay]);
-
+  // A day with nothing logged is a rest day (the owner, 18 Oct): "No workout · Rest day".
   const levelName = loggedNoDetails ? 'Logged' : LEVEL_NAMES[level];
   const line = loggedNoDetails
     ? 'No details · counts toward your Streak'
@@ -194,7 +175,7 @@ export function useDaySheetViewModel(date: ISODate | null) {
     marked: loggedNoDetails,
     levelName,
     standing: line,
-    summaryLabel: `${levelName}. ${line}.`,
+    summaryLabel: line ? `${levelName}. ${line}.` : `${levelName}.`,
 
     status: failed ? ('error' as const) : pending ? ('loading' as const) : ('ready' as const),
     rows,
@@ -216,13 +197,7 @@ export function useDaySheetViewModel(date: ISODate | null) {
               : 'Finish the workout in progress first',
           options: elsewhere ? [] : logOptions,
         },
-    /** A past day with nothing logged can be logged with no details (signed in: it goes to Streak). */
-    noDetails:
-      noDetails.canLog && day < today && !loggedHere && !loggedNoDetails
-        ? { logging: noDetails.logging }
-        : null,
     onLog,
-    onLogNoDetails: () => void onLogNoDetails(),
     onResume,
     onOpenWorkout,
     onRetry,

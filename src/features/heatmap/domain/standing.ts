@@ -4,7 +4,8 @@ import { countSets } from '@/features/workouts/domain/labels';
 
 /**
  * PURE: the line under a day's level: the facts it was judged by, in a few words. A workout still running
- * is not counted until it is finished, and the line says so rather than calling today a rest day.
+ * is not counted until it is finished, and the line says so rather than calling today a rest day. A past day
+ * with nothing logged is a rest day (the owner, 18 Oct).
  */
 export function standingLine(
   standing: DayStanding,

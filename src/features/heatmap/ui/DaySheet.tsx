@@ -38,9 +38,11 @@ export function DaySheet({ date }: { date: ISODate | null }) {
               <HeatCell level={vm.level} size={36} radius={10} outlined={vm.level === 0} marked={vm.marked} />
               <View style={styles.levelText}>
                 <Text variant="headline">{vm.levelName}</Text>
-                <Text variant="footnote" tone="secondary">
-                  {vm.standing}
-                </Text>
+                {vm.standing ? (
+                  <Text variant="footnote" tone="secondary">
+                    {vm.standing}
+                  </Text>
+                ) : null}
               </View>
             </View>
           </Card>
@@ -116,21 +118,6 @@ export function DaySheet({ date }: { date: ISODate | null }) {
                 </Text>
               )}
             </View>
-          )}
-
-          {vm.noDetails && (
-            <Card tight>
-              <ListRow
-                title="Log the day, no details"
-                description={vm.noDetails.logging ? 'Logging…' : 'Counts toward your Streak'}
-                icon="check"
-                trailing="none"
-                onPress={vm.onLogNoDetails}
-                accessibilityHint="Logs this day without its workout"
-                busy={vm.noDetails.logging}
-                testID="day-log-no-details"
-              />
-            </Card>
           )}
         </>
       )}

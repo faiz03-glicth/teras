@@ -1,13 +1,11 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
-import { AppError } from '@/core/errors/AppError';
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
 import type { Workout, WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
 import * as actions from '@/shared/actions';
-import * as toast from '@/shared/ui/toast';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
@@ -255,106 +253,13 @@ describe('a day checked in on Streak but not logged here', () => {
   });
 });
 
-describe('logging a past day with no details', () => {
-  const PAST = '2026-09-29' as ISODate;
+describe('a past day with nothing logged', () => {
+  it('offers a full workout log but never a no-details log (the owner, 18 Oct)', async () => {
+    open('2026-09-29' as ISODate, { days: [], workouts: [] });
 
-  it('is offered on a past day with nothing logged', async () => {
-    open(PAST, { days: [], workouts: [] });
-
-    expect(await screen.findByTestId('day-log-no-details')).toBeTruthy();
-    expect(screen.getByText('Log the day, no details')).toBeTruthy();
-  });
-
-  it('logs the day on Streak, then closes the sheet', async () => {
-    const { repositories } = open(PAST, { days: [], workouts: [] });
-
-    fireEvent.press(await screen.findByTestId('day-log-no-details'));
-    await act(async () => undefined);
-
-    expect(repositories.streakDays.logDay).toHaveBeenCalledWith('user-1', PAST);
-    expect(actions.goBack).toHaveBeenCalled();
-    expect(repositories.workouts.start).not.toHaveBeenCalled();
-  });
-
-  it('is offered even while a workout runs elsewhere: it starts nothing', async () => {
-    open(PAST, { days: [], workouts: [], active: running });
-
-    expect(await screen.findByTestId('day-log-blocked')).toBeTruthy();
-    expect(screen.getByTestId('day-log-no-details')).toBeTruthy();
-  });
-
-  it('stays on the sheet when it could not be logged, ready to try again', async () => {
-    const { repositories } = open(PAST, {
-      days: [],
-      workouts: [],
-      prepare: (fakes) =>
-        void fakes.streakDays.logDay.mockRejectedValueOnce(new AppError('Network', 'Network request failed')),
-    });
-
-    fireEvent.press(await screen.findByTestId('day-log-no-details'));
-    await act(async () => undefined);
-
-    expect(actions.goBack).not.toHaveBeenCalled();
-    fireEvent.press(screen.getByTestId('day-log-no-details'));
-    await act(async () => undefined);
-    expect(repositories.streakDays.logDay).toHaveBeenCalledTimes(2);
-    expect(actions.goBack).toHaveBeenCalled();
-  });
-
-  it('says why it could not be logged: a server without it is not a connection problem', async () => {
-    const info = jest.spyOn(toast, 'showInfo');
-    open(PAST, {
-      days: [],
-      workouts: [],
-      prepare: (fakes) =>
-        void fakes.streakDays.logDay.mockRejectedValueOnce(new AppError('Unavailable', 'not set up')),
-    });
-
-    fireEvent.press(await screen.findByTestId('day-log-no-details'));
-    await act(async () => undefined);
-
-    expect(info).toHaveBeenCalledWith({
-      title: "Couldn't log the day",
-      sub: "Logging a day without its workout isn't available yet.",
-    });
-    info.mockClear();
-  });
-
-  it('reads as busy while it is being logged', async () => {
-    let finish = () => undefined as void;
-    open(PAST, {
-      days: [],
-      workouts: [],
-      prepare: (fakes) =>
-        void fakes.streakDays.logDay.mockImplementationOnce(
-          () => new Promise<void>((resolve) => (finish = resolve)),
-        ),
-    });
-
-    fireEvent.press(await screen.findByTestId('day-log-no-details'));
-
-    expect(screen.getByTestId('day-log-no-details').props.accessibilityState).toEqual(
-      expect.objectContaining({ busy: true, disabled: true }),
-    );
-    await act(async () => finish());
-  });
-
-  it('is not offered today, on a trained day, or to a guest', async () => {
-    open(TODAY, { days: [], workouts: [] });
-    expect(await screen.findByText('Nothing logged yet')).toBeTruthy();
-    expect(screen.queryByTestId('day-log-no-details')).toBeNull();
-    screen.unmount();
-
-    open(DAY);
-    expect(await screen.findByText('Strong')).toBeTruthy();
-    expect(screen.queryByTestId('day-log-no-details')).toBeNull();
-    screen.unmount();
-
-    act(() => {
-      useAuthStore.setState({ ...initialAuth, status: 'guest', user: null }, true);
-    });
-    open(PAST, { days: [], workouts: [] });
     expect(await screen.findByText('Rest day')).toBeTruthy();
+    expect(screen.getByText(/^log a workout$/i)).toBeTruthy();
+    expect(screen.queryByText('Log the day, no details')).toBeNull();
     expect(screen.queryByTestId('day-log-no-details')).toBeNull();
   });
 });
