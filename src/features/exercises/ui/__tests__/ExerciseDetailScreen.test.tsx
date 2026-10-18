@@ -225,3 +225,32 @@ describe('states', () => {
     expect(await screen.findByText('More for chest')).toBeTruthy();
   });
 });
+
+describe('while the screen slides in', () => {
+  afterEach(() => jest.mocked(actions.useScreenSettled).mockReturnValue(true));
+
+  it('draws what the slide shows first, and the body, chart and lists once it has settled', async () => {
+    jest.mocked(actions.useScreenSettled).mockReturnValue(false);
+    const view = detail('bench-press-barbell');
+
+    // The name, the muscles named and the record: all there as it slides.
+    expect(await screen.findByLabelText('Heaviest weight, 62.5 kg, personal record')).toBeTruthy();
+    expect(screen.getByText('Bench Press (Barbell)')).toBeTruthy();
+    // The body keeps its room; the SVG body, the chart and the lists are not built yet.
+    expect(screen.getByTestId('body-map-space')).toBeTruthy();
+    // The body is hidden from screen readers (the muscles are named in text), so look past that.
+    expect(screen.queryByTestId('body-map', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByLabelText(/^Best set each week/)).toBeNull();
+    expect(screen.queryByText('History')).toBeNull();
+    expect(screen.queryByText('More for chest')).toBeNull();
+
+    jest.mocked(actions.useScreenSettled).mockReturnValue(true);
+    view.rerender(<ExerciseDetailScreen id="bench-press-barbell" />);
+
+    expect(screen.getByTestId('body-map', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('body-map-space')).toBeNull();
+    expect(screen.getByLabelText('Best set each week, 2 weeks, latest 62.5 kg')).toBeTruthy();
+    expect(screen.getByText('History')).toBeTruthy();
+    expect(screen.getByText('More for chest')).toBeTruthy();
+  });
+});

@@ -16,6 +16,8 @@ export const goBack = jest.fn();
  * can take the `ask` a screen passes and answer it as if the person had tried to leave.
  */
 export const useLeaveGuard = jest.fn((_guarded: boolean, _ask: (leave: () => void) => void) => goBack);
+/** No slide to wait for in these tests: every screen has settled, so it draws everything at once. */
+export const useScreenSettled = jest.fn(() => true);
 export const openActiveWorkout = jest.fn();
 export const openAddExercise = jest.fn();
 export const openExerciseLibrary = jest.fn();

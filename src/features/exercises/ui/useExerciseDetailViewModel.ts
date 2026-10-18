@@ -13,7 +13,7 @@ import {
   useSetActiveWorkout,
   useWorkoutOwner,
 } from '@/features/workouts/hooks/useWorkoutQueries';
-import { goBack, openExercise, openSession, returnToWorkout } from '@/shared/actions';
+import { goBack, openExercise, openSession, returnToWorkout, useScreenSettled } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { shortDate, shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
@@ -198,6 +198,9 @@ export function useExerciseDetailViewModel(id: string | null) {
     void refetchHistory();
   }, [refetchExercise, refetchHistory]);
 
+  // The body map, the chart and the lists below wait until the screen has slid in (see Ready).
+  const settled = useScreenSettled();
+
   const status =
     id === null
       ? ('missing' as const)
@@ -211,6 +214,8 @@ export function useExerciseDetailViewModel(id: string | null) {
 
   return {
     status,
+    /** Slid in: the costly parts (the SVG body, the chart, the history and similar lists) draw now. */
+    settled,
     name: row?.name ?? '',
     tags: row ? tagsOf(row) : [],
     primary: row ? MUSCLE_LABELS[row.primaryMuscle] : '',

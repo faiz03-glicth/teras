@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import {
@@ -18,8 +19,9 @@ import {
   StatTile,
   Text,
 } from '@/shared/ui';
+import { motion, useReduceMotion } from '@/theme';
 
-import { BodyMap } from './components/BodyMap';
+import { BodyMap, BodyMapSpace } from './components/BodyMap';
 import { useExerciseDetailViewModel, type ExerciseDetailViewModel } from './useExerciseDetailViewModel';
 
 /**
@@ -64,7 +66,15 @@ export function ExerciseDetailScreen({ id }: { id: string | null }) {
   );
 }
 
+/** Each side of the body, as the muscles card draws it. */
+const BODY_WIDTH = 118;
+
+/**
+ * What the slide shows comes first: the name, the muscles named, the record. The body, the chart and the
+ * lists below wait until the screen has settled, so none of them is built or painted while it moves.
+ */
 function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
+  const reduced = useReduceMotion();
   return (
     <>
       <View style={styles.head}>
@@ -79,7 +89,13 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
       </View>
 
       <Card style={styles.muscles}>
-        <BodyMap highlight={vm.highlight} width={118} />
+        {vm.settled ? (
+          <Animated.View entering={reduced ? undefined : FadeIn.duration(motion.duration.fast)}>
+            <BodyMap highlight={vm.highlight} width={BODY_WIDTH} />
+          </Animated.View>
+        ) : (
+          <BodyMapSpace width={BODY_WIDTH} />
+        )}
         <View style={styles.muscleList}>
           <Muscle label="Primary" value={vm.primary} shade="primary" />
           <Muscle label="Secondary" value={vm.secondary} shade="secondary" />
@@ -106,7 +122,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </View>
       )}
 
-      {vm.chart && (
+      {vm.settled && vm.chart && (
         <Card style={styles.chart}>
           <Text variant="headline">Best set each week</Text>
           <BarChart
@@ -120,7 +136,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </Card>
       )}
 
-      {vm.sessions.length > 0 ? (
+      {!vm.settled ? null : vm.sessions.length > 0 ? (
         <View style={styles.group}>
           <View style={styles.sectionHead}>
             <Text variant="headline">History</Text>
@@ -140,7 +156,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </Text>
       )}
 
-      {vm.similar.length > 0 && (
+      {vm.settled && vm.similar.length > 0 && (
         <View style={styles.group}>
           <Text variant="headline">{vm.similarTitle}</Text>
           <Card tight divided>

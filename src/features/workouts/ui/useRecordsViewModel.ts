@@ -1,10 +1,16 @@
 import { useMemo } from 'react';
 
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
-import { goBack, openExercise } from '@/shared/actions';
+import { goBack, openExercise, useScreenSettled } from '@/shared/actions';
 
 import { recordLine } from '../domain/records';
 import { useAllRecords, useWorkoutOwner } from '../hooks/useWorkoutQueries';
+
+/**
+ * Rows drawn while Records slides in: more than the tallest phone shows at once. The rest follow once it
+ * has settled, so the slide waits for a screenful of rows, not the whole list.
+ */
+export const FIRST_ROWS = 14;
 
 /** One exercise's record, as the list words it. */
 export interface RecordRowView {
@@ -32,11 +38,13 @@ export function useRecordsViewModel() {
       })),
     [query.data, unit],
   );
+  const settled = useScreenSettled();
+  const shown = useMemo(() => (settled ? rows : rows.slice(0, FIRST_ROWS)), [rows, settled]);
   const { refetch } = query;
 
   return {
     status: query.isError ? ('error' as const) : query.isPending ? ('loading' as const) : ('ready' as const),
-    rows,
+    rows: shown,
     onOpenExercise: openExercise,
     onRetry: () => void refetch(),
     onBack: () => goBack(),

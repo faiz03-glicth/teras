@@ -10,6 +10,7 @@ import { createWrapper } from '@test/providers';
 import { renderInScheme } from '@test/render';
 
 import { RecordsScreen } from '../RecordsScreen';
+import { FIRST_ROWS } from '../useRecordsViewModel';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
 
@@ -150,3 +151,27 @@ describe('the Records summary, kept between visits', () => {
   });
 });
 
+describe('a long list, while Records slides in', () => {
+  afterEach(() => jest.mocked(actions.useScreenSettled).mockReturnValue(true));
+
+  const many: PersonalRecord[] = Array.from({ length: FIRST_ROWS + 6 }, (_, index) => ({
+    exerciseId: `exercise-${index}`,
+    name: `Exercise ${index}`,
+    type: 'bodyweight',
+    value: 10,
+  }));
+
+  it('draws a screenful of rows first, and the rest once it has settled', async () => {
+    jest.mocked(actions.useScreenSettled).mockReturnValue(false);
+    const view = records({ prepare: (fakes) => void fakes.workouts.records.mockResolvedValue(many) });
+
+    expect(await screen.findByText('Exercise 0')).toBeTruthy();
+    expect(screen.getByText(`Exercise ${FIRST_ROWS - 1}`)).toBeTruthy();
+    expect(screen.queryByText(`Exercise ${FIRST_ROWS}`)).toBeNull();
+
+    jest.mocked(actions.useScreenSettled).mockReturnValue(true);
+    view.rerender(<RecordsScreen />);
+
+    expect(screen.getByText(`Exercise ${FIRST_ROWS + 5}`)).toBeTruthy();
+  });
+});

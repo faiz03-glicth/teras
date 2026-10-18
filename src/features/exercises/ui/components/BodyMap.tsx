@@ -54,6 +54,14 @@ export function BodyMap({ highlight, width = 120, onRegion }: BodyMapProps) {
   );
 }
 
+/**
+ * The body map's room, empty: holds the card at its size while the screen slides in, so the body (SVG,
+ * painted on the UI thread on Android) draws once the slide is over and nothing below it moves.
+ */
+export function BodyMapSpace({ width = 120 }: { width?: number }) {
+  return <View style={{ height: Math.round(width * ASPECT) }} testID="body-map-space" />;
+}
+
 interface SideProps {
   drawing: BodySide;
   width: number;
