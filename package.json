@@ -91,8 +91,6 @@
   },
   "reanimated": {
     "staticFeatureFlags": {
-      "FORCE_REACT_RENDER_FOR_SETTLED_ANIMATIONS": false,
-      "USE_COMMIT_HOOK_ONLY_FOR_REACT_COMMITS": false,
       "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
     }
   },
