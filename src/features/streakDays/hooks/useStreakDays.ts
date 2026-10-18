@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useRepositories } from '@/core/DiProvider';
+import { LOCAL_READ } from '@/core/query/queryClient';
 import type { WorkoutOwner } from '@/features/workouts/data/WorkoutRepository';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 
@@ -13,9 +14,10 @@ export const streakKeys = {
 export function useStreakDays(owner: WorkoutOwner, from: ISODate, to: ISODate, enabled = true) {
   const { streakDays } = useRepositories();
   return useQuery({
+    // The phone's copy changes only by a pull, and a pull that changed anything invalidates it.
+    ...LOCAL_READ,
     queryKey: [...streakKeys.days, owner, from, to],
     queryFn: () => streakDays.list(owner, from, to),
     enabled,
-    networkMode: 'always',
   });
 }

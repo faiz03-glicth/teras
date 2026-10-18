@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useRepositories } from '@/core/DiProvider';
+import { LOCAL_READ } from '@/core/query/queryClient';
 import type { ExerciseOwner, NewExercise } from '@/features/exercises/data/ExerciseRepository';
 import { workoutKeys } from '@/features/workouts/hooks/useWorkoutQueries';
 
@@ -61,10 +62,12 @@ export function useExercise(id: string | null) {
 export function useExerciseHistory(owner: ExerciseOwner, id: string | null) {
   const { workouts } = useRepositories();
   return useQuery({
+    // Every set of this exercise (1,859 for the most trained): read once per visit window, and again only
+    // when a workout changes it. Unvisited exercises drop out of memory after the default five minutes.
+    ...LOCAL_READ,
     queryKey: [...workoutKeys.history, owner, 'exercise', id],
     queryFn: () => (id ? workouts.exerciseHistory(owner, id) : []),
     enabled: id !== null,
-    networkMode: 'always',
   });
 }
 

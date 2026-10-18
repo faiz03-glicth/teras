@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { useRepositories } from '@/core/DiProvider';
+import { LOCAL_READ } from '@/core/query/queryClient';
 import type { WorkoutOwner } from '@/features/workouts/data/WorkoutRepository';
 import { workoutKeys } from '@/features/workouts/hooks/useWorkoutQueries';
 import type { ISODate } from '@/shared/lib/date/isoDate';
@@ -16,10 +17,10 @@ export const trainingDaysKey = (owner: WorkoutOwner, from: ISODate, to: ISODate)
 export function useTrainingDays(owner: WorkoutOwner, from: ISODate, to: ISODate, enabled = true) {
   const { workoutDays } = useRepositories();
   return useQuery({
+    ...LOCAL_READ,
     queryKey: trainingDaysKey(owner, from, to),
     queryFn: () => workoutDays.list(owner, from, to),
     enabled,
-    networkMode: 'always',
   });
 }
 

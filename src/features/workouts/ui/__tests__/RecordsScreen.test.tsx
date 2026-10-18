@@ -1,8 +1,9 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, renderHook, screen } from '@testing-library/react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { PersonalRecord } from '@/features/workouts/domain/records';
+import { usePrefetchAllRecords, workoutKeys } from '@/features/workouts/hooks/useWorkoutQueries';
 import * as actions from '@/shared/actions';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
@@ -91,3 +92,61 @@ describe('Records', () => {
     expect(actions.goBack).toHaveBeenCalled();
   });
 });
+
+describe('the Records summary, kept between visits', () => {
+  // Folding every set into one row per exercise is the slow read: it must not run again as Records slides in.
+  const RECORDS_KEY = [...workoutKeys.history, 'user-1', 'records-all'];
+
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  it('is not read again when Records opens later, however long after', async () => {
+    const repositories = createFakeRepositories();
+    repositories.workouts.records.mockResolvedValue(RECORDS);
+    const { Wrapper } = createWrapper(repositories);
+    const first = renderInScheme(<RecordsScreen />, 'light', { wrapper: Wrapper });
+    expect(await screen.findByText('Plank')).toBeTruthy();
+    first.unmount();
+
+    // Ten minutes on: well past the 30 s after which other reads count as stale.
+    const now = Date.now();
+    jest.spyOn(Date, 'now').mockReturnValue(now + 10 * 60_000);
+    renderInScheme(<RecordsScreen />, 'light', { wrapper: Wrapper });
+
+    expect(await screen.findByText('Plank')).toBeTruthy();
+    expect(repositories.workouts.records).toHaveBeenCalledTimes(1);
+  });
+
+  it('is read again once a workout changes it', async () => {
+    const repositories = createFakeRepositories();
+    repositories.workouts.records.mockResolvedValue(RECORDS);
+    const { Wrapper, queryClient } = createWrapper(repositories);
+    renderInScheme(<RecordsScreen />, 'light', { wrapper: Wrapper });
+    expect(await screen.findByText('Plank')).toBeTruthy();
+
+    await act(() => queryClient.invalidateQueries({ queryKey: workoutKeys.history }));
+
+    expect(repositories.workouts.records).toHaveBeenCalledTimes(2);
+  });
+
+  it('is folded ahead, in a quiet moment, by the screen that opens Records', async () => {
+    jest.useFakeTimers();
+    const repositories = createFakeRepositories();
+    repositories.workouts.records.mockResolvedValue(RECORDS);
+    const { Wrapper, queryClient } = createWrapper(repositories);
+    renderHook(() => usePrefetchAllRecords('user-1'), { wrapper: Wrapper });
+    expect(repositories.workouts.records).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(2_000);
+    });
+
+    expect(queryClient.getQueryData(RECORDS_KEY)).toEqual(RECORDS);
+    renderInScheme(<RecordsScreen />, 'light', { wrapper: Wrapper });
+    expect(screen.getByText('Plank')).toBeTruthy();
+    expect(repositories.workouts.records).toHaveBeenCalledTimes(1);
+  });
+});
+

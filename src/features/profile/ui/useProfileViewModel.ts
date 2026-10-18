@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/state/authStore';
 import { BMI_CATEGORY_LABELS, bmiOf, formatIndex } from '@/features/training/domain/body';
 import { weightNumber } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
+import { usePrefetchAllRecords, useWorkoutOwner } from '@/features/workouts/hooks/useWorkoutQueries';
 import { openCalendar, openExerciseLibrary, openFfmi, openLogWeight, openRecords } from '@/shared/actions';
 import { useSessionActions } from '@/shared/actions/session';
 import { useHapticPreferencesStore } from '@/shared/state/hapticPreferencesStore';
@@ -35,6 +36,8 @@ export function useProfileViewModel() {
   const user = useAuthStore((s) => s.user);
   const restartOnboarding = useAuthStore((s) => s.restartOnboarding);
   const { data: profile } = useProfile(user);
+  // Records opens from here: its summary is folded while Profile sits still, not as Records slides in.
+  usePrefetchAllRecords(useWorkoutOwner());
   const theme = useThemePreferencesStore((s) => s.preference);
   const setTheme = useThemePreferencesStore((s) => s.setPreference);
   const reduceMotion = useThemePreferencesStore((s) => s.reduceMotion);

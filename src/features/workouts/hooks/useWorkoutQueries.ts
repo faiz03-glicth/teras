@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { useRepositories } from '@/core/DiProvider';
+import { LOCAL_READ, PREFETCH_IDLE_TIMEOUT_MS, SUMMARY_GC_MS } from '@/core/query/queryClient';
 import { useAuthStore } from '@/features/auth/state/authStore';
 import type { WorkoutOwner } from '@/features/workouts/data/local/workoutDao';
 import type { Workout } from '@/features/workouts/data/WorkoutRepository';
@@ -195,14 +196,39 @@ export function useExerciseBests(owner: WorkoutOwner, exerciseIds: readonly stri
   });
 }
 
+/**
+ * The Records list's summary: one row per exercise, folded from every set (about 23,000 over six years).
+ * Read once, kept until a workout changes it, and held a while after Records closes.
+ */
+const allRecordsQuery = (workouts: ReturnType<typeof useRepositories>['workouts'], owner: WorkoutOwner) => ({
+  ...LOCAL_READ,
+  queryKey: [...workoutKeys.history, owner, 'records-all'],
+  queryFn: () => workouts.records(owner),
+  gcTime: SUMMARY_GC_MS,
+});
+
 /** Every exercise's record as it stands, the most recently trained first: the Records list. */
 export function useAllRecords(owner: WorkoutOwner) {
   const { workouts } = useRepositories();
-  return useQuery({
-    queryKey: [...workoutKeys.history, owner, 'records-all'],
-    queryFn: () => workouts.records(owner),
-    networkMode: 'always',
-  });
+  return useQuery(allRecordsQuery(workouts, owner));
+}
+
+/**
+ * Folds the Records summary in a quiet moment (Profile, which opens Records), so opening Records shows
+ * it at once instead of reading every set while its page slides in. A no-op while the summary is fresh.
+ */
+export function usePrefetchAllRecords(owner: WorkoutOwner) {
+  const { workouts } = useRepositories();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const prefetch = () => void queryClient.prefetchQuery(allRecordsQuery(workouts, owner));
+    if (typeof requestIdleCallback !== 'function') {
+      const timer = setTimeout(prefetch, PREFETCH_IDLE_TIMEOUT_MS);
+      return () => clearTimeout(timer);
+    }
+    const handle = requestIdleCallback(prefetch, { timeout: PREFETCH_IDLE_TIMEOUT_MS });
+    return () => cancelIdleCallback(handle);
+  }, [owner, queryClient, workouts]);
 }
 
 /** The personal records a finished workout set, for its Saved screen. */
