@@ -34,7 +34,9 @@ export default function AppLayout() {
       <Stack.Screen name="exercise/[id]" />
       <Stack.Screen name="routine/[id]" />
       <Stack.Screen name="routine-preview/[id]" />
-      <Stack.Screen name="calendar" />
+      <Stack.Screen name="calendar/index" />
+      <Stack.Screen name="calendar/[year]/index" />
+      <Stack.Screen name="calendar/[year]/[month]" />
       <Stack.Screen name="records" />
       <Stack.Screen name="session/[id]" />
       <Stack.Screen name="day/[date]" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />

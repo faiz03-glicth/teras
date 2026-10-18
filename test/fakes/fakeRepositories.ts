@@ -80,6 +80,7 @@ export function createFakeWorkoutDayRepository(): FakeWorkoutDayRepository {
   return {
     recordDay: mockFn<Days['recordDay']>(async (_owner, date, totals) => ({ date, ...totals, level: 2 })),
     list: mockFn<Days['list']>(async () => []),
+    years: mockFn<Days['years']>(async () => []),
     windowBefore: mockFn<Days['windowBefore']>(async () => []),
     pushPending: mockFn<Days['pushPending']>(async () => 0),
   };
@@ -93,6 +94,7 @@ export function createFakeStreakDayRepository(): FakeStreakDayRepository {
   return {
     pull: mockFn<Streak['pull']>(async () => 0),
     list: mockFn<Streak['list']>(async () => []),
+    years: mockFn<Streak['years']>(async () => []),
     logDay: mockFn<Streak['logDay']>(async () => undefined),
   };
 }

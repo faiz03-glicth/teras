@@ -38,9 +38,24 @@ export function openActiveWorkout({ replace = false }: FlowOptions = {}): void {
   else router.push(routes.activeWorkout());
 }
 
-/** The full training wave, with every workout listed by month (opened from Home's wave). */
+/** The Calendar's years (from Profile's dashboard). */
 export function openCalendar(): void {
   router.push(routes.calendar());
+}
+
+/** A year's months, pushed over the years. */
+export function openCalendarYear(year: number): void {
+  router.push(routes.calendarYear(year));
+}
+
+/** A month's days, pushed over its year (`month` zero-based). */
+export function openCalendarMonth(year: number, month: number): void {
+  router.push(routes.calendarMonth(year, month));
+}
+
+/** Steps the open month's days to another month in place: Back still climbs to the year it was opened from. */
+export function showCalendarMonth(year: number, month: number): void {
+  router.setParams({ year: String(year), month: String(month + 1) });
 }
 
 /** Every exercise's record, from Profile's dashboard. */

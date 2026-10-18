@@ -3,8 +3,10 @@ import {
   parseAddExerciseTarget,
   parseAuthIntent,
   parseISODate,
+  parseMonth,
   parseOnboardingStep,
   parseRecordId,
+  parseYear,
   tabForRouteName,
 } from '../params';
 
@@ -59,5 +61,19 @@ describe('route param parsers', () => {
     expect(tabForRouteName('profile')).toBe('profile');
     expect(tabForRouteName('settings')).toBe('home');
     expect(tabForRouteName(undefined)).toBe('home');
+  });
+});
+
+describe('calendar links', () => {
+  it('reads a year from 1900 to 2999, and nothing else', () => {
+    expect(parseYear('2021')).toBe(2021);
+    expect(parseYear(['2026', '2020'])).toBe(2026);
+    for (const bad of ['21', '1899', '3000', '2021x', '', undefined]) expect(parseYear(bad)).toBeNull();
+  });
+
+  it('reads a month 1–12 as a zero-based index', () => {
+    expect(parseMonth('1')).toBe(0);
+    expect(parseMonth('12')).toBe(11);
+    for (const bad of ['0', '13', '01', 'x', undefined]) expect(parseMonth(bad)).toBeNull();
   });
 });

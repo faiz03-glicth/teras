@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, isNull, lte, sql } from 'drizzle-orm';
 
 import { workoutDays, type NewWorkoutDayRow, type WorkoutDayRow } from '@/core/db/schema';
 import type { AppDatabase } from '@/core/db/types';
@@ -13,6 +13,8 @@ export interface WorkoutDayDao {
   save(row: NewWorkoutDayRow): Promise<void>;
   /** Days in the range (inclusive), oldest first. */
   list(owner: WorkoutDayOwner, from: string, to: string): Promise<WorkoutDayRow[]>;
+  /** The years with at least one recorded day, newest first (one grouped read, no rows loaded). */
+  years(owner: WorkoutDayOwner): Promise<number[]>;
   /** Volumes of the days with volume in the range (inclusive): what a new day is judged against. */
   trainingVolumes(owner: WorkoutDayOwner, from: string, to: string): Promise<number[]>;
   /** A user's days that still have to be sent. */
@@ -72,6 +74,20 @@ export function createWorkoutDayDao(db: AppDatabase): WorkoutDayDao {
         .where(inRange(owner, from, to))
         .orderBy(asc(workoutDays.date))
         .all();
+    },
+
+    async years(owner) {
+      const year = sql<string>`substr(${workoutDays.date}, 1, 4)`;
+      return (
+        db
+          .selectDistinct({ year })
+          .from(workoutDays)
+          // A day whose workouts were all deleted keeps its row, emptied: it gives its year nothing to show.
+          .where(and(ownedBy(owner), isNull(workoutDays.deletedAt), gt(workoutDays.workouts, 0)))
+          .orderBy(desc(year))
+          .all()
+          .map((row) => Number(row.year))
+      );
     },
 
     async trainingVolumes(owner, from, to) {

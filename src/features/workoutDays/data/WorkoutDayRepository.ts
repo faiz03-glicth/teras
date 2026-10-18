@@ -21,6 +21,8 @@ export interface WorkoutDayRepository {
   recordDay(owner: WorkoutDayOwner, date: ISODate, totals: DayTotals, level: HeatLevel): Promise<WorkoutDay>;
   /** Days in the range (inclusive), oldest first. */
   list(owner: WorkoutDayOwner, from: ISODate, to: ISODate): Promise<WorkoutDay[]>;
+  /** The years with at least one recorded day, newest first: the year Calendar's list. */
+  years(owner: WorkoutDayOwner): Promise<number[]>;
   /**
    * The volumes of the training days in the 90 days before `date`, for the Day detail's comparison.
    */
@@ -87,6 +89,10 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
 
   async list(owner: WorkoutDayOwner, from: ISODate, to: ISODate): Promise<WorkoutDay[]> {
     return (await this.deps.dao.list(owner, from, to)).map(toDay);
+  }
+
+  years(owner: WorkoutDayOwner): Promise<number[]> {
+    return this.deps.dao.years(owner);
   }
 
   windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]> {

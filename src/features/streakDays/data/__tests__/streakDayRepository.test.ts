@@ -173,3 +173,15 @@ describe('logDay', () => {
     expect(await repo.list(USER, FROM, TO)).toEqual([]);
   });
 });
+
+describe('years', () => {
+  it("lists each year with a check-in once, newest first, and a guest's as none", async () => {
+    const { repo, pages } = await setup();
+    pages.push([checked('2024-06-01', 1), checked('2026-10-01', 2), checked('2024-07-01', 3)]);
+    await repo.pull(USER);
+
+    expect(await repo.years(USER)).toEqual([2026, 2024]);
+    expect(await repo.years(OTHER)).toEqual([]);
+    expect(await repo.years(null)).toEqual([]);
+  });
+});

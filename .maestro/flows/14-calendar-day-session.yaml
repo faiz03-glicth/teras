@@ -1,12 +1,37 @@
-# Home → Calendar → a workout → Session; Calendar → today → Day sheet. Read-only.
+# The year Calendar, all three levels: Profile › Calendar → years → 2021 → March → a day's sheet, then
+# ‹ › between months and back up each level. Read-only (opening a day's sheet writes nothing).
 appId: com.faiz.teras.local
 ---
 - runFlow: ../subflows/open-app.yaml
-- tapOn: 'Training wave, .*'
+- tapOn: { id: 'tab-profile' }
+- scrollUntilVisible:
+    element: { id: 'profile-calendar' }
+- tapOn: { id: 'profile-calendar' }
 - assertVisible: { id: 'calendar-screen' }
-- assertVisible: { id: 'calendar-wave' }
-- tapOn: { id: 'calendar-workout-.*', index: 0 }
-- assertVisible: { id: 'session-screen' }
-- back
-- tapOn: '.*, today: .*'
+- assertVisible: 'YOUR YEARS'
+- assertVisible: { id: 'calendar-year-2026' }
+- takeScreenshot: calendar-1-years
+- scrollUntilVisible:
+    element: { id: 'calendar-year-2021' }
+    direction: DOWN
+- takeScreenshot: calendar-1-years-oldest
+- tapOn: { id: 'calendar-year-2021' }
+- assertVisible: { id: 'calendar-year-screen' }
+- takeScreenshot: calendar-2-months-2021
+- tapOn: { id: 'calendar-month-3' }
+- assertVisible: { id: 'calendar-month-screen' }
+- assertVisible: 'March'
+- takeScreenshot: calendar-3-days-march-2021
+- tapOn: { id: 'calendar-next' }
+- assertVisible: 'April'
+- tapOn: { id: 'calendar-prev' }
+- assertVisible: 'March'
+- tapOn: { id: 'calendar-day-2021-03-.*', index: 0 }
 - assertVisible: { id: 'day-sheet' }
+- takeScreenshot: calendar-4-day-sheet
+- back
+- assertVisible: { id: 'calendar-month-screen' }
+- back
+- assertVisible: { id: 'calendar-year-screen' }
+- back
+- assertVisible: { id: 'calendar-screen' }

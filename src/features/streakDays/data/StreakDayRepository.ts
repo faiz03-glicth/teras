@@ -20,6 +20,8 @@ export interface StreakDayRepository {
   pull(userId: string): Promise<number>;
   /** The checked-in dates in the range (inclusive), oldest first. A guest has none. */
   list(owner: string | null, from: ISODate, to: ISODate): Promise<ISODate[]>;
+  /** The years with at least one checked-in date, newest first. A guest has none. */
+  years(owner: string | null): Promise<number[]>;
   /**
    * Logs `date` with no details: checked in on Streak first (it needs the network; a failure throws and
    * keeps nothing), then listed here at once.
@@ -54,6 +56,10 @@ export class LocalStreakDayRepository implements StreakDayRepository {
   async list(owner: string | null, from: ISODate, to: ISODate): Promise<ISODate[]> {
     if (owner === null) return [];
     return (await this.deps.dao.list(owner, from, to)) as ISODate[];
+  }
+
+  async years(owner: string | null): Promise<number[]> {
+    return owner === null ? [] : this.deps.dao.years(owner);
   }
 
   async logDay(userId: string, date: ISODate): Promise<void> {

@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, sql, type SQL } from 'drizzle-orm';
 
 import { streakDays, streakSync, type StreakSyncRow } from '@/core/db/schema';
 import type { AppDatabase } from '@/core/db/types';
@@ -16,6 +16,8 @@ export type StreakSync = Omit<StreakSyncRow, 'userId'>;
 export interface StreakDayDao {
   /** The user's checked-in dates in the range (inclusive), oldest first. */
   list(userId: string, from: string, to: string): Promise<string[]>;
+  /** The years with at least one checked-in date, newest first (one grouped read). */
+  years(userId: string): Promise<number[]>;
   getSync(userId: string): Promise<StreakSync | null>;
   /** Applies a page of changes and moves the bookmark, in one go. Returns how many dates changed. */
   apply(userId: string, changes: readonly StreakDayChange[], sync: StreakSync): Promise<number>;
@@ -79,6 +81,17 @@ export function createStreakDayDao(db: AppDatabase): StreakDayDao {
         .orderBy(asc(streakDays.date))
         .all()
         .map((row) => row.date);
+    },
+
+    async years(userId) {
+      const year = sql<string>`substr(${streakDays.date}, 1, 4)`;
+      return db
+        .selectDistinct({ year })
+        .from(streakDays)
+        .where(eq(streakDays.userId, userId))
+        .orderBy(desc(year))
+        .all()
+        .map((row) => Number(row.year));
     },
 
     async getSync(userId) {

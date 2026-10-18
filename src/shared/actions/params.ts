@@ -28,6 +28,18 @@ export function parseISODate(raw: RawParam): ISODate | null {
   return value !== undefined && isISODate(value) ? value : null;
 }
 
+/** A calendar year from a link (1900–2999), or null. */
+export function parseYear(raw: RawParam): number | null {
+  const value = first(raw);
+  return value !== undefined && /^(19|2\d)\d\d$/.test(value) ? Number(value) : null;
+}
+
+/** A month from a link, which carries 1–12, as Date's zero-based index; or null. */
+export function parseMonth(raw: RawParam): number | null {
+  const value = first(raw);
+  return value !== undefined && /^([1-9]|1[0-2])$/.test(value) ? Number(value) - 1 : null;
+}
+
 /** Ids are UUIDs or seeded slugs: letters, digits, '-' and '_' only. Anything else is not a record. */
 const RECORD_ID = /^[A-Za-z0-9_-]{1,64}$/;
 

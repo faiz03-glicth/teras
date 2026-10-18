@@ -7,6 +7,13 @@ export const routes = {
   home: (): Href => '/',
   tab: (tab: Tab): Href => (tab === 'home' ? '/' : `/${tab}`),
   calendar: (): Href => '/calendar',
+  /** A year's twelve months. */
+  calendarYear: (year: number): Href => ({ pathname: '/calendar/[year]', params: { year: String(year) } }),
+  /** A month's days; `month` is zero-based like Date, the link carries 1–12. */
+  calendarMonth: (year: number, month: number): Href => ({
+    pathname: '/calendar/[year]/[month]',
+    params: { year: String(year), month: String(month + 1) },
+  }),
   records: (): Href => '/records',
   logWeight: (): Href => '/log-weight',
   ffmi: (): Href => '/ffmi',

@@ -151,3 +151,25 @@ describe('pushPending', () => {
     expect(await repo.list(USER, day(0), day(0))).toHaveLength(1);
   });
 });
+
+describe('years', () => {
+  it('lists each year with a recorded day once, newest first, for its owner only', async () => {
+    const { repo } = await setup();
+    await repo.recordDay(USER, '2021-03-04' as ISODate, totals(5000), 2);
+    await repo.recordDay(USER, '2021-11-30' as ISODate, totals(5000), 2);
+    await repo.recordDay(USER, '2026-10-01' as ISODate, totals(5000), 3);
+    await repo.recordDay(USER, '2023-01-01' as ISODate, totals(5000), 1);
+    await repo.recordDay(null, '2019-05-05' as ISODate, totals(5000), 1);
+
+    expect(await repo.years(USER)).toEqual([2026, 2023, 2021]);
+    expect(await repo.years(null)).toEqual([2019]);
+  });
+
+  it('leaves out a year whose only day was emptied (its workouts deleted)', async () => {
+    const { repo } = await setup();
+    await repo.recordDay(USER, '2024-02-02' as ISODate, { volumeKg: 0, sets: 0, workouts: 0 }, 0);
+    await repo.recordDay(USER, '2026-10-01' as ISODate, totals(5000), 3);
+
+    expect(await repo.years(USER)).toEqual([2026]);
+  });
+});
