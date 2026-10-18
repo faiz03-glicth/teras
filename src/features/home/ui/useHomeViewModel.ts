@@ -24,7 +24,7 @@ import {
   useWorkoutOwner,
 } from '@/features/workouts/hooks/useWorkoutQueries';
 import { useStartWorkout } from '@/features/workouts/hooks/useStartWorkout';
-import { openCalendar, openDay, openSession } from '@/shared/actions';
+import { openDay, openSession } from '@/shared/actions';
 import { eachDay, firstOfMonth, monthOf, startOfWeek, weekdayLetters } from '@/shared/lib/date/calendar';
 import { isISODate, type ISODate } from '@/shared/lib/date/isoDate';
 import { useToday } from '@/shared/lib/date/useToday';
@@ -88,9 +88,13 @@ export function useHomeViewModel() {
   const today = useToday();
   const unit = useTrainingPreferencesStore((state) => state.unit);
 
-  const months = useMemo(() => recentMonths(today, MONTHS_PER_ROW), [today]);
-  // Exactly the days the wave draws, so Home never reads a year to colour three months.
-  const from = firstOfMonth(months[0] ?? monthOf(today));
+  // Three months, or six after a tap on the header. Both versions are prepared here, once (about 184 days
+  // in one read), and the wave keeps which one shows: opening it re-renders the wave alone, never all of Home.
+  const six = useMemo(() => recentMonths(today, MONTHS_PER_ROW * 2), [today]);
+  const recent = useMemo(() => six.slice(MONTHS_PER_ROW), [six]);
+  const older = useMemo(() => six.slice(0, MONTHS_PER_ROW), [six]);
+  const from = firstOfMonth(six[0] ?? monthOf(today));
+  const recentFrom = firstOfMonth(recent[0] ?? monthOf(today));
   const days = useTrainingDays(owner, from, today);
   const streakDays = useStreakDays(owner, from, today);
   const feed = useRecentWorkouts(owner, FEED_LIMIT);
@@ -99,9 +103,9 @@ export function useHomeViewModel() {
 
   const levels = useMemo(() => new Map((days.data ?? []).map((day) => [day.date, day.level])), [days.data]);
   const streakSet = useMemo(() => new Set(streakDays.data ?? []), [streakDays.data]);
-  const wave = useMemo<HeatmapMonth[]>(
-    () =>
-      months.map((month) => ({
+  const panel = useCallback(
+    (row: typeof six): HeatmapMonth[] =>
+      row.map((month) => ({
         key: `${month.year}-${month.month}`,
         label: monthLabel(month, today),
         grid: buildMonthGrid(month, {
@@ -111,10 +115,13 @@ export function useHomeViewModel() {
           weekStart: WEEK_START,
         }),
       })),
-    [levels, months, streakSet, today],
+    [levels, streakSet, today],
   );
-  // Stable, so the memoised wave only redraws when what it shows changes.
-  const waveRows = useMemo(() => [wave], [wave]);
+  const recentRow = useMemo(() => panel(recent), [panel, recent]);
+  const olderRow = useMemo(() => panel(older), [older, panel]);
+  // Stable, so the memoised wave only redraws when what it shows changes. The newer months stay on top.
+  const collapsedRows = useMemo(() => [recentRow], [recentRow]);
+  const expandedRows = useMemo(() => [recentRow, olderRow], [olderRow, recentRow]);
   const entries = useMemo(
     () => (feed.data ?? []).map((summary) => feedEntry(summary, today, unit)),
     [feed.data, today, unit],
@@ -125,8 +132,15 @@ export function useHomeViewModel() {
     (day) => (levels.get(day) ?? 0) > 0,
   ).length;
 
-  const range = monthRangeLabel(months);
-  const workouts = days.data?.reduce((sum, day) => sum + day.workouts, 0);
+  const countFrom = (start: string) =>
+    days.data?.reduce((sum, day) => (day.date >= start ? sum + day.workouts : sum), 0);
+  const subtitle = (months: typeof six, start: string) => {
+    const range = monthRangeLabel(months);
+    const workouts = countFrom(start);
+    return workouts === undefined ? range : `${range} · ${countWorkouts(workouts)}`;
+  };
+  const collapsedSubtitle = subtitle(recent, recentFrom);
+  const expandedSubtitle = subtitle(six, from);
   // Until the workout in progress is known, Home cannot tell "nothing yet" from "one running".
   const status: LoadStatus =
     days.isError || feed.isError || active.isError
@@ -134,10 +148,12 @@ export function useHomeViewModel() {
       : days.isPending || feed.isPending || active.isPending
         ? 'loading'
         : 'ready';
-  const waveSubtitle = workouts === undefined ? range : `${range} · ${countWorkouts(workouts)}`;
-  const waveHeader = useMemo(
-    () => ({ title: 'Training wave', subtitle: waveSubtitle, onPress: openCalendar }),
-    [waveSubtitle],
+  const wave = useMemo(
+    () => ({
+      collapsed: { rows: collapsedRows, subtitle: collapsedSubtitle },
+      expanded: { rows: expandedRows, subtitle: expandedSubtitle },
+    }),
+    [collapsedRows, collapsedSubtitle, expandedRows, expandedSubtitle],
   );
 
   const { refetch: refetchDays } = days;
@@ -163,8 +179,8 @@ export function useHomeViewModel() {
       label: `${daysThisWeek} this week`,
       accessibilityLabel: `Trained ${daysThisWeek === 1 ? '1 day' : `${daysThisWeek} days`} this week`,
     },
-    waveHeader,
-    waveRows,
+    /** Both versions of the wave: three months, and six (the wave itself keeps which one shows). */
+    wave,
     dayLabels: DAY_LABELS,
     legendCaption: 'vs the same lifts last week',
 

@@ -1,18 +1,24 @@
 import { memo } from 'react';
 import { View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Card, HeatmapMonths, Icon, Legend, PressableScale, Text, type HeatmapMonth } from '@/shared/ui';
-import { motion } from '@/theme';
+import { motion, useReduceMotion } from '@/theme';
 
 export interface TrainingWaveHeader {
   /** "Training wave". */
   title: string;
   /** "Aug – Oct 2026 · 8 workouts". */
   subtitle: string;
-  /** The header is the way into the full Calendar. */
-  onPress: () => void;
+  /** Showing six months rather than three. */
+  expanded?: boolean;
+  /** Home: the header shows three months more, or three fewer (never the Calendar: that is on Profile). */
+  onToggle?: () => void;
 }
+
+/** The second row of months fades in as one layer; its place is laid out once, never grown per frame. */
+const ROW_FADE_MS = 220;
 
 export interface TrainingWaveProps {
   /** Rows of months side by side, newest row first: Home shows one, the Calendar every one. */
@@ -48,6 +54,7 @@ export const TrainingWave = memo(function TrainingWave({
   legend = true,
 }: TrainingWaveProps) {
   const { theme } = useUnistyles();
+  const reduced = useReduceMotion();
   const columns = Math.max(
     sharedColumns,
     ...rows.map((row) => row.reduce((sum, month) => sum + month.grid.columns.length, 0)),
@@ -55,15 +62,16 @@ export const TrainingWave = memo(function TrainingWave({
 
   return (
     <Card testID={testID} style={styles.panel}>
-      {header && (
+      {header?.onToggle ? (
         <PressableScale
-          onPress={header.onPress}
+          onPress={header.onToggle}
           scaleTo={motion.press.subtleScale}
           accessibilityRole="button"
           accessibilityLabel={`${header.title}, ${header.subtitle}`}
-          accessibilityHint="Opens the calendar"
+          accessibilityHint={header.expanded ? 'Shows three months' : 'Shows six months'}
+          accessibilityState={{ expanded: header.expanded ?? false }}
           style={styles.header}
-          testID={testID && `${testID}-open`}
+          testID={testID && `${testID}-toggle`}
         >
           <View style={styles.titles}>
             <Text variant="headline">{header.title}</Text>
@@ -71,22 +79,42 @@ export const TrainingWave = memo(function TrainingWave({
               {header.subtitle}
             </Text>
           </View>
-          {/* A small raised key: it reads as the thing to press, like the app's other icon keys. */}
+          {/* A small raised key (Home keeps the walnut material); its chevron turns over when open. */}
           <View style={styles.key}>
-            <Icon name="chevron-right" size={18} color={theme.colors.text} />
+            <View style={styles.chevron(header.expanded ?? false)}>
+              <Icon name="chevron-down" size={18} color={theme.colors.text} />
+            </View>
           </View>
         </PressableScale>
-      )}
+      ) : header ? (
+        <View
+          style={styles.header}
+          accessible
+          accessibilityRole="header"
+          accessibilityLabel={`${header.title}, ${header.subtitle}`}
+        >
+          <View style={styles.titles}>
+            <Text variant="headline">{header.title}</Text>
+            <Text variant="footnote" tone="secondary">
+              {header.subtitle}
+            </Text>
+          </View>
+        </View>
+      ) : null}
       <View style={styles.rows}>
         {rows.map((row, index) => (
-          <HeatmapMonths
+          <Animated.View
             key={row[0]?.key ?? index}
-            months={row}
-            dayLabels={dayLabels}
-            onDayPress={onDayPress}
-            selected={selected}
-            columns={columns}
-          />
+            entering={index > 0 && !reduced ? FadeIn.duration(ROW_FADE_MS) : undefined}
+          >
+            <HeatmapMonths
+              months={row}
+              dayLabels={dayLabels}
+              onDayPress={onDayPress}
+              selected={selected}
+              columns={columns}
+            />
+          </Animated.View>
         ))}
       </View>
       {legend && <Legend caption={legendCaption} />}
@@ -94,20 +122,19 @@ export const TrainingWave = memo(function TrainingWave({
   );
 });
 
-const KEY = 36;
-
 const styles = StyleSheet.create((theme) => ({
   panel: { gap: theme.spacing.md },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, minHeight: 44 },
   titles: { flex: 1, gap: 1 },
   key: {
-    width: KEY,
-    height: KEY,
+    width: 36,
+    height: 36,
     borderRadius: theme.radii.key,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.material.raisedSm.background,
     boxShadow: theme.material.raisedSm.shadow,
   },
+  chevron: (open: boolean) => ({ transform: [{ rotate: open ? '180deg' : '0deg' }] }),
   rows: { gap: 18 },
 }));

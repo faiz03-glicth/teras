@@ -1,8 +1,9 @@
-import type { ComponentProps } from 'react';
+import { memo, useCallback, useMemo, useState, type ComponentProps } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { TrainingWave } from '@/features/heatmap/ui/components/TrainingWave';
+import { haptics } from '@/shared/lib/haptics';
 import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, SectionLabel, Text } from '@/shared/ui';
 
 import { FeedCard } from './components/FeedCard';
@@ -29,11 +30,10 @@ export function HomeScreen() {
       </View>
 
       <HomeWave
-        rows={vm.waveRows}
+        wave={vm.wave}
         dayLabels={vm.dayLabels}
         onDayPress={vm.onDayPress}
         legendCaption={vm.legendCaption}
-        header={vm.waveHeader}
       />
 
       {vm.canStart && (
@@ -69,13 +69,31 @@ export function HomeScreen() {
   );
 }
 
-type HomeWaveProps = Omit<ComponentProps<typeof TrainingWave>, 'selected' | 'testID'>;
+type WaveVersion = { rows: ComponentProps<typeof TrainingWave>['rows']; subtitle: string };
+type HomeWaveProps = Omit<ComponentProps<typeof TrainingWave>, 'selected' | 'testID' | 'rows' | 'header'> & {
+  wave: { collapsed: WaveVersion; expanded: WaveVersion };
+};
 
-/** The wave owns the selected-day subscription, so tapping a day re-renders the wave and not all of Home. */
-function HomeWave(props: HomeWaveProps) {
+/**
+ * The wave owns the selected-day subscription and whether it shows three months or six, so tapping a day
+ * or its header re-renders the wave and not all of Home.
+ */
+const HomeWave = memo(function HomeWave({ wave, ...props }: HomeWaveProps) {
   const selected = useHomeSelectedDay();
-  return <TrainingWave {...props} testID="training-wave" selected={selected} />;
-}
+  const [expanded, setExpanded] = useState(false);
+  const onToggle = useCallback(() => {
+    haptics.selection();
+    setExpanded((open) => !open);
+  }, []);
+  const shown = expanded ? wave.expanded : wave.collapsed;
+  const header = useMemo(
+    () => ({ title: 'Training wave', subtitle: shown.subtitle, expanded, onToggle }),
+    [expanded, onToggle, shown.subtitle],
+  );
+  return (
+    <TrainingWave {...props} rows={shown.rows} header={header} testID="training-wave" selected={selected} />
+  );
+});
 
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.xl },

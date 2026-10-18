@@ -120,11 +120,11 @@ describe('the training wave', () => {
     expect(screen.getByText('Training wave')).toBeTruthy();
   });
 
-  it('asks only for the days it draws: the first of August to today', async () => {
+  it('asks only for the days it can draw: the first of May (six months back) to today', async () => {
     const { repositories } = home();
 
     await waitFor(() => expect(repositories.workoutDays.list).toHaveBeenCalled());
-    expect(repositories.workoutDays.list).toHaveBeenCalledWith('user-1', '2026-08-01', '2026-10-02');
+    expect(repositories.workoutDays.list).toHaveBeenCalledWith('user-1', '2026-05-01', '2026-10-02');
   });
 
   it("colours each day with the level it was recorded at, and says the level's name", async () => {
@@ -176,12 +176,24 @@ describe('the training wave', () => {
     expect(cell.props.accessibilityState).toMatchObject({ selected: true });
   });
 
-  it('opens the Calendar from its header', async () => {
-    home();
+  it('shows three months, six after a tap on its header, and three again; it never opens the Calendar', async () => {
+    const { repositories } = home({ days: [day('2026-05-12', 2), day('2026-09-30', 3)] });
 
-    fireEvent.press(await screen.findByRole('button', { name: /^Training wave/ }));
+    const toggle = await screen.findByRole('button', { name: /^Training wave, Aug – Oct 2026 · 1 workout/ });
+    expect(toggle.props.accessibilityState).toMatchObject({ expanded: false });
+    expect(screen.queryByTestId('day-2026-05-12')).toBeNull();
+    // Six months are read up front, so opening the second row reads nothing more.
+    expect(repositories.workoutDays.list).toHaveBeenCalledWith('user-1', '2026-05-01', '2026-10-02');
 
-    expect(actions.openCalendar).toHaveBeenCalled();
+    fireEvent.press(toggle);
+    const open = await screen.findByRole('button', { name: /^Training wave, May – Oct 2026 · 2 workouts/ });
+    expect(open.props.accessibilityState).toMatchObject({ expanded: true });
+    expect(screen.getByTestId('day-2026-05-12')).toBeTruthy();
+
+    fireEvent.press(open);
+    expect(await screen.findByRole('button', { name: /^Training wave, Aug – Oct 2026/ })).toBeTruthy();
+    expect(screen.queryByTestId('day-2026-05-12')).toBeNull();
+    expect(actions.openCalendar).not.toHaveBeenCalled();
   });
 });
 
