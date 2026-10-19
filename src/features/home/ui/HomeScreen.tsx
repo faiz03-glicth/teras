@@ -28,6 +28,10 @@ import { useHomeSelectedDay, useHomeViewModel, type FeedEntry, type HomeViewMode
  */
 const feedKey = (entry: FeedEntry | undefined, index: number): string => entry?.id ?? `gone-${index}`;
 
+// A workout added at the top (or the wave opening above the cards) must push the cards down, not scroll
+// Home to keep them still: Home stays at its top, the title and wave in view.
+const KEEP_PLACE = { disabled: true } as const;
+
 /**
  * Home: the training wave on top, then the workouts behind it. The workouts are a recycling list: only the
  * cards on screen and a little below exist, so coming back to Home (from another tab, or a workout opened
@@ -48,6 +52,7 @@ export function HomeScreen() {
       <FlashList
         data={vm.entries}
         keyExtractor={feedKey}
+        maintainVisibleContentPosition={KEEP_PLACE}
         renderItem={renderItem}
         CellRendererComponent={FeedCell}
         ItemSeparatorComponent={FeedGap}

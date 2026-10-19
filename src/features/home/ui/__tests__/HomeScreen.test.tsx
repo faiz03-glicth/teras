@@ -1,3 +1,4 @@
+import { FlashList } from '@shopify/flash-list';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
@@ -248,6 +249,15 @@ describe('the workout feed', () => {
     expect(['first', 'second', 'third'].map((id) => drawnAt(screen.getByTestId(`feed-${id}`)))).toEqual([
       0, 1, 2,
     ]);
+  });
+
+  it('stays at its top when a workout is added above the cards, rather than scrolling to keep them still', async () => {
+    home({ feed: [summary()] });
+    await screen.findByTestId('feed-w1');
+
+    expect(screen.UNSAFE_getByType(FlashList).props.maintainVisibleContentPosition).toEqual({
+      disabled: true,
+    });
   });
 
   it('opens the workout that was tapped', async () => {
