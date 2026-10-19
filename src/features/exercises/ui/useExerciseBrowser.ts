@@ -4,7 +4,7 @@ import type { ExerciseRow } from '@/core/db/schema';
 import { browserSections, groupByMuscle, muscleBadge } from '@/features/exercises/domain/browse';
 import { EQUIPMENT_LABELS, MUSCLE_LABELS, muscleSummary } from '@/features/exercises/domain/labels';
 import { useWorkoutOwner } from '@/features/workouts/hooks/useWorkoutQueries';
-import { openCreateExercise, openEquipmentFilter } from '@/shared/actions';
+import { openCreateExercise, openEquipmentFilter, useScreenSettled } from '@/shared/actions';
 
 import { useExerciseList, useFavouriteIds, useRecentExercises } from '../hooks/useExerciseQueries';
 import { useExerciseBrowserStore } from '../state/exerciseBrowserStore';
@@ -207,6 +207,8 @@ export function useExerciseBrowser() {
 
   const { refetch } = library;
   const onRetry = useCallback(() => void refetch(), [refetch]);
+  // While the screen slides in, the list draws only the rows it shows; the ones just below follow after.
+  const settled = useScreenSettled();
   const status = library.isError
     ? ('error' as const)
     : library.isPending
@@ -220,12 +222,13 @@ export function useExerciseBrowser() {
       status,
       items: view.items,
       empty: status === 'ready' && view.empty,
+      settled,
       onClearFilters: clearFilters,
       onClear: clear,
       onCreate: openCreate,
       onRetry,
     }),
-    [clear, clearFilters, onRetry, status, view],
+    [clear, clearFilters, onRetry, settled, status, view],
   );
 
   return {

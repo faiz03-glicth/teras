@@ -1,3 +1,4 @@
+import { FlashList } from '@shopify/flash-list';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
@@ -54,6 +55,24 @@ describe('the exercise library', () => {
     fireEvent.press(await screen.findByRole('button', { name: 'Create' }));
 
     expect(actions.openCreateExercise).toHaveBeenCalled();
+  });
+});
+
+describe('while it slides in', () => {
+  afterEach(() => jest.mocked(actions.useScreenSettled).mockReturnValue(true));
+
+  it('draws only the rows on screen, and those just below once it has settled', async () => {
+    jest.mocked(actions.useScreenSettled).mockReturnValue(false);
+    const view = library();
+    expect(await screen.findByTestId('all-squat-barbell')).toBeTruthy();
+    const drawDistance = () => screen.UNSAFE_getByType(FlashList).props.drawDistance;
+
+    expect(drawDistance()).toBe(0);
+
+    jest.mocked(actions.useScreenSettled).mockReturnValue(true);
+    view.rerender(<ExerciseLibraryScreen />);
+
+    expect(drawDistance()).toBe(250);
   });
 });
 

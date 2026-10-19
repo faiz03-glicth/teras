@@ -37,6 +37,13 @@ export interface ExerciseBrowserProps {
 const KEEP_PLACE = { disabled: true } as const;
 
 /**
+ * How far past the screen the list draws rows ahead of a scroll: FlashList's own default, given outright
+ * since leaving it out keeps the 0 drawn while the screen slides in. Those rows, built in the frame after
+ * the first, would otherwise land mid-slide.
+ */
+const DRAW_DISTANCE = 250;
+
+/**
  * Search and the equipment and muscle filters (the body opens in place, above the list it narrows), then
  * the lists: Favourites and Recent first, then every exercise (or the matches), grouped by muscle. One
  * recycling list: only the rows on screen (and a little either side) exist, however long the library, and a
@@ -82,6 +89,7 @@ export function ExerciseBrowser({ browser, onPick, onInfo, header }: ExerciseBro
       keyExtractor={itemKey}
       getItemType={itemKind}
       maintainVisibleContentPosition={KEEP_PLACE}
+      drawDistance={results.settled ? DRAW_DISTANCE : 0}
       renderItem={renderItem}
       ListHeaderComponent={
         <View style={styles.header}>
