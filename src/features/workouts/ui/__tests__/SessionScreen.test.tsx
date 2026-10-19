@@ -13,6 +13,7 @@ import { createWrapper } from '@test/providers';
 import { renderInScheme } from '@test/render';
 
 import { SessionScreen } from '../SessionScreen';
+import { FIRST_EXERCISES } from '../useSessionViewModel';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
 jest.mock('@/shared/lib/date/useToday', () => ({ useToday: () => '2026-10-02' }));
@@ -400,5 +401,34 @@ describe('states', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
 
     expect(await screen.findByText('Push Day')).toBeTruthy();
+  });
+});
+
+describe('a long workout, while the screen slides in', () => {
+  afterEach(() => jest.mocked(actions.useScreenSettled).mockReturnValue(true));
+
+  const long = logged({
+    exercises: Array.from({ length: FIRST_EXERCISES + 2 }, (_, index) => ({
+      id: `we${index}`,
+      exerciseId: `exercise-${index}`,
+      name: `Exercise ${index}`,
+      type: 'weighted' as const,
+      restSeconds: 90,
+      sets: [set(`s${index}`, 'done', 40, 10)],
+    })),
+  });
+
+  it('draws the first exercises first, and the rest once it has settled', async () => {
+    jest.mocked(actions.useScreenSettled).mockReturnValue(false);
+    const view = session('w1', { workout: long });
+
+    expect(await screen.findByText('Exercise 0')).toBeTruthy();
+    expect(screen.getByText(`Exercise ${FIRST_EXERCISES - 1}`)).toBeTruthy();
+    expect(screen.queryByText(`Exercise ${FIRST_EXERCISES}`)).toBeNull();
+
+    jest.mocked(actions.useScreenSettled).mockReturnValue(true);
+    view.rerender(<SessionScreen id="w1" />);
+
+    expect(screen.getByText(`Exercise ${FIRST_EXERCISES + 1}`)).toBeTruthy();
   });
 });

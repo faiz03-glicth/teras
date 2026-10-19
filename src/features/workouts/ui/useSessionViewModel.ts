@@ -8,7 +8,7 @@ import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
-import { goBack, openActiveWorkout, openExercise } from '@/shared/actions';
+import { goBack, openActiveWorkout, openExercise, useScreenSettled } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
@@ -26,6 +26,12 @@ import {
   useWorkoutOwner,
   workoutKeys,
 } from '../hooks/useWorkoutQueries';
+
+/**
+ * Exercises drawn while the screen slides in: below its heading and numbers, more than a phone shows at
+ * once. The rest follow once it has settled, so the slide waits for a screenful, not the whole workout.
+ */
+export const FIRST_EXERCISES = 4;
 
 /** One exercise of a logged workout, its completed sets already worded. */
 export interface SessionExerciseView {
@@ -87,6 +93,11 @@ export function useSessionViewModel(id: string | null) {
       })),
     }));
   }, [bests.data, logged, unit]);
+  const settled = useScreenSettled();
+  const shown = useMemo(
+    () => (settled ? exercises : exercises.slice(0, FIRST_EXERCISES)),
+    [exercises, settled],
+  );
 
   const { refetch } = query;
   const { refetch: refetchDay } = day;
@@ -192,7 +203,7 @@ export function useSessionViewModel(id: string | null) {
           { label: 'Sets', value: String(totals?.sets ?? 0) },
         ]
       : [],
-    exercises,
+    exercises: shown,
     deleting,
     onDelete,
     onRetry,
