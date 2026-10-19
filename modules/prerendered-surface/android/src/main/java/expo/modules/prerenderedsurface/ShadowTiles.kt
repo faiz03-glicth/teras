@@ -19,6 +19,7 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 
 // React Native draws outer box shadows from Android 9 and inner ones from Android 10; below that it draws
@@ -37,6 +38,9 @@ private const val SIGMA_REACH = 3f
 
 /** The bitmaps kept: some thirty at a card's size. */
 private const val CACHE_BYTES = 16 * 1024 * 1024
+
+/** A tile bigger than this would push most of the cache out (or itself): such a shadow is drawn live. */
+private const val MAX_TILE_BYTES = CACHE_BYTES / 4
 
 /**
  * Rest between two bitmaps: each one is drawn on the RenderThread, so making them back to back would hold
@@ -149,7 +153,10 @@ internal object ShadowTiles {
   ) {
     if (Build.VERSION.SDK_INT < if (shadow.inset) MIN_INSET_SDK else MIN_OUTSET_SDK) return
     if (shadow.color ushr 24 == 0) return
-    val geometry = Geometry(shadow, radius, density)
+    // Corners rounder than half the box draw as half the box (Skia scales them down): a pill's 9999 then
+    // shares its tiles, rather than a new full-size bitmap for each size.
+    val clamped = min(radius, min(width, height) / 2f)
+    val geometry = Geometry(shadow, clamped, density)
     val stretchX = width >= 2 * geometry.cornerX + 1
     val stretchY = height >= 2 * geometry.cornerY + 1
     val key =
@@ -160,7 +167,7 @@ internal object ShadowTiles {
         shadow.blur,
         shadow.spread,
         shadow.color,
-        radius,
+        clamped,
         density,
         if (stretchX) 0 else width,
         if (stretchY) 0 else height,
@@ -176,6 +183,10 @@ internal object ShadowTiles {
     if (canvas.isHardwareAccelerated && key !in liveOnly) {
       val tileWidth = if (stretchX) 2 * geometry.cornerX + 1 else width
       val tileHeight = if (stretchY) 2 * geometry.cornerY + 1 else height
+      if (tileWidth.toLong() * tileHeight * 4 > MAX_TILE_BYTES) {
+        liveOnly.add(key)
+        return
+      }
       request(key, view, shadow.color, geometry, tileWidth, tileHeight, stretchX, stretchY)
     }
   }
@@ -205,7 +216,7 @@ internal object ShadowTiles {
   ) {
     val views = waiting[key]
     if (views != null) {
-      views.add(WeakReference(view))
+      if (views.none { it.get() === view }) views.add(WeakReference(view))
       return
     }
     waiting[key] = mutableListOf(WeakReference(view))
@@ -213,7 +224,9 @@ internal object ShadowTiles {
       val tile =
         try {
           render(color, geometry, boxWidth, boxHeight, stretchX, stretchY)
-        } catch (error: RuntimeException) {
+        } catch (error: Throwable) {
+          // Any failure (out of memory included) costs only the bitmap: the shadow is drawn live instead,
+          // and the views waiting on it are still told.
           Log.w(TAG, "GPU render of a shadow failed; drawing it live", error)
           null
         }
