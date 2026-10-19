@@ -22,6 +22,7 @@ import { renderInScheme } from '@test/render';
 
 import { NothingToTickError } from '../../domain/tickFill';
 import { ActiveWorkoutScreen } from '../ActiveWorkoutScreen';
+import { FIRST_EXERCISES } from '../useActiveWorkoutViewModel';
 
 jest.mock('@/shared/actions', () => require('@test/mocks/navigationActions'));
 
@@ -685,5 +686,33 @@ describe('typing next to a tick or a delete (press-feedback typed writes meeting
 
     expect(repositories.workouts.removeSet).toHaveBeenCalledWith('s2');
     expect(repositories.workouts.updateSet).not.toHaveBeenCalled();
+  });
+});
+
+describe('a long routine, while the workout slides up', () => {
+  afterEach(() => jest.mocked(actions.useScreenSettled).mockReturnValue(true));
+
+  const long = running(
+    Array.from({ length: FIRST_EXERCISES + 2 }, (_, index) =>
+      bench([set(`s${index}`, 'pending')], {
+        id: `we${index}`,
+        exerciseId: `exercise-${index}`,
+        name: `Exercise ${index}`,
+      }),
+    ),
+  );
+
+  it('draws the first exercises first, then the rest one a frame once it has settled', async () => {
+    jest.mocked(actions.useScreenSettled).mockReturnValue(false);
+    const view = log(long);
+
+    expect(await screen.findByText('Exercise 0')).toBeTruthy();
+    expect(screen.getByText(`Exercise ${FIRST_EXERCISES - 1}`)).toBeTruthy();
+    expect(screen.queryByText(`Exercise ${FIRST_EXERCISES}`)).toBeNull();
+
+    jest.mocked(actions.useScreenSettled).mockReturnValue(true);
+    view.rerender(<ActiveWorkoutScreen />);
+
+    expect(await screen.findByText(`Exercise ${FIRST_EXERCISES + 1}`)).toBeTruthy();
   });
 });

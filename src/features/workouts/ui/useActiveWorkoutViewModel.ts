@@ -6,10 +6,11 @@ import { useRepositories } from '@/core/DiProvider';
 import { formatVolume, REST_SECONDS } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
-import { goBack, openAddExercise, openWorkoutSaved, useLeaveGuard } from '@/shared/actions';
+import { goBack, openAddExercise, openWorkoutSaved, useLeaveGuard, useScreenSettled } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
+import { useStagedReveal } from '@/shared/lib/useStagedReveal';
 import { showInfo } from '@/shared/ui/toast';
 
 import type { RemovedSet, SetPatch, Workout } from '../data/WorkoutRepository';
@@ -24,6 +25,12 @@ import {
   workoutKeys,
 } from '../hooks/useWorkoutQueries';
 import { useRestTimerStore } from '../state/restTimerStore';
+
+/**
+ * Exercises drawn while the workout slides up: more than a phone shows below its numbers. The rest follow
+ * one a frame once it has settled, so no frame blurs a whole routine's wells.
+ */
+export const FIRST_EXERCISES = 3;
 
 /** How long a deleted set can be brought back. */
 export const UNDO_MS = 5000;
@@ -234,6 +241,10 @@ export function useActiveWorkoutViewModel() {
       }),
     [previous, unit, workout],
   );
+  // Each field is a texture with a blurred inset well: a whole routine's at once is 300 ms of drawing (S44).
+  const settled = useScreenSettled();
+  const revealed = useStagedReveal(settled, Math.max(0, exercises.length - FIRST_EXERCISES));
+  const shown = useMemo(() => exercises.slice(0, FIRST_EXERCISES + revealed), [exercises, revealed]);
 
   /** Throws the workout away and leaves. Shared by Discard and by finishing with nothing done. */
   const discard = useCallback(async () => {
@@ -339,7 +350,7 @@ export function useActiveWorkoutViewModel() {
   return {
     loading: isPending,
     workout: workout ?? null,
-    exercises,
+    exercises: shown,
     unit,
     finishing,
     /** Volume and Sets; Time counts up beside them on its own clock. */
