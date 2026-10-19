@@ -247,10 +247,11 @@ describe('while the screen slides in', () => {
     jest.mocked(actions.useScreenSettled).mockReturnValue(true);
     view.rerender(<ExerciseDetailScreen id="bench-press-barbell" />);
 
+    // They come one per frame (useStagedReveal), the lists last.
+    expect(await screen.findByText('More for chest')).toBeTruthy();
     expect(screen.getByTestId('body-map', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.queryByTestId('body-map-space')).toBeNull();
     expect(screen.getByLabelText('Best set each week, 2 weeks, latest 62.5 kg')).toBeTruthy();
     expect(screen.getByText('History')).toBeTruthy();
-    expect(screen.getByText('More for chest')).toBeTruthy();
   });
 });

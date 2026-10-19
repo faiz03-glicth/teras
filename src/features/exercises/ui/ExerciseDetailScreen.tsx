@@ -71,7 +71,8 @@ const BODY_WIDTH = 118;
 
 /**
  * What the slide shows comes first: the name, the muscles named, the record. The body, the chart and the
- * lists below wait until the screen has settled, so none of them is built or painted while it moves.
+ * lists below wait until the screen has settled, so none of them is built or painted while it moves, and
+ * then come one per frame, top down, so no one frame builds them all.
  */
 function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
   const reduced = useReduceMotion();
@@ -89,7 +90,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
       </View>
 
       <Card style={styles.muscles}>
-        {vm.settled ? (
+        {vm.reveal.body ? (
           <Animated.View entering={reduced ? undefined : FadeIn.duration(motion.duration.fast)}>
             <BodyMap highlight={vm.highlight} width={BODY_WIDTH} />
           </Animated.View>
@@ -122,7 +123,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </View>
       )}
 
-      {vm.settled && vm.chart && (
+      {vm.reveal.chart && vm.chart && (
         <Card style={styles.chart}>
           <Text variant="headline">Best set each week</Text>
           <BarChart
@@ -136,7 +137,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </Card>
       )}
 
-      {!vm.settled ? null : vm.sessions.length > 0 ? (
+      {!vm.reveal.lists ? null : vm.sessions.length > 0 ? (
         <View style={styles.group}>
           <View style={styles.sectionHead}>
             <Text variant="headline">History</Text>
@@ -156,7 +157,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
         </Text>
       )}
 
-      {vm.settled && vm.similar.length > 0 && (
+      {vm.reveal.lists && vm.similar.length > 0 && (
         <View style={styles.group}>
           <Text variant="headline">{vm.similarTitle}</Text>
           <Card tight divided>

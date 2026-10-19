@@ -15,6 +15,7 @@ import {
 } from '@/features/workouts/hooks/useWorkoutQueries';
 import { goBack, openExercise, openSession, returnToWorkout, useScreenSettled } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
+import { useStagedReveal } from '@/shared/lib/useStagedReveal';
 import { shortDate, shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
 import { showInfo } from '@/shared/ui/toast';
@@ -66,6 +67,9 @@ function tagsOf(row: ExerciseRow): string[] {
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** The body, the chart, the history and similar lists: what waits for the slide, in three parts. */
+const REVEAL_PARTS = 3;
 
 /**
  * One exercise: what it is and works, its record and best estimated max, its best set each week, and the
@@ -198,8 +202,9 @@ export function useExerciseDetailViewModel(id: string | null) {
     void refetchHistory();
   }, [refetchExercise, refetchHistory]);
 
-  // The body map, the chart and the lists below wait until the screen has slid in (see Ready).
-  const settled = useScreenSettled();
+  // The body map, the chart and the lists below wait until the screen has slid in, then come one per frame
+  // (see Ready): all built in the one frame after the slide, they held it for 80–150 ms.
+  const revealed = useStagedReveal(useScreenSettled(), REVEAL_PARTS);
 
   const status =
     id === null
@@ -214,8 +219,8 @@ export function useExerciseDetailViewModel(id: string | null) {
 
   return {
     status,
-    /** Slid in: the costly parts (the SVG body, the chart, the history and similar lists) draw now. */
-    settled,
+    /** The costly parts, drawn once slid in, one per frame: the SVG body, then the chart, then the lists. */
+    reveal: { body: revealed >= 1, chart: revealed >= 2, lists: revealed >= 3 },
     name: row?.name ?? '',
     tags: row ? tagsOf(row) : [],
     primary: row ? MUSCLE_LABELS[row.primaryMuscle] : '',
