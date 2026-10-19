@@ -27,7 +27,7 @@ export const FeedCard = memo(function FeedCard({
       accessibilityLabel={entry.accessibilityLabel}
       accessibilityHint="Opens the workout"
       style={styles.card}
-      pressedStyle={styles.pressed}
+      surface={{ style: styles.surface, pressed: styles.pressed, bleed: 'card' }}
       testID={`feed-${entry.id}`}
     >
       <View style={styles.heading}>
@@ -80,6 +80,11 @@ const styles = StyleSheet.create((theme) => ({
   card: {
     gap: theme.spacing.xs,
     padding: theme.spacing.lg,
+    borderRadius: theme.radii.card,
+  },
+  // The card's material, drawn behind its content from prerendered shadows (CachedSurface), not blurred
+  // again on every frame Home fades in, slides back or scrolls.
+  surface: {
     borderRadius: theme.radii.card,
     backgroundColor: theme.material.raised.background,
     boxShadow: theme.material.raised.shadow,
