@@ -1,4 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import type { ReactTestInstance } from 'react-test-renderer';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
@@ -227,6 +229,25 @@ describe('the workout feed', () => {
       'feed-older',
     ]);
     expect(screen.getByText('Tue, 29 Sep · 07:10')).toBeTruthy();
+  });
+
+  it('draws each card over the one above it, as a column would, whichever cell the list reuses', async () => {
+    home({
+      feed: [summary({ id: 'first' }), summary({ id: 'second' }), summary({ id: 'third' })],
+    });
+    await screen.findByTestId('feed-third');
+    // The card's cell: the nearest view around it that says where it is drawn.
+    const drawnAt = (card: ReactTestInstance): unknown => {
+      for (let node = card.parent; node; node = node.parent) {
+        const zIndex = StyleSheet.flatten(node.props.style)?.zIndex;
+        if (zIndex !== undefined) return zIndex;
+      }
+      return undefined;
+    };
+
+    expect(['first', 'second', 'third'].map((id) => drawnAt(screen.getByTestId(`feed-${id}`)))).toEqual([
+      0, 1, 2,
+    ]);
   });
 
   it('opens the workout that was tapped', async () => {

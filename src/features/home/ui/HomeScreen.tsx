@@ -1,22 +1,69 @@
-import { memo, useCallback, useMemo, useState, type ComponentProps } from 'react';
-import { View } from 'react-native';
+import { memo, useCallback, useMemo, useState, type ComponentProps, type Ref } from 'react';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import { View, type ViewProps } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { TrainingWave } from '@/features/heatmap/ui/components/TrainingWave';
 import { haptics } from '@/shared/lib/haptics';
-import { Button, Card, EmptyState, ErrorState, LoadingState, Screen, SectionLabel, Text } from '@/shared/ui';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  Screen,
+  SectionLabel,
+  Text,
+  useTabBarRoom,
+} from '@/shared/ui';
 
 import { FeedCard } from './components/FeedCard';
 import { WeekChip } from './components/WeekChip';
 
-import { useHomeSelectedDay, useHomeViewModel } from './useHomeViewModel';
+import { useHomeSelectedDay, useHomeViewModel, type FeedEntry, type HomeViewModel } from './useHomeViewModel';
 
-/** Home: the training wave on top, then the workouts behind it. */
+/*
+ * A card past the end of the feed for a render draws nothing, as the exercise browser's rows do (see its
+ * `itemKey`): FlashList 2.0.2 can ask about one while the feed shrinks.
+ */
+const feedKey = (entry: FeedEntry | undefined, index: number): string => entry?.id ?? `gone-${index}`;
+
+/**
+ * Home: the training wave on top, then the workouts behind it. The workouts are a recycling list: only the
+ * cards on screen and a little below exist, so coming back to Home (from another tab, or a workout opened
+ * from it) attaches and draws a screenful again, not the whole feed.
+ */
 export function HomeScreen() {
   const vm = useHomeViewModel();
+  const room = useTabBarRoom();
+  const { onOpenWorkout } = vm;
+  const renderItem: ListRenderItem<FeedEntry> = useCallback(
+    ({ item }: { item: FeedEntry | undefined }) =>
+      item === undefined ? null : <FeedCard entry={item} onPress={onOpenWorkout} />,
+    [onOpenWorkout],
+  );
 
   return (
-    <Screen scroll withTabBar testID="home-screen" contentStyle={styles.content}>
+    <Screen list testID="home-screen">
+      <FlashList
+        data={vm.entries}
+        keyExtractor={feedKey}
+        renderItem={renderItem}
+        CellRendererComponent={FeedCell}
+        ItemSeparatorComponent={FeedGap}
+        ListHeaderComponent={<HomeHeader vm={vm} />}
+        contentContainerStyle={styles.list(room)}
+        keyboardShouldPersistTaps="handled"
+        testID="home-feed"
+      />
+    </Screen>
+  );
+}
+
+/** Everything above the cards: the title, the wave, Start workout, and the feed's heading or state. */
+function HomeHeader({ vm }: { vm: HomeViewModel }) {
+  return (
+    <View style={styles.header}>
       <View style={styles.headRow}>
         <View style={styles.head}>
           <Text variant="title" accessibilityRole="header">
@@ -48,7 +95,7 @@ export function HomeScreen() {
         />
       )}
 
-      <View style={styles.group}>
+      <View style={[styles.group, vm.entries.length > 0 && styles.beforeCards]}>
         <SectionLabel>Workouts</SectionLabel>
         {vm.status === 'loading' && <LoadingState label="Loading workouts" testID="home-loading" />}
         {vm.status === 'error' && (
@@ -61,13 +108,21 @@ export function HomeScreen() {
             <EmptyState icon="dumbbell" title="No workouts yet" />
           </Card>
         )}
-        {vm.entries.map((entry) => (
-          <FeedCard key={entry.id} entry={entry} onPress={vm.onOpenWorkout} />
-        ))}
       </View>
-    </Screen>
+    </View>
   );
 }
+
+/**
+ * A card's cell, drawn in feed order as a column draws its cards: each card's light falls on the card
+ * above it, and its shadow lies under the card below. The list reuses cells in any order, so the order
+ * they are drawn in is said outright.
+ */
+function FeedCell({ index, style, ...props }: ViewProps & { index: number; ref?: Ref<View> }) {
+  return <View {...props} style={[style, { zIndex: index }]} />;
+}
+
+const FeedGap = () => <View style={styles.gap} />;
 
 type WaveVersion = { rows: ComponentProps<typeof TrainingWave>['rows']; subtitle: string };
 type HomeWaveProps = Omit<ComponentProps<typeof TrainingWave>, 'selected' | 'testID' | 'rows' | 'header'> & {
@@ -96,7 +151,8 @@ const HomeWave = memo(function HomeWave({ wave, ...props }: HomeWaveProps) {
 });
 
 const styles = StyleSheet.create((theme) => ({
-  content: { gap: theme.spacing.xl },
+  list: (bottom: number) => ({ paddingHorizontal: theme.spacing.gutter, paddingBottom: bottom }),
+  header: { gap: theme.spacing.xl },
   headRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -105,4 +161,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   head: { gap: 2, flexShrink: 1 },
   group: { gap: theme.spacing.md },
+  // The first card sits as far under the heading as the cards sit from each other.
+  beforeCards: { paddingBottom: theme.spacing.md },
+  gap: { height: theme.spacing.md },
 }));

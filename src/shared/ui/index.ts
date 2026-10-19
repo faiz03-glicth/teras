@@ -32,7 +32,7 @@ export { Pager } from './Pager';
 export { Pill } from './Pill';
 export { PressableScale } from './PressableScale';
 export { PressDelay } from './pressDelay';
-export { Screen } from './Screen';
+export { Screen, useTabBarRoom } from './Screen';
 export { ScreenTransition } from './ScreenTransition';
 export { SectionLabel } from './SectionLabel';
 export { SegmentedControl, type SegmentOption } from './SegmentedControl';

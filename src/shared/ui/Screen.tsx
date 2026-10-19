@@ -45,6 +45,14 @@ export interface ScreenProps {
 const TAB_BAR_CLEARANCE = 104;
 
 /**
+ * The room a tab's page leaves under its content for the floating tab bar, and for a bar docked on it
+ * (Resume). A screen pads its own content with it; a list screen (`list`) pads its list's.
+ */
+export function useTabBarRoom(): number {
+  return TAB_BAR_CLEARANCE + useTabBarClearance();
+}
+
+/**
  * Gesture-handler's scroll view, animated as the keyboard-aware scroll view expects its scroll view to be.
  * Its type names Reanimated's own ScrollView; this is the same animated scroll view with gesture-handler's
  * props added, hence the cast.
@@ -66,9 +74,8 @@ export function Screen({
   footer,
   testID,
 }: ScreenProps) {
-  // A bar docked above the tab bar (Resume) adds its own height to the room left under the content.
-  const extra = useTabBarClearance();
-  const content = [styles.content(inset, withTabBar ? TAB_BAR_CLEARANCE + extra : 0), contentStyle];
+  const room = useTabBarRoom();
+  const content = [styles.content(inset, withTabBar ? room : 0), contentStyle];
   return (
     <SafeAreaView edges={edges} style={styles.root} testID={testID}>
       {list ? (
