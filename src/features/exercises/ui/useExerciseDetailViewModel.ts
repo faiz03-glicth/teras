@@ -68,8 +68,8 @@ function tagsOf(row: ExerciseRow): string[] {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-/** The body, the chart, the history and similar lists: what waits for the slide, in three parts. */
-const REVEAL_PARTS = 3;
+/** The body's front, its back, the chart, then the history and similar lists: what waits for the slide. */
+const REVEAL_PARTS = 4;
 
 /**
  * One exercise: what it is and works, its record and best estimated max, its best set each week, and the
@@ -204,7 +204,7 @@ export function useExerciseDetailViewModel(id: string | null) {
 
   // The body map, the chart and the lists below wait until the screen has slid in, then come one per frame
   // (see Ready): all built in the one frame after the slide, they held it for 80–150 ms.
-  const revealed = useStagedReveal(useScreenSettled(), REVEAL_PARTS);
+  const settled = useScreenSettled();
 
   const status =
     id === null
@@ -216,11 +216,14 @@ export function useExerciseDetailViewModel(id: string | null) {
           : row === null
             ? ('missing' as const)
             : ('ready' as const);
+  // Counted from when there is something to draw: an exercise still loading after the slide would
+  // otherwise get all its parts in one frame.
+  const revealed = useStagedReveal(settled && status === 'ready', REVEAL_PARTS);
 
   return {
     status,
-    /** The costly parts, drawn once slid in, one per frame: the SVG body, then the chart, then the lists. */
-    reveal: { body: revealed >= 1, chart: revealed >= 2, lists: revealed >= 3 },
+    /** The costly parts, once slid in, one per frame: the body's front, its back, the chart, the lists. */
+    reveal: { body: revealed >= 1, back: revealed >= 2, chart: revealed >= 3, lists: revealed >= 4 },
     name: row?.name ?? '',
     tags: row ? tagsOf(row) : [],
     primary: row ? MUSCLE_LABELS[row.primaryMuscle] : '',

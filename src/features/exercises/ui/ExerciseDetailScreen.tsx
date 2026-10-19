@@ -92,7 +92,7 @@ function Ready({ vm }: { vm: ExerciseDetailViewModel }) {
       <Card style={styles.muscles}>
         {vm.reveal.body ? (
           <Animated.View entering={reduced ? undefined : FadeIn.duration(motion.duration.fast)}>
-            <BodyMap highlight={vm.highlight} width={BODY_WIDTH} />
+            <BodyMap highlight={vm.highlight} width={BODY_WIDTH} back={vm.reveal.back} />
           </Animated.View>
         ) : (
           <BodyMapSpace width={BODY_WIDTH} />

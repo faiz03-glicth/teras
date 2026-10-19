@@ -14,5 +14,5 @@ export function useStagedReveal(start: boolean, parts: number): number {
     return () => cancelAnimationFrame(frame);
   }, [parts, shown, start]);
 
-  return start ? shown : 0;
+  return start ? Math.min(shown, parts) : 0;
 }

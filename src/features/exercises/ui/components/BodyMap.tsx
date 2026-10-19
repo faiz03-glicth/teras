@@ -18,6 +18,11 @@ export interface BodyMapProps {
   width?: number;
   /** Makes every region tappable (the muscle filter). Which muscle a region means is the caller's call. */
   onRegion?: (region: string) => void;
+  /**
+   * Whether the back is drawn yet (default true). False keeps its room empty, so a screen can draw the
+   * front in one frame and the back in the next: each side is half the SVG work.
+   */
+  back?: boolean;
 }
 
 /**
@@ -27,7 +32,7 @@ export interface BodyMapProps {
  * snapping. Hidden from screen readers: the muscles are always named in text beside it, and the muscle
  * filter lists them as choices too.
  */
-export function BodyMap({ highlight, width = 120, onRegion }: BodyMapProps) {
+export function BodyMap({ highlight, width = 120, onRegion, back = true }: BodyMapProps) {
   const height = Math.round(width * ASPECT);
   const shaded = highlight.primary.length + highlight.secondary.length > 0;
   return (
@@ -40,13 +45,27 @@ export function BodyMap({ highlight, width = 120, onRegion }: BodyMapProps) {
           height={height}
           onRegion={onRegion}
         />
-        <PlainSide name="back" drawing={BODY_SIDES.back} width={width} height={height} onRegion={onRegion} />
+        {back ? (
+          <PlainSide
+            name="back"
+            drawing={BODY_SIDES.back}
+            width={width}
+            height={height}
+            onRegion={onRegion}
+          />
+        ) : (
+          <View style={{ width, height }} />
+        )}
       </View>
       <ContentSwap id={[...highlight.primary, '/', ...highlight.secondary].join(' ')} style={styles.shading}>
         {shaded && (
           <>
             <Shading drawing={BODY_SIDES.front} width={width} height={height} highlight={highlight} />
-            <Shading drawing={BODY_SIDES.back} width={width} height={height} highlight={highlight} />
+            {back ? (
+              <Shading drawing={BODY_SIDES.back} width={width} height={height} highlight={highlight} />
+            ) : (
+              <View style={{ width, height }} />
+            )}
           </>
         )}
       </ContentSwap>

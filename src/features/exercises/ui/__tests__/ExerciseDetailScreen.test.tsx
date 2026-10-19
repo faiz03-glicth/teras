@@ -102,6 +102,8 @@ describe('what the exercise is', () => {
     const svgColor = (color: string) => ({ type: 0, payload: processColor(color) });
 
     expect(await screen.findByLabelText('Primary, Chest')).toBeTruthy();
+    // The front comes a frame before the back (useStagedReveal): wait for both.
+    expect(await screen.findByTestId('body-back', hidden)).toBeTruthy();
     // The muscles worked are shaded over the plain body; the rest stay plain.
     expect(fillOf('highlight-pectorals')).toEqual(svgColor(theme.heat[4]));
     expect(fillOf('highlight-triceps')).toEqual(svgColor(theme.heat[2]));
