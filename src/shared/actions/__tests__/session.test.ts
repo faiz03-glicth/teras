@@ -66,7 +66,7 @@ describe('signOut', () => {
     expect(toast.success).toHaveBeenCalledWith(
       'Signed out',
       expect.objectContaining({
-        description: 'Your workouts stay on this device for when you sign back in.',
+        description: 'Your workouts stay on this device, and a copy is kept with your account.',
       }),
     );
   });

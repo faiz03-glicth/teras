@@ -30,33 +30,46 @@
 
       <div class="note">
         <p>
-          <strong>The short version.</strong> These apps are built to keep your data on your phone. Your
-          workouts, sets, routines, habits and check-ins are stored locally and are never uploaded. One small
-          summary per training day is sent to our server, so that your training can appear next to your
-          habits. There is no advertising, no analytics and no tracking of any kind.
+          <strong>The short version.</strong> Your data starts on your phone. If you sign in to Teras, a copy
+          of your workouts, sets, routines, custom exercises and weigh-ins is kept on a separate Teras server,
+          linked to your account and readable only by you, so it is backed up. Streak's habits and check-ins
+          stay on your phone. One small summary per training day is shared between the apps, so that your
+          training can appear next to your habits. There is no advertising, no analytics and no tracking of
+          any kind.
         </p>
       </div>
 
       <h2>What stays on your phone</h2>
       <p>
-        Both apps keep their records in a database on the device itself. None of the following is uploaded
-        anywhere:
+        Both apps keep their records in a database on the device itself. As a guest, none of the following
+        is uploaded. When you are signed in to Teras, the items marked "copied" are also kept on the Teras
+        server described under "What leaves your phone".
       </p>
       <ul>
         <li>
           Every workout: its exercises, each set, the weight, reps or time, and whether you completed it
+          (copied)
         </li>
-        <li>Your routines and any exercises you create</li>
-        <li>Your bodyweight and height entries</li>
+        <li>Your routines, favourite exercises and any exercises you create (copied)</li>
+        <li>Your bodyweight entries (copied) and your height (never copied)</li>
         <li>Your habits and daily check-ins in Streak</li>
         <li>Your settings: units, default rest, theme, sound and haptics</li>
       </ul>
       <p>
-        Because this data lives only on the device, uninstalling an app deletes it, and it is not restored on
-        a new phone. It is also not included in our backups, because we never receive it.
+        Anything kept only on the device is deleted when you uninstall the app and is not restored on a new
+        phone.
       </p>
 
       <h2>What leaves your phone</h2>
+
+      <h3>Your Teras workouts, when you are signed in</h3>
+      <p>
+        Signed in, Teras copies the items marked "copied" above to its own server (Supabase), in a project
+        separate from the one Streak uses, so Streak cannot read them. Each row is tied to your account, and
+        the server only lets your own signed-in account read or change it. A workout still under way is
+        copied once you finish it, and deleting a workout on the phone deletes it on the server too. To have
+        the whole server copy erased, write to us at <span class="todo">[CONTACT EMAIL]</span>.
+      </p>
 
       <h3>Your account</h3>
       <p>
@@ -105,7 +118,7 @@
       </table>
       <p>
         That is the whole of it. Which exercises you did, how much you lifted on any particular set, and your
-        bodyweight are not part of this summary and never leave the device.
+        bodyweight are not part of this summary, and Streak never sees them.
       </p>
 
       <h3>Using the apps as a guest</h3>

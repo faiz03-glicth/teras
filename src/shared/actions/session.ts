@@ -27,13 +27,14 @@ export interface SessionDeps {
 
 const COPY = {
   allSet: { title: "You're all set", sub: 'Start a workout whenever you are ready.' },
-  // Workout detail is never synced: it stays on this device, kept for this account.
-  confirmMember: 'Your workouts stay on this device. Sign in again any time to see them.',
+  // Signed in, workout detail stays on this device and a copy is kept with the account (teras-detail).
+  confirmMember:
+    'Your workouts stay on this device, and a copy is kept with your account. Sign in again any time to see them.',
   confirmGuest:
     "You're using Teras as a guest, so your workouts stay on this device. Continue as a guest later to pick up where you left off.",
   signedOutMember: {
     title: 'Signed out',
-    sub: 'Your workouts stay on this device for when you sign back in.',
+    sub: 'Your workouts stay on this device, and a copy is kept with your account.',
   },
   signedOutGuest: { title: 'Signed out', sub: 'Your workouts stay on this device.' },
   offline: { title: "You're offline", sub: 'Check your connection and try again.' },

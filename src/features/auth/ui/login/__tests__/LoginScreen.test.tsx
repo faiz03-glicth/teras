@@ -26,7 +26,7 @@ describe.each(SCHEMES)('LoginScreen in %s', (scheme) => {
     renderWithApp(<LoginScreen intent="new" />, { scheme });
     expect(screen.getByRole('header', { name: 'Sign in' })).toBeTruthy();
     // One line, and it is true: signing in is optional and backs nothing up.
-    expect(screen.getByText('Optional. Workouts stay on this phone.')).toBeTruthy();
+    expect(screen.getByText('Optional. Sign in to back up your workouts.')).toBeTruthy();
     expect(screen.queryByText(/backed up|across devices|never lose|sync/i)).toBeNull();
     // No list of benefits to read through before the buttons.
     expect(screen.queryByText('Private by default')).toBeNull();

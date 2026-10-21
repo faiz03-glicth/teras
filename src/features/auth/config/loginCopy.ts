@@ -13,9 +13,9 @@ export interface LoginHeading {
 export function loginHeading(step: LoginStep, intent: AuthIntent, email: string): LoginHeading {
   if (step === 'email') return { title: 'Continue with email', subtitle: "We'll send you a 6-digit code." };
   if (step === 'code') return { title: 'Check your inbox', subtitle: `Enter the code sent to ${email}` };
-  // One line, and it is true on both counts: an account is optional, and it backs nothing up.
+  // One line, and it is true on both counts: an account is optional, and signing in backs workouts up.
   return intent === 'new'
-    ? { title: 'Sign in', subtitle: 'Optional. Workouts stay on this phone.' }
+    ? { title: 'Sign in', subtitle: 'Optional. Sign in to back up your workouts.' }
     : { title: 'Welcome back', subtitle: 'Sign in to carry on.' };
 }
 
