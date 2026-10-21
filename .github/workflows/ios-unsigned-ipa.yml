@@ -1,0 +1,109 @@
+# Builds an UNSIGNED iOS .ipa of SandBoxTeras on a GitHub macOS runner, for sideloading to the owner's
+# own iPhone with a free Apple ID (Sideloadly, AltStore or xtool sign it while installing). It is not
+# an App Store or TestFlight build, and EAS is not used.
+#
+# Run it from the Actions tab (Run workflow) or by pushing a branch named ios/<anything>. The .ipa is
+# the run's "SandBoxTeras-unsigned-ipa" artifact.
+#
+# Needs these repository secrets (Settings › Secrets and variables › Actions), the same values as the
+# local .env: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+# EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_LEGAL_BASE_URL.
+name: iOS unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['ios/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Expo SDK 57 needs Xcode 26.4 or later; macos-26 ships 26.6 by default.
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      APP_VARIANT: sandbox
+      EXPO_NO_TELEMETRY: 1
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
+      EXPO_PUBLIC_LEGAL_BASE_URL: ${{ secrets.EXPO_PUBLIC_LEGAL_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the build settings are present
+        # Names only: the values are never printed.
+        run: |
+          missing=0
+          for name in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID \
+            EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_LEGAL_BASE_URL; do
+            if [ -z "${!name}" ]; then echo "::error::Repository secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Show the toolchain
+        run: |
+          xcodebuild -version
+          node --version
+          pod --version
+
+      - name: Generate the iOS project
+        # Continuous Native Generation: ios/ is made here from app.config.ts and never committed.
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Drop Sign in with Apple
+        # A free Apple ID cannot sign that capability, and the install would fail. This build only:
+        # sign in with Google or use the app as a guest.
+        run: |
+          for file in ios/*/*.entitlements; do
+            /usr/libexec/PlistBuddy -c 'Delete :com.apple.developer.applesignin' "$file" 2>/dev/null || true
+          done
+
+      - name: Build the app, unsigned
+        run: |
+          workspace=$(ls -d ios/*.xcworkspace | head -1)
+          scheme=$(basename "$workspace" .xcworkspace)
+          echo "Building scheme $scheme"
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build | tail -n 200
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Package the .ipa
+        run: |
+          app=$(ls -d build/Build/Products/Release-iphoneos/*.app | head -1)
+          test -n "$app" || { echo "::error::No .app was built"; exit 1; }
+          mkdir -p dist/Payload
+          cp -R "$app" dist/Payload/
+          (cd dist && zip -qry SandBoxTeras-unsigned.ipa Payload)
+          ls -lh dist/SandBoxTeras-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SandBoxTeras-unsigned-ipa
+          path: dist/SandBoxTeras-unsigned.ipa
+          retention-days: 7
+          if-no-files-found: error
