@@ -7,7 +7,8 @@
 #
 # Needs these repository secrets (Settings › Secrets and variables › Actions), the same values as the
 # local .env: EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-# EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_LEGAL_BASE_URL.
+# EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_LEGAL_BASE_URL, EXPO_PUBLIC_TERAS_DETAIL_URL,
+# EXPO_PUBLIC_TERAS_DETAIL_KEY.
 name: iOS unsigned IPA
 
 on:
@@ -35,6 +36,9 @@ jobs:
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
       EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
       EXPO_PUBLIC_LEGAL_BASE_URL: ${{ secrets.EXPO_PUBLIC_LEGAL_BASE_URL }}
+      # teras-detail (workout sync, decision 22): the project URL and its publishable/anon key.
+      EXPO_PUBLIC_TERAS_DETAIL_URL: ${{ secrets.EXPO_PUBLIC_TERAS_DETAIL_URL }}
+      EXPO_PUBLIC_TERAS_DETAIL_KEY: ${{ secrets.EXPO_PUBLIC_TERAS_DETAIL_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +47,8 @@ jobs:
         run: |
           missing=0
           for name in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID \
-            EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_LEGAL_BASE_URL; do
+            EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID EXPO_PUBLIC_LEGAL_BASE_URL \
+            EXPO_PUBLIC_TERAS_DETAIL_URL EXPO_PUBLIC_TERAS_DETAIL_KEY; do
             if [ -z "${!name}" ]; then echo "::error::Repository secret $name is not set"; missing=1; fi
           done
           exit $missing
