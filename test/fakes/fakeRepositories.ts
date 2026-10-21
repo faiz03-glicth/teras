@@ -7,6 +7,7 @@ import type { ExerciseRepository } from '@/features/exercises/data/ExerciseRepos
 import type { RoutineRepository } from '@/features/routines/data/RoutineRepository';
 import type { BodyweightRepository } from '@/features/training/data/BodyweightRepository';
 import type { StreakDayRepository } from '@/features/streakDays/data/StreakDayRepository';
+import type { DetailSyncRepository } from '@/features/sync/data/DetailSyncRepository';
 import type { WorkoutDayRepository } from '@/features/workoutDays/data/WorkoutDayRepository';
 import type { Workout, WorkoutRepository } from '@/features/workouts/data/WorkoutRepository';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
@@ -210,6 +211,15 @@ export function createFakeBodyweightRepository(): FakeBodyweightRepository {
   return { log: mockFn<Bodyweight['log']>(async () => undefined) };
 }
 
+type DetailSync = DetailSyncRepository;
+export type FakeDetailSyncRepository = { [K in keyof DetailSync]: jest.Mock };
+
+export function createFakeDetailSyncRepository(): FakeDetailSyncRepository {
+  return {
+    pushPending: mockFn<DetailSync['pushPending']>(async () => ({ sent: 0, refused: 0, deleted: 0 })),
+  };
+}
+
 export function createFakeRepositories(): Repositories & {
   auth: FakeAuthRepository;
   profile: FakeProfileRepository;
@@ -219,6 +229,7 @@ export function createFakeRepositories(): Repositories & {
   workouts: FakeWorkoutRepository;
   routines: FakeRoutineRepository;
   bodyweight: FakeBodyweightRepository;
+  detailSync: FakeDetailSyncRepository;
 } {
   return {
     auth: createFakeAuthRepository(),
@@ -229,5 +240,6 @@ export function createFakeRepositories(): Repositories & {
     workouts: createFakeWorkoutRepository(),
     routines: createFakeRoutineRepository(),
     bodyweight: createFakeBodyweightRepository(),
+    detailSync: createFakeDetailSyncRepository(),
   };
 }

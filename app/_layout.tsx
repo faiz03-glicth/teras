@@ -9,6 +9,7 @@ import { useAuthAutoRefresh } from '@/core/supabase/useAuthAutoRefresh';
 import { useRouteGuards } from '@/features/auth/hooks/useRouteGuards';
 import { SessionGate } from '@/features/auth/ui/SessionGate';
 import { usePushPendingProfileEdits } from '@/features/profile/hooks/usePushPendingProfileEdits';
+import { usePushPendingDetail } from '@/features/sync/hooks/usePushPendingDetail';
 import { usePullStreakDays } from '@/features/streakDays/hooks/usePullStreakDays';
 import { usePushPendingWorkoutDays } from '@/features/workoutDays/hooks/usePushPendingWorkoutDays';
 import { AppToaster } from '@/shared/ui';
@@ -45,6 +46,7 @@ function RootNavigator() {
   useAuthAutoRefresh();
   usePushPendingProfileEdits();
   usePushPendingWorkoutDays();
+  usePushPendingDetail();
   usePullStreakDays();
   const { canEnterApp, canEnterAuth } = useRouteGuards();
   const transitions = useNavigationMotion();

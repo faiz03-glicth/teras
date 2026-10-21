@@ -21,6 +21,13 @@ import { createBodyweightDao } from '@/features/training/data/local/bodyweightDa
 import { LocalFirstProfileRepository } from '@/features/profile/data/LocalFirstProfileRepository';
 import type { ProfileRepository } from '@/features/profile/data/ProfileRepository';
 import { createProfileApi } from '@/features/profile/data/remote/profileApi';
+import { createDetailSyncDao } from '@/features/sync/data/local/detailSyncDao';
+import { createDetailApi } from '@/features/sync/data/remote/detailApi';
+import {
+  disabledDetailSync,
+  RemoteDetailSyncRepository,
+  type DetailSyncRepository,
+} from '@/features/sync/data/DetailSyncRepository';
 import { createStreakDayDao } from '@/features/streakDays/data/local/streakDayDao';
 import { createStreakApi } from '@/features/streakDays/data/remote/streakApi';
 import {
@@ -41,6 +48,7 @@ import { requireEnv } from './config/env';
 import { createAppMetaDao } from './db/appMetaDao';
 import { db } from './db/client';
 import { getSupabase } from './supabase/client';
+import { getDetailSupabase } from './supabase/detailClient';
 
 /**
  * Repository interfaces the app depends on. Concrete implementations are registered in
@@ -55,6 +63,7 @@ export interface Repositories {
   workouts: WorkoutRepository;
   routines: RoutineRepository;
   bodyweight: BodyweightRepository;
+  detailSync: DetailSyncRepository;
 }
 
 /** Composition root: the only place concrete data sources and services are wired together. */
@@ -124,5 +133,11 @@ export function createRepositories(): Repositories {
     now: nowIso,
   });
 
-  return { auth, profile, workoutDays, streakDays, exercises, workouts, routines, bodyweight };
+  // Without teras-detail keys in this build, workout detail stays on the phone.
+  const detailSupabase = getDetailSupabase();
+  const detailSync = detailSupabase
+    ? new RemoteDetailSyncRepository({ dao: createDetailSyncDao(db), api: createDetailApi(detailSupabase) })
+    : disabledDetailSync;
+
+  return { auth, profile, workoutDays, streakDays, exercises, workouts, routines, bodyweight, detailSync };
 }
