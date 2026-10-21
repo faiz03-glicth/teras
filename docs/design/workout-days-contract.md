@@ -1,16 +1,26 @@
 # The Teras ↔ Streak contract: `workout_days`
 
-Teras keeps every workout detail in SQLite on the phone. The **only** workout data it sends to Supabase is one row
-per person per training day, in `public.workout_days`. Streak reads that table to draw its second heatmap wave.
+Teras uses **two Supabase projects** (decisions 22 and 23, 21 Oct 2026):
+
+| Project | Holds | Who reads it |
+|---|---|---|
+| **The shared project** (Streak's) | `public.workout_days` only: one row per person per training day | Streak, for its second heatmap wave |
+| **`teras-detail`** (Teras's own) | Every workout detail: workouts, their exercises and sets, routines, custom exercises, favourites, weigh-ins, and a `profiles` row mapping the person to their shared-project user | Teras only |
+
+The phone's SQLite stays the source of truth for both: everything is written there first and copied in the
+background. **Workout detail is never written to the shared project**, because Streak can read it. This document is
+the contract for the shared half, `workout_days`; the detail project's schema is `supabase/detail/0001_teras_detail.sql`.
 
 ```text
-Teras SQLite (workout detail)
-   │  a day's completed sets change
-   ▼
-WorkoutDayRepository.recordDay  → totals + frozen level, stored locally, marked "to send"
-   │  signed in + online (on sign-in, on reconnect, on returning to the app)
-   ▼
-Supabase public.workout_days   (upsert on user_id + date)
+Teras SQLite (source of truth: workout detail + day summaries)
+   │  a day's completed sets change                 │  any detail row changes
+   ▼                                                ▼
+WorkoutDayRepository.recordDay                     marked "to send"
+  → totals + frozen level, marked "to send"         │
+   │  signed in + online                            │  signed in + online
+   ▼                                                ▼
+shared project: public.workout_days                teras-detail: workouts, workout_sets, …
+  (upsert on user_id + date)                         (upsert on user_id + id; pull_changes by synced_at)
    │
    ▼
 Streak reads date + level  → second heatmap wave
@@ -37,7 +47,9 @@ no delete: a day whose sets were all removed is stored with level 0, so the chan
 - **`level` is final.** Teras computes it against the person's own previous 90 days and freezes it
   (`src/features/workoutDays/domain/heatLevel.ts`). Streak draws it as is and never recomputes it, so Streak needs
   no knowledge of what a "heavy day" is.
-- **Guests send nothing.** Days logged as a guest are handed to the account and sent after sign-in.
+- **Guests** sign in anonymously (decision 23), so a guest has a real `user_id` from first launch and keeps it when
+  they link Google or an email code. **Open:** whether an anonymous guest's days are sent to the shared project
+  before they link an account (Streak can only show them once both apps share that account).
 - **A failed send is retried.** Rows stay marked until the server accepts them.
 
 ## How Streak reads it
@@ -62,6 +74,13 @@ order by date;
 | Repository (record, list, push) | `src/features/workoutDays/data/WorkoutDayRepository.ts` |
 | Supabase read/write | `src/features/workoutDays/data/remote/workoutDayApi.ts` |
 | Background push | `src/features/workoutDays/hooks/usePushPendingWorkoutDays.ts` |
+| Workout detail (the other project) | `supabase/detail/0001_teras_detail.sql`, checks in `supabase/detail/TEST.md` (kept on this computer only) |
 
 The migration reuses `public.set_updated_at()` from Streak's `0001_profiles.sql`, so apply it to the same Supabase
-project, after Streak's.
+project, after Streak's. Streak's `0005_teras_link.sql` adds a trigger on this table (a day's first sets become a
+Workout check-in), so the table is shared by both apps: never drop or rename it.
+
+**Superseded:** from 12 Oct 2026 the shared project also held a `teras` schema of detail tables with
+`public.teras_push` / `public.teras_pull` (Teras's `0002_teras_detail_schema.sql`, `0003_teras_sync_functions.sql`).
+Decision 22 moves detail to `teras-detail`; those objects are archived in
+`docs/design/archive/shared-project-teras-schema-2026-10-12.md` and removed only after the owner confirms.

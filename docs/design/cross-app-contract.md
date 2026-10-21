@@ -217,15 +217,23 @@ alone. Replacement benefits, all true today:
 And the words that must not appear, because they are not true: *backed up*, *across devices*, *never lose
 your data*, *sync your workouts*, *access anywhere*.
 
+> **Superseded 21 Oct 2026 by decisions 22 and 23.** Workout detail is now copied to Teras's own Supabase
+> project, `teras-detail` (never the shared project, which still holds only `workout_days`). Once that copy
+> ships, "Exercises, sets and weights never leave this phone" is no longer true and the banned words above
+> need re-checking against what the sync actually does. The approved sync wording replaces this table.
+
 ### `decisions.md`
 
 Only what this genuinely changes:
 
 - **Row 2** — extend: the shared id is the link, and the contract is now two tables, one per direction.
 - **Row 8** — extend: local-first, push the daily summary, **pull a minimal daily flag**. Still no backup.
+  (Later superseded for workout detail by decision 22: detail is copied to `teras-detail`; the shared
+  project still gets only the daily summary.)
 - **Rows 6 and 7** — unchanged, with a sentence making it explicit that an external signal never
   contributes to a level.
-- **New row 22** — the Streak → Teras workout signal and the pending state.
+- **New row** — the Streak → Teras workout signal and the pending state. (Proposed here as row 22; that
+  number went to "Workout detail on the server", so this needs the next free number.)
 
 Rows 1, 3–5 and 9–21 are untouched.
 
