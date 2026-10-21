@@ -40,7 +40,8 @@ export type ExerciseType = (typeof EXERCISE_TYPES)[number];
 /**
  * The exercise library: built-in and custom exercises in one table, so search and filters treat them alike.
  * Built-in rows are seeded by the migration with a readable slug id (`bench-press-barbell`) and no owner.
- * Custom rows get a UUID and `is_custom`. Local only: never pushed to Supabase.
+ * Custom rows get a UUID and `is_custom`; an owned custom row is copied to `teras-detail` (migration 0007).
+ * Built-in rows never leave the phone.
  */
 export const exercises = sqliteTable(
   'exercises',

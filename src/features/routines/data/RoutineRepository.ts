@@ -12,7 +12,8 @@ export type SavedRoutine = RoutineDraft & { routineId: string };
 export type SaveResult = { ok: true; id: string } | { ok: false; reason: string };
 
 /**
- * Building routines: open one to edit, save it, delete it. Local only, like the workouts made from them.
+ * Building routines: open one to edit, save it, delete it. Written on the phone and copied to
+ * `teras-detail` in the background (migration 0007), like the workouts made from them.
  * Listing and starting routines stay with the workouts (`WorkoutRepository`). The starters can be edited
  * and deleted like any other routine; they belong to whoever uses the phone.
  */

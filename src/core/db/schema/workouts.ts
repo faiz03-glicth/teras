@@ -5,7 +5,8 @@ import { exercises } from './exercises';
 import { routines } from './routines';
 
 /**
- * One workout session. Local only: `workout_days` is the summary that leaves the phone.
+ * One workout session. Owned rows are copied to `teras-detail` once the workout has ended (migration 0007);
+ * the shared project only ever gets the `workout_days` summary.
  * `date` is the local calendar day the session STARTED on (YYYY-MM-DD); it decides which heatmap day it
  * counts towards. `ended_at` is null while the workout is running. `bodyweight_kg` is a snapshot taken at
  * the start, so logging a new bodyweight never changes the volume of past days.

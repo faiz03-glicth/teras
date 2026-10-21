@@ -116,7 +116,7 @@ export interface ExerciseSetRow {
 
 /**
  * Data source: the workout tables, plus the read-only lookups needed to build a workout (an exercise's
- * name and type, a routine's items). Local only — none of this leaves the phone.
+ * name and type, a routine's items). SQLite only; migration 0007's triggers mark what the sync copies.
  */
 export interface WorkoutDao {
   /** The workout that has not been finished yet, if there is one. */

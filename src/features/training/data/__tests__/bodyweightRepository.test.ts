@@ -40,13 +40,13 @@ const stored = (db: AppDatabase) =>
     .all();
 
 describe('logging bodyweight', () => {
-  it("keeps the day's weigh-in for its owner, on this phone only", async () => {
+  it("keeps the day's weigh-in for its owner, marked to be copied to teras-detail", async () => {
     const { db, repo } = await setup();
 
     await repo.log(USER, MONDAY, 72.5);
 
     expect(stored(db)).toEqual([
-      { userId: USER, date: MONDAY, weightKg: 72.5, dirty: false, deletedAt: null },
+      { userId: USER, date: MONDAY, weightKg: 72.5, dirty: true, deletedAt: null },
     ]);
   });
 
@@ -75,12 +75,12 @@ describe('logging bodyweight', () => {
     ]);
   });
 
-  it("hands a guest's weigh-ins to the account signed in to, still on this phone only", async () => {
+  it("hands a guest's weigh-ins to the account signed in to, marked to be copied", async () => {
     const { db, repo } = await setup();
     await repo.log(null, MONDAY, 64);
 
     await createGuestDataDao(db).reassignGuestData('guest-1', USER, '2026-10-05T08:00:00.000Z');
 
-    expect(stored(db)).toEqual([{ userId: USER, date: MONDAY, weightKg: 64, dirty: false, deletedAt: null }]);
+    expect(stored(db)).toEqual([{ userId: USER, date: MONDAY, weightKg: 64, dirty: true, deletedAt: null }]);
   });
 });

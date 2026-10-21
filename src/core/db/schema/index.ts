@@ -5,3 +5,4 @@ export * from './routines';
 export * from './streakDays';
 export * from './workoutDays';
 export * from './workouts';
+export * from './sync';

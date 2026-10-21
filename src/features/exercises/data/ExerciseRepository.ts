@@ -7,9 +7,9 @@ import type { ExerciseDao, ExerciseOwner } from './local/exerciseDao';
 export type { ExerciseOwner } from './local/exerciseDao';
 
 /**
- * The exercise library. Local only: the 104 built-in exercises are seeded by the migration and custom
- * ones are added by the person, so the whole library works offline and in guest mode. Favourites stay on
- * the phone too.
+ * The exercise library, on the phone: the 104 built-in exercises are seeded by the migration and custom
+ * ones are added by the person, so the whole library works offline and in guest mode. Custom exercises and
+ * favourites are copied to `teras-detail` in the background (migration 0007).
  */
 export interface ExerciseRepository {
   /** Every exercise available to this owner, by name. */

@@ -34,14 +34,15 @@ export function createGuestDataDao(db: AppDatabase): GuestDataDao {
           .where(isNull(workoutDays.userId))
           .run();
         // The workout in progress and everything logged in it, so signing in mid-session loses nothing.
-        // These stay on the device, so they are claimed but never marked to be sent.
+        // Claiming them marks them to be copied to teras-detail (migration 0007's triggers); a workout still
+        // running is only sent once it ends.
         tx.update(workouts).set({ userId, updatedAt: now }).where(isNull(workouts.userId)).run();
         tx.update(workoutExercises)
           .set({ userId, updatedAt: now })
           .where(isNull(workoutExercises.userId))
           .run();
         tx.update(workoutSets).set({ userId, updatedAt: now }).where(isNull(workoutSets.userId)).run();
-        // Weigh-ins, likewise kept on the device.
+        // Weigh-ins, likewise.
         tx.update(bodyweightLogs).set({ userId, updatedAt: now }).where(isNull(bodyweightLogs.userId)).run();
         // Exercises the guest created. Built-in ones have no owner either, so only custom rows move.
         tx.update(exercises)

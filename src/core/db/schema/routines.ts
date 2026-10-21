@@ -4,7 +4,8 @@ import { syncColumns } from './columns';
 import { exercises } from './exercises';
 
 /**
- * A routine: an ordered list of exercises with targets. Local only. The starters seeded by the migration
+ * A routine: an ordered list of exercises with targets. Owned routines are copied to `teras-detail`
+ * (migration 0007); the starters never leave the phone. The starters seeded by the migration
  * have no owner, like a guest's own routines; `is_starter` tells them apart, so signing in claims what
  * the guest built and leaves the starters for everyone on the phone.
  */
