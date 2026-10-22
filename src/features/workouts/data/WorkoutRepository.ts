@@ -13,9 +13,9 @@ import { liftStanding, nextMatch, overloadLevel, type BestSet, type LiftSession 
 import { isPastLog, pastLogEnd, pastLogStart } from '../domain/pastLog';
 import { isEmptySet, NothingToTickError, tickFill, type SetValues } from '../domain/tickFill';
 import { dayTotals } from '../domain/totals';
-import type { LiftSetRow, WorkoutDao, WorkoutOwner } from './local/workoutDao';
+import type { LiftSetRow, MuscleSetRow, WorkoutDao, WorkoutOwner } from './local/workoutDao';
 
-export type { WorkoutOwner } from './local/workoutDao';
+export type { MuscleSetRow, WorkoutOwner } from './local/workoutDao';
 
 /** A lift's sets, one session (workout) each, in the order they were done. */
 function liftSessions(rows: readonly LiftSetRow[]): LiftSession[] {
@@ -152,6 +152,11 @@ export interface WorkoutRepository {
   history(owner: WorkoutOwner, limit: number): Promise<WorkoutSummary[]>;
   /** Finished workouts dated within the range (inclusive), most recent first: a day's, or the Calendar's. */
   historyBetween(owner: WorkoutOwner, from: ISODate, to: ISODate): Promise<WorkoutSummary[]>;
+  /**
+   * Each exercise of the finished workouts dated `from`..`to` (inclusive) with its muscles and completed
+   * sets: what the muscle cards (this week's map, balance, history) are computed from.
+   */
+  muscleSets(owner: WorkoutOwner, from: ISODate, to: ISODate): Promise<MuscleSetRow[]>;
   get(id: string): Promise<Workout | null>;
   /** A workout as its owner logged it, or null if it is not theirs: what a link to a session may open. */
   logged(owner: WorkoutOwner, id: string): Promise<Workout | null>;
@@ -358,6 +363,10 @@ export class LocalWorkoutRepository implements WorkoutRepository {
 
   async historyBetween(owner: WorkoutOwner, from: ISODate, to: ISODate): Promise<WorkoutSummary[]> {
     return this.summarise(owner, await this.deps.dao.finishedWorkoutsBetween(owner, from, to));
+  }
+
+  muscleSets(owner: WorkoutOwner, from: ISODate, to: ISODate): Promise<MuscleSetRow[]> {
+    return this.deps.dao.muscleSetsBetween(owner, from, to);
   }
 
   async get(id: string): Promise<Workout | null> {

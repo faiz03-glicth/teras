@@ -136,6 +136,7 @@ export function createFakeWorkoutRepository(): FakeWorkoutRepository {
     routines: mockFn<Workouts['routines']>(async () => []),
     history: mockFn<Workouts['history']>(async () => []),
     historyBetween: mockFn<Workouts['historyBetween']>(async () => []),
+    muscleSets: mockFn<Workouts['muscleSets']>(async () => []),
     start: mockFn<Workouts['start']>(async () => empty),
     active: mockFn<Workouts['active']>(async () => null),
     get: mockFn<Workouts['get']>(async () => null),

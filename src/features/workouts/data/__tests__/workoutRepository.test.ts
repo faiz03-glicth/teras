@@ -1350,3 +1350,23 @@ describe('ticking a set with nothing typed in (S21)', () => {
     expect(values(after, 1)).toEqual({ weightKg: 60, reps: 8, seconds: null, status: 'pending' });
   });
 });
+
+describe('muscle sets for the muscle cards', () => {
+  it('lists each finished workout exercise with its muscles and completed sets, nothing in progress', async () => {
+    const { repo } = await setup();
+    const started = await startEmpty(repo);
+    const logged = await logSet(repo, started.id, 'squat-barbell', { weightKg: 100, reps: 5 });
+    await repo.addSet(first(logged.exercises, 'exercise').id);
+    await repo.finish(started.id);
+    const running = await startEmpty(repo);
+    await logSet(repo, running.id, 'bench-press-barbell', { weightKg: 60, reps: 8 });
+
+    const rows = await repo.muscleSets(USER, DATE, DATE);
+
+    expect(rows).toEqual([
+      expect.objectContaining({ workoutId: started.id, date: DATE, primaryMuscle: 'quads', doneSets: 1 }),
+    ]);
+    expect(Array.isArray(rows[0]?.secondaryMuscles)).toBe(true);
+    expect(await repo.muscleSets(USER, '2026-10-02' as ISODate, '2026-10-08' as ISODate)).toEqual([]);
+  });
+});

@@ -24,6 +24,7 @@ import {
   workouts,
   workoutSets,
   type ExerciseType,
+  type Muscle,
   type NewWorkoutExerciseRow,
   type NewWorkoutRow,
   type NewWorkoutSetRow,
@@ -38,6 +39,15 @@ import type { AppDatabase } from '@/core/db/types';
 
 /** A signed-in user's id, or null for a workout started in guest mode. */
 export type WorkoutOwner = string | null;
+
+/** One exercise of a finished workout: the muscles it trains and how many of its sets were completed. */
+export interface MuscleSetRow {
+  workoutId: string;
+  date: string;
+  primaryMuscle: Muscle;
+  secondaryMuscles: Muscle[];
+  doneSets: number;
+}
 
 /** A set reduced to what the day's volume needs, with how its exercise is measured. */
 export interface SetWithType {
@@ -167,6 +177,11 @@ export interface WorkoutDao {
     from: string,
     to: string,
   ): Promise<LiftSetRow[]>;
+  /**
+   * Each exercise of the owner's finished workouts dated `from`..`to` (inclusive) with at least one
+   * completed set: its muscles and its completed sets. One read, for the muscle cards.
+   */
+  muscleSetsBetween(owner: WorkoutOwner, from: string, to: string): Promise<MuscleSetRow[]>;
   /**
    * The exercises and the sets of many workouts, each in one read, so a list of summaries costs the same
    * few queries however long it is.
@@ -442,6 +457,33 @@ export function createWorkoutDao(db: AppDatabase): WorkoutDao {
           .where(inArray(workoutExercises.workoutId, chunk))
           .all(),
       );
+    },
+
+    async muscleSetsBetween(owner, from, to) {
+      return db
+        .select({
+          workoutId: workouts.id,
+          date: workouts.date,
+          primaryMuscle: exercises.primaryMuscle,
+          secondaryMuscles: exercises.secondaryMuscles,
+          doneSets: sql<number>`count(${workoutSets.id})`.mapWith(Number),
+        })
+        .from(workoutSets)
+        .innerJoin(workoutExercises, eq(workoutExercises.id, workoutSets.workoutExerciseId))
+        .innerJoin(workouts, eq(workouts.id, workoutExercises.workoutId))
+        .innerJoin(exercises, eq(exercises.id, workoutExercises.exerciseId))
+        .where(
+          and(
+            ownedBy(owner),
+            live,
+            isNotNull(workouts.endedAt),
+            eq(workoutSets.status, 'done'),
+            gte(workouts.date, from),
+            lte(workouts.date, to),
+          ),
+        )
+        .groupBy(workoutExercises.id)
+        .all();
     },
 
     async liftSetsBetween(owner, exerciseIds, from, to) {
