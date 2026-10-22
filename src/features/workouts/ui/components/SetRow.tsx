@@ -3,7 +3,7 @@ import { TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
-import { Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
+import { CachedSurface, Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
 
 import type { SetPatch, WorkoutExercise, WorkoutSet } from '../../data/WorkoutRepository';
 import { parseSetWeight, setWeightText, weightColumn } from '../../domain/setUnits';
@@ -122,26 +122,28 @@ export const SetRow = memo(function SetRow({
     patch: (text: string) => SetPatch,
     label: string,
   ) => (
-    <TextInput
-      value={value}
-      onChangeText={(text) => {
-        onText(text);
-        onChange(set.id, patch(text));
-      }}
-      // A completed set is locked, as in the prototype: untick it to change it.
-      editable={!done}
-      keyboardType="decimal-pad"
-      selectTextOnFocus
-      placeholder="–"
-      placeholderTextColor={theme.colors.text3}
-      accessibilityLabel={`${label}, set ${index + 1}`}
-      {...deletable}
-      style={styles.input(done)}
-      // The well (its fill and inset shadow, drawn inside it) is kept as a texture while the table
-      // scrolls; only a field being typed in is redrawn.
-      renderToHardwareTextureAndroid
-      testID={`set-${set.id}-${label}`}
-    />
+    // The well (its fill and inset shadow) is drawn from one bitmap shared by every field (CachedSurface),
+    // not blurred field by field: a routine's wells all at once were 300 ms of drawing (S44).
+    <View style={styles.field}>
+      <CachedSurface style={styles.well(done)} bleed="none" />
+      <TextInput
+        value={value}
+        onChangeText={(text) => {
+          onText(text);
+          onChange(set.id, patch(text));
+        }}
+        // A completed set is locked, as in the prototype: untick it to change it.
+        editable={!done}
+        keyboardType="decimal-pad"
+        selectTextOnFocus
+        placeholder="–"
+        placeholderTextColor={theme.colors.text3}
+        accessibilityLabel={`${label}, set ${index + 1}`}
+        {...deletable}
+        style={styles.input}
+        testID={`set-${set.id}-${label}`}
+      />
+    </View>
   );
 
   return (
@@ -213,19 +215,22 @@ const styles = StyleSheet.create((theme) => ({
   tickColumn: { width: TICK_SIZE, alignItems: 'center' },
   // A field is a well pressed into the card. Once its set is done it fills gold-tinted, so a finished
   // row reads by its colour even where the inset shadow does not draw.
-  input: (done: boolean) => ({
-    flex: 1,
-    minHeight: 44,
-    paddingHorizontal: theme.spacing.sm,
+  field: { flex: 1, borderRadius: theme.radii.control },
+  well: (done: boolean) => ({
     borderRadius: theme.radii.control,
     backgroundColor: done ? theme.colors.accentSoft : theme.material.inset.background,
     boxShadow: theme.material.inset.shadow,
+  }),
+  input: {
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: theme.spacing.sm,
     color: theme.colors.text,
     fontFamily: theme.fonts.semibold,
     fontSize: 17,
     textAlign: 'center' as const,
     fontVariant: ['tabular-nums' as const],
-  }),
+  },
   tick: {
     width: TICK_SIZE,
     height: TICK_SIZE,

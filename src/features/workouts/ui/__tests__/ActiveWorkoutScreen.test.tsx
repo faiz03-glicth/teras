@@ -216,12 +216,13 @@ describe('the set table', () => {
     expect(await screen.findByText('+KG', { includeHiddenElements: true })).toBeTruthy();
   });
 
-  it("draws each row's wells and tick once into textures, so scrolling the table never re-blurs them", async () => {
+  it("draws each row's wells and tick from shared pre-drawn surfaces, not a texture per field", async () => {
     log(running([bench([set('s1', 'pending')])]));
 
-    expect((await screen.findByTestId('set-s1-weight')).props.renderToHardwareTextureAndroid).toBe(true);
-    expect(screen.getByTestId('set-s1-reps').props.renderToHardwareTextureAndroid).toBe(true);
-    expect(within(screen.getByTestId('set-s1-tick')).getByTestId('cached-surface')).toBeTruthy();
+    // Weight, reps and the tick: each surface drawn from a bitmap, so opening a routine blurs nothing.
+    expect(within(await screen.findByTestId('set-s1')).getAllByTestId('cached-surface')).toHaveLength(3);
+    expect(screen.getByTestId('set-s1-weight').props.renderToHardwareTextureAndroid).toBeUndefined();
+    expect(screen.getByTestId('set-s1-reps').props.renderToHardwareTextureAndroid).toBeUndefined();
   });
 
   it('locks a completed set: untick it to change it', async () => {
