@@ -15,7 +15,7 @@ import { showInfo } from '@/shared/ui/toast';
 
 import type { RemovedSet, SetPatch, Workout } from '../data/WorkoutRepository';
 import { previousText } from '../domain/setUnits';
-import { NothingToTickError } from '../domain/tickFill';
+import { isEmptySet, NothingToTickError } from '../domain/tickFill';
 import { workoutTotals } from '../domain/totals';
 import {
   useActiveWorkout,
@@ -27,10 +27,12 @@ import {
 import { useRestTimerStore } from '../state/restTimerStore';
 
 /**
- * Exercises drawn while the workout slides up: more than a phone shows below its numbers. The rest follow
- * one a frame once it has settled, so no frame blurs a whole routine's wells.
+ * Exercises drawn before the workout slides up. The rest follow one a frame once it has settled. Building
+ * a page of set rows (fields, swipe and press motion, styles) was 0.4–0.55 s of JS before the slide could
+ * start on the owner's phone (v38p profile, 22 Oct; it was 3, S49): one exercise lets it start at once,
+ * and the next ones arrive below it within a few frames of the slide ending.
  */
-export const FIRST_EXERCISES = 3;
+export const FIRST_EXERCISES = 1;
 
 /** How long a deleted set can be brought back. */
 export const UNDO_MS = 5000;
@@ -52,6 +54,23 @@ function setCounts(workout: Workout | null | undefined) {
   const sets = workout?.exercises.flatMap((exercise) => exercise.sets) ?? [];
   const done = sets.filter((set) => set.status === 'done').length;
   return { done, unticked: sets.length - done };
+}
+
+/** PURE: the workout with one set ticked or unticked, as it will be stored. Other sets keep their identity. */
+function withSetStatus(workout: Workout, setId: string, done: boolean): Workout {
+  return {
+    ...workout,
+    exercises: workout.exercises.map((exercise) =>
+      exercise.sets.some((set) => set.id === setId)
+        ? {
+            ...exercise,
+            sets: exercise.sets.map((set) =>
+              set.id === setId ? { ...set, status: done ? 'done' : 'pending' } : set,
+            ),
+          }
+        : exercise,
+    ),
+  };
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -100,7 +119,13 @@ export function useActiveWorkoutViewModel() {
   const { workouts, workoutDays } = useRepositories();
   const owner = useWorkoutOwner();
   const unit = useTrainingPreferencesStore((state) => state.unit);
-  const { data: workout, isPending } = useActiveWorkout(owner);
+  const { data: stored, isPending } = useActiveWorkout(owner);
+  /**
+   * The workout as it was when it was saved or discarded: the screen keeps showing it while it slides
+   * away, instead of collapsing to an empty page mid-transition.
+   */
+  const [leavingWith, setLeavingWith] = useState<Workout | null>(null);
+  const workout = stored ?? leavingWith;
   const exerciseIds = useMemo(
     () => workout?.exercises.map((exercise) => exercise.exerciseId) ?? [],
     [workout],
@@ -114,6 +139,8 @@ export function useActiveWorkoutViewModel() {
   // A workout that ends while this screen is open should leave, but only once.
   const leaving = useRef(false);
   const writes = useRef<Promise<void>>(Promise.resolve());
+  /** Changes queued and not yet finished: only the last one's result is shown (it holds all the others). */
+  const queued = useRef(0);
   /** Each set's typed values whose write is queued but not yet started. */
   const typed = useRef(new Map<string, SetPatch>());
   /** Sets deleted on this screen (until an Undo): a keystroke landing as one slides away has nothing to write to. */
@@ -124,46 +151,67 @@ export function useActiveWorkoutViewModel() {
     showInfo({ title: "Couldn't save", sub: 'Try again.' });
   }, []);
 
-  /** Queues a change behind every earlier one, then shows whatever the repository hands back (if anything). */
+  /**
+   * Queues a change behind every earlier one, then shows whatever the repository hands back (if anything).
+   * While later changes wait, an earlier result is not shown: it predates them, and would briefly take back
+   * a tick already on screen. A failed change re-reads the stored workout, so the screen never keeps a tick
+   * that wasn't saved.
+   */
   const change = useCallback(
     (what: string, run: () => Promise<Workout | null>) => {
+      queued.current += 1;
       writes.current = writes.current.then(async () => {
         try {
           const after = await run();
-          if (after) cacheWorkout(after);
+          if (after && queued.current === 1) cacheWorkout(after);
         } catch (cause) {
           report(what, cause);
+          void queryClient.invalidateQueries({ queryKey: workoutKeys.active(owner) });
+        } finally {
+          queued.current -= 1;
         }
       });
     },
-    [cacheWorkout, report],
+    [cacheWorkout, owner, queryClient, report],
   );
 
   /**
-   * Ticking rests for as long as the set's exercise asks, once the set is stored as done: a tick with nothing
-   * typed in and nothing to copy is refused (tickFill), and a refused tick never starts a rest. Read from
-   * what the repository hands back, so this stays the same function and the set rows are not redrawn.
+   * A tick shows at once, from the workout already on screen, and is stored behind it. Only a tick on a set
+   * with nothing typed in waits for the store: it may be filled from the set above or last time, or refused
+   * (tickFill), and a refused tick never starts a rest. Ticking rests for as long as the set's exercise asks.
+   * Read from the cache, not the render, so this stays the same function and the set rows are not redrawn.
    */
   const onTickSet = useCallback(
     (setId: string, done: boolean) => {
       haptics.selection();
       if (!done) stopRest();
+      const current = queryClient.getQueryData<Workout | null>(workoutKeys.active(owner));
+      const exercise = current?.exercises.find((one) => one.sets.some((set) => set.id === setId));
+      const set = exercise?.sets.find((one) => one.id === setId);
+      const showNow = current && exercise && set && (!done || !isEmptySet(set) || typed.current.has(setId));
+      if (showNow) {
+        cacheWorkout(withSetStatus(current, setId, done));
+        // A past day's log is typed in after the fact: there is nothing to rest for.
+        if (done && !current.pastLog) startRest(exercise.restSeconds ?? REST_SECONDS.default);
+      }
       change('Could not tick a set', async () => {
         try {
           const after = await workouts.setStatus(setId, done ? 'done' : 'pending');
-          const exercise = after.exercises.find((one) => one.sets.some((set) => set.id === setId));
-          // A past day's log is typed in after the fact: there is nothing to rest for.
-          if (done && !after.pastLog) startRest(exercise?.restSeconds ?? REST_SECONDS.default);
+          const stored = after.exercises.find((one) => one.sets.some((one) => one.id === setId));
+          if (!showNow && done && !after.pastLog) startRest(stored?.restSeconds ?? REST_SECONDS.default);
           return after;
         } catch (cause) {
           if (!(cause instanceof NothingToTickError)) throw cause;
           haptics.warning();
           showInfo({ title: 'Nothing to tick yet', sub: 'Type what you lifted first.' });
-          return null;
+          if (!showNow) return null;
+          // Shown too early (what was typed got cleared before it was stored): take the tick back.
+          stopRest();
+          return workouts.active(owner);
         }
       });
     },
-    [change, startRest, stopRest, workouts],
+    [cacheWorkout, change, owner, queryClient, startRest, stopRest, workouts],
   );
 
   /**
@@ -254,6 +302,7 @@ export function useActiveWorkoutViewModel() {
       await workouts.discard(workout.id);
       setUndoable(null);
       stopRest();
+      setLeavingWith(workout);
       cacheWorkout(null);
       leaving.current = true;
       goBack();
@@ -271,6 +320,7 @@ export function useActiveWorkoutViewModel() {
       await workouts.finish(workout.id);
       setUndoable(null);
       stopRest();
+      setLeavingWith(workout);
       cacheWorkout(null);
       // Home lists this workout and lights its day: both were read before it existed.
       void queryClient.invalidateQueries({ queryKey: workoutKeys.history });

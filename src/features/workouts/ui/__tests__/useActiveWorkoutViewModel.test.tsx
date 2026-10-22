@@ -100,3 +100,42 @@ describe('after saving', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: workoutKeys.days });
   });
 });
+
+describe('ticking a set', () => {
+  const statusOf = (workout: Workout | null | undefined) => workout?.exercises[0]?.sets[0]?.status;
+
+  it('shows the tick before it is stored', async () => {
+    const { result, repositories } = await open(workoutWith('pending'));
+    let store: (workout: Workout) => void = () => undefined;
+    repositories.workouts.setStatus.mockReturnValue(new Promise<Workout>((resolve) => (store = resolve)));
+
+    act(() => result.current.onTickSet('s1', true));
+
+    expect(statusOf(result.current.workout)).toBe('done');
+    await act(async () => store(workoutWith('done')));
+    expect(statusOf(result.current.workout)).toBe('done');
+  });
+
+  it('takes the tick back when it could not be stored', async () => {
+    const { result, repositories } = await open(workoutWith('pending'));
+    repositories.workouts.setStatus.mockRejectedValue(new Error('disk full'));
+    jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    act(() => result.current.onTickSet('s1', true));
+
+    expect(statusOf(result.current.workout)).toBe('done');
+    await waitFor(() => expect(statusOf(result.current.workout)).toBe('pending'));
+  });
+});
+
+describe('leaving', () => {
+  it('keeps showing the discarded workout while the screen slides away', async () => {
+    const { result, repositories } = await open(workoutWith('pending'));
+
+    act(() => result.current.onDiscardNow());
+
+    await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));
+    await waitFor(() => expect(result.current.workout?.id).toBe('w1'));
+    expect(result.current.exercises).toHaveLength(1);
+  });
+});

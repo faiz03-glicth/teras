@@ -145,6 +145,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-apple-authentication',
     ['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme() }],
     'react-native-edge-to-edge',
+    './plugins/withoutAutoHandwriting',
     [
       'expo-build-properties',
       {
