@@ -25,6 +25,23 @@ export const PUSH_PAGE = 500;
  */
 export const DELETE_CHUNK = 100;
 
+/** Rows per download request: the server's own cap. */
+export const PULL_PAGE = 1000;
+
+export interface PullResult {
+  /** Rows written or deleted on this phone. */
+  changed: number;
+  /** Rows left out (this phone's unsent edit wins, or a value or parent it can't take). */
+  skipped: number;
+  /** The earliest day of a workout the download wrote, or null when it wrote none. */
+  earliestDate: string | null;
+}
+
+export interface SyncResult {
+  push: PushResult;
+  pull: PullResult;
+}
+
 export interface PushResult {
   /** Rows the server now has. */
   sent: number;
@@ -38,11 +55,20 @@ export interface PushResult {
 export interface DetailSyncRepository {
   /** Sends everything waiting for this person. One run at a time per person; a second call joins it. */
   pushPending(userId: string): Promise<PushResult>;
+  /** Brings in what the person's other phones stored since this phone last looked. */
+  pullChanges(userId: string): Promise<PullResult>;
+  /** Sends first, then brings in: this phone's edits reach the server before anything comes back. */
+  sync(userId: string): Promise<SyncResult>;
 }
 
-/** For builds without teras-detail keys: nothing leaves the phone. */
+const NOTHING_SENT: PushResult = { sent: 0, refused: 0, deleted: 0 };
+const NOTHING_PULLED: PullResult = { changed: 0, skipped: 0, earliestDate: null };
+
+/** For builds without teras-detail keys: nothing leaves the phone, and nothing comes in. */
 export const disabledDetailSync: DetailSyncRepository = {
-  pushPending: async () => ({ sent: 0, refused: 0, deleted: 0 }),
+  pushPending: async () => NOTHING_SENT,
+  pullChanges: async () => NOTHING_PULLED,
+  sync: async () => ({ push: NOTHING_SENT, pull: NOTHING_PULLED }),
 };
 
 interface Deps {
@@ -54,8 +80,49 @@ const isRefusal = (error: unknown) => error instanceof AppError && error.code ==
 
 export class RemoteDetailSyncRepository implements DetailSyncRepository {
   private readonly pushing = new Map<string, Promise<PushResult>>();
+  private readonly syncing = new Map<string, Promise<SyncResult>>();
 
   constructor(private readonly deps: Deps) {}
+
+  sync(userId: string): Promise<SyncResult> {
+    const inFlight = this.syncing.get(userId);
+    if (inFlight) return inFlight;
+    const run = (async () => {
+      const push = await this.pushPending(userId);
+      const pull = await this.pullChanges(userId);
+      return { push, pull };
+    })().finally(() => this.syncing.delete(userId));
+    this.syncing.set(userId, run);
+    return run;
+  }
+
+  /**
+   * Table by table, parents first, a page at a time from each table's bookmark. Each page is written and
+   * its bookmark moved in one transaction, so a run stopped part-way resumes where it stopped.
+   */
+  async pullChanges(userId: string): Promise<PullResult> {
+    const { dao, api } = this.deps;
+    const result: PullResult = { changed: 0, skipped: 0, earliestDate: null };
+    for (const table of PUSH_ORDER) {
+      for (;;) {
+        const bookmark = await dao.bookmark(userId, table);
+        const rows = await api.pull(table, bookmark?.syncedAt ?? null, bookmark?.rowId ?? null, PULL_PAGE);
+        const last = rows.at(-1);
+        if (!last) break;
+        const applied = await dao.applyPulled(table, userId, rows, {
+          syncedAt: last.syncedAt,
+          rowId: last.id,
+        });
+        result.changed += applied.changed;
+        result.skipped += applied.skipped;
+        if (applied.earliestDate && (!result.earliestDate || applied.earliestDate < result.earliestDate)) {
+          result.earliestDate = applied.earliestDate;
+        }
+        if (rows.length < PULL_PAGE) break;
+      }
+    }
+    return result;
+  }
 
   pushPending(userId: string): Promise<PushResult> {
     const inFlight = this.pushing.get(userId);

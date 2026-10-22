@@ -84,6 +84,7 @@ export function createFakeWorkoutDayRepository(): FakeWorkoutDayRepository {
     years: mockFn<Days['years']>(async () => []),
     windowBefore: mockFn<Days['windowBefore']>(async () => []),
     pushPending: mockFn<Days['pushPending']>(async () => 0),
+    pullDays: mockFn<Days['pullDays']>(async () => 0),
   };
 }
 
@@ -215,8 +216,12 @@ type DetailSync = DetailSyncRepository;
 export type FakeDetailSyncRepository = { [K in keyof DetailSync]: jest.Mock };
 
 export function createFakeDetailSyncRepository(): FakeDetailSyncRepository {
+  const sent = { sent: 0, refused: 0, deleted: 0 };
+  const pulled = { changed: 0, skipped: 0, earliestDate: null };
   return {
-    pushPending: mockFn<DetailSync['pushPending']>(async () => ({ sent: 0, refused: 0, deleted: 0 })),
+    pushPending: mockFn<DetailSync['pushPending']>(async () => sent),
+    pullChanges: mockFn<DetailSync['pullChanges']>(async () => pulled),
+    sync: mockFn<DetailSync['sync']>(async () => ({ push: sent, pull: pulled })),
   };
 }
 

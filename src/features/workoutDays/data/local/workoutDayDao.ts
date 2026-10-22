@@ -24,6 +24,15 @@ export interface WorkoutDayDao {
    * changed while the push was in flight stays dirty and goes up next time.
    */
   markClean(id: string, updatedAt: string): Promise<void>;
+  /**
+   * Stores days the server holds for this user (a new phone filling in), as they are: never marked to be
+   * sent back, and a day this phone still has to send keeps its own totals. Returns how many changed.
+   */
+  saveFromServer(
+    userId: string,
+    days: readonly { date: string; volumeKg: number; sets: number; workouts: number; level: number }[],
+    stamp: { uuid: () => string; now: string },
+  ): Promise<number>;
 }
 
 const ownedBy = (owner: WorkoutDayOwner) =>
@@ -105,6 +114,61 @@ export function createWorkoutDayDao(db: AppDatabase): WorkoutDayDao {
         .from(workoutDays)
         .where(and(eq(workoutDays.userId, userId), eq(workoutDays.dirty, true)))
         .all();
+    },
+
+    async saveFromServer(userId, days, stamp) {
+      if (days.length === 0) return 0;
+      const dates = days.map((day) => day.date).sort();
+      const stored = new Map(
+        db
+          .select()
+          .from(workoutDays)
+          .where(
+            and(
+              eq(workoutDays.userId, userId),
+              gte(workoutDays.date, dates[0] ?? ''),
+              lte(workoutDays.date, dates[dates.length - 1] ?? ''),
+            ),
+          )
+          .all()
+          .map((row) => [row.date, row]),
+      );
+      let changed = 0;
+      db.transaction((tx) => {
+        for (const day of days) {
+          const mine = stored.get(day.date);
+          if (mine?.dirty) continue;
+          const same =
+            mine &&
+            mine.deletedAt === null &&
+            mine.volumeKg === day.volumeKg &&
+            mine.sets === day.sets &&
+            mine.workouts === day.workouts &&
+            mine.level === day.level;
+          if (same) continue;
+          const totals = { volumeKg: day.volumeKg, sets: day.sets, workouts: day.workouts, level: day.level };
+          if (mine) {
+            tx.update(workoutDays)
+              .set({ ...totals, updatedAt: stamp.now, deletedAt: null, dirty: false })
+              .where(eq(workoutDays.id, mine.id))
+              .run();
+          } else {
+            tx.insert(workoutDays)
+              .values({
+                id: stamp.uuid(),
+                userId,
+                date: day.date,
+                ...totals,
+                createdAt: stamp.now,
+                updatedAt: stamp.now,
+                dirty: false,
+              })
+              .run();
+          }
+          changed += 1;
+        }
+      });
+      return changed;
     },
 
     async markClean(id, updatedAt) {

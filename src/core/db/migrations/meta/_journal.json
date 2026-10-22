@@ -57,6 +57,13 @@
       "when": 1792598686220,
       "tag": "0007_sync_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792640271540,
+      "tag": "0008_sync_bookmarks",
+      "breakpoints": true
     }
   ]
 }

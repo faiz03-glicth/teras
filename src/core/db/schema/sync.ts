@@ -41,4 +41,20 @@ export const syncState = sqliteTable('sync_state', {
   applying: integer('applying', { mode: 'boolean' }).notNull().default(false),
 });
 
+/**
+ * How far each person's download of each detail table got: the last row's server `synced_at` (kept
+ * verbatim, to the microsecond, because the server compares it exactly) and id. The next pull starts after it.
+ */
+export const syncBookmarks = sqliteTable(
+  'sync_bookmarks',
+  {
+    userId: text('user_id').notNull(),
+    tableName: text('table_name', { enum: DETAIL_TABLES }).notNull(),
+    syncedAt: text('synced_at').notNull(),
+    rowId: text('row_id').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.tableName] })],
+);
+
 export type SyncTombstoneRow = typeof syncTombstones.$inferSelect;
+export type SyncBookmarkRow = typeof syncBookmarks.$inferSelect;

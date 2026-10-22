@@ -44,6 +44,7 @@ function fakeApi(options: { refuse?: (row: DetailRow) => boolean; fail?: () => E
     async markDeleted(table, _userId, ids, deletedAt) {
       calls.push({ kind: 'delete', table, ids: [...ids], deletedAt });
     },
+    pull: async () => [],
   };
   return { api, calls };
 }
@@ -239,6 +240,7 @@ describe('sending workout detail to teras-detail', () => {
           db.update(workouts).set({ name: 'Renamed' }).where(eq(workouts.id, 'w1')).run();
       },
       async markDeleted() {},
+      pull: async () => [],
     });
     addWorkout(db, '1');
 

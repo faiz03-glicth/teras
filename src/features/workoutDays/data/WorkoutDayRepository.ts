@@ -29,6 +29,12 @@ export interface WorkoutDayRepository {
   windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]>;
   /** Sends the signed-in user's days that aren't on the server yet. Returns how many were sent. */
   pushPending(userId: string): Promise<number>;
+  /**
+   * Fetches the user's day summaries from the server from `fromDate`'s year to this year, and stores the
+   * ones this phone doesn't have: a new phone gets each day's frozen level as recorded, never recomputed.
+   * Returns how many days changed.
+   */
+  pullDays(userId: string, fromDate: ISODate): Promise<number>;
 }
 
 export interface LocalFirstWorkoutDayDeps {
@@ -97,6 +103,29 @@ export class LocalFirstWorkoutDayRepository implements WorkoutDayRepository {
 
   windowBefore(owner: WorkoutDayOwner, date: ISODate): Promise<number[]> {
     return this.deps.dao.trainingVolumes(owner, addDays(date, -HEAT_WINDOW_DAYS), addDays(date, -1));
+  }
+
+  async pullDays(userId: string, fromDate: ISODate): Promise<number> {
+    const { dao, api, uuid, now } = this.deps;
+    const first = Number(fromDate.slice(0, 4));
+    const last = Number(now().slice(0, 4));
+    let changed = 0;
+    // A year a request: at most 366 days, under the server's 1000-row cap.
+    for (let year = first; year <= last; year += 1) {
+      const days = await api.list(userId, `${year}-01-01`, `${year}-12-31`);
+      changed += await dao.saveFromServer(
+        userId,
+        days.map((day) => ({
+          date: day.date,
+          volumeKg: day.volume_kg,
+          sets: day.sets,
+          workouts: day.workouts,
+          level: day.level,
+        })),
+        { uuid, now: now() },
+      );
+    }
+    return changed;
   }
 
   pushPending(userId: string): Promise<number> {

@@ -6,6 +6,29 @@ import type { AppDatabase } from '@/core/db/types';
 /** A row as the server stores it: snake_case columns, `user_id` included, no `dirty`. */
 export type DetailRow = Record<string, string | number | boolean | null | string[]>;
 
+/** One row of `pull_changes`: the server's row as JSON (without `user_id`) and when it was stored. */
+export interface PulledRow {
+  id: string;
+  data: Record<string, unknown>;
+  /** Verbatim from the server (microseconds), for the next bookmark. */
+  syncedAt: string;
+}
+
+/** Where a table's download got to: the last pulled row's `synced_at` and id. */
+export interface PullBookmark {
+  syncedAt: string;
+  rowId: string;
+}
+
+export interface AppliedPull {
+  /** Rows written or deleted on this phone. */
+  changed: number;
+  /** Rows left out: this phone's own unsent edit wins, a value it can't store, or a parent it doesn't have. */
+  skipped: number;
+  /** The earliest day of a workout this pull wrote, so the day summaries for it can be fetched. */
+  earliestDate: string | null;
+}
+
 export interface PendingTombstone {
   tableName: DetailTable;
   id: string;
@@ -29,6 +52,19 @@ export interface DetailSyncDao {
   ): Promise<PendingTombstone[]>;
   /** Forgets deletions the server has, each only if it is still the same deletion. */
   removeTombstones(rows: readonly PendingTombstone[]): Promise<void>;
+  /** How far this person's download of `table` got, or null before the first. */
+  bookmark(userId: string, table: DetailTable): Promise<PullBookmark | null>;
+  /**
+   * Writes the server's rows into this phone's tables with the sync triggers quiet (nothing is marked to
+   * send back), then moves the bookmark to `next`, in one transaction. A row this phone has edited and
+   * not sent yet keeps its local version; a newer stored version is kept; a deletion deletes.
+   */
+  applyPulled(
+    table: DetailTable,
+    userId: string,
+    rows: readonly PulledRow[],
+    next: PullBookmark,
+  ): Promise<AppliedPull>;
 }
 
 // The server's columns for each table (supabase/detail/0001_teras_detail.sql), in its order.
@@ -105,13 +141,71 @@ function toServerRow(raw: Record<string, unknown>): DetailRow {
 }
 
 /** Runs `write` with the sync triggers quiet, so marking a row sent doesn't mark it to be sent again. */
-function applying(db: AppDatabase, write: (tx: AppDatabase) => void): void {
-  db.transaction((tx) => {
+function applying<T>(db: AppDatabase, write: (tx: AppDatabase) => T): T {
+  return db.transaction((tx) => {
     tx.run(sql`update sync_state set applying = 1 where id = 1`);
-    write(tx as unknown as AppDatabase);
+    const result = write(tx as unknown as AppDatabase);
     tx.run(sql`update sync_state set applying = 0 where id = 1`);
+    return result;
   });
 }
+
+const TIMES = new Set(['created_at', 'updated_at', 'deleted_at', 'started_at', 'ended_at', 'completed_at']);
+const NUMBERS = new Set([
+  'position',
+  'target_sets',
+  'target_reps',
+  'target_seconds',
+  'start_weight_kg',
+  'bodyweight_kg',
+  'rest_seconds',
+  'weight_kg',
+  'reps',
+  'seconds',
+  'rpe',
+]);
+
+class InvalidPulledValue extends Error {}
+
+/**
+ * A server value as this phone stores it. Server rows are external data: anything of the wrong kind
+ * throws, and the row is left out. Times become the phone's own ISO form (10:00:00.000Z), which the
+ * triggers and the newest-edit comparison rely on.
+ */
+function toLocalValue(column: string, value: unknown): string | number | null {
+  if (value === null || value === undefined) return null;
+  if (TIMES.has(column)) {
+    const time = typeof value === 'string' ? new Date(value) : null;
+    if (!time || Number.isNaN(time.getTime())) throw new InvalidPulledValue(column);
+    return time.toISOString();
+  }
+  if (BOOLEANS.has(column)) {
+    if (typeof value !== 'boolean') throw new InvalidPulledValue(column);
+    return value ? 1 : 0;
+  }
+  if (column === 'secondary_muscles') {
+    if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
+      throw new InvalidPulledValue(column);
+    }
+    return JSON.stringify(value);
+  }
+  if (NUMBERS.has(column)) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) throw new InvalidPulledValue(column);
+    return value;
+  }
+  if (typeof value !== 'string') throw new InvalidPulledValue(column);
+  return value;
+}
+
+interface LocalState {
+  id: string;
+  userId: string | null;
+  updatedAt: string;
+  dirty: number;
+}
+
+/** SQLite's bound-parameter limit is far above this; it keeps each lookup small. */
+const LOOKUP_CHUNK = 500;
 
 export function createDetailSyncDao(db: AppDatabase): DetailSyncDao {
   return {
@@ -151,6 +245,94 @@ export function createDetailSyncDao(db: AppDatabase): DetailSyncDao {
           tx.run(sql`delete from sync_tombstones
             where table_name = ${row.tableName} and id = ${row.id} and deleted_at = ${row.deletedAt}`);
         }
+      });
+    },
+
+    async bookmark(userId, table) {
+      const [row] = db.all<PullBookmark>(sql`
+        select synced_at as syncedAt, row_id as rowId from sync_bookmarks
+        where user_id = ${userId} and table_name = ${table}`);
+      return row ?? null;
+    },
+
+    async applyPulled(table, userId, rows, next) {
+      const columns = COLUMNS[table].filter((column) => column !== 'user_id');
+      return applying(db, (tx) => {
+        const local = new Map<string, LocalState>();
+        for (let start = 0; start < rows.length; start += LOOKUP_CHUNK) {
+          const ids = rows.slice(start, start + LOOKUP_CHUNK).map((row) => sql`${row.id}`);
+          for (const state of tx.all<LocalState>(sql`
+            select id, user_id as userId, updated_at as updatedAt, dirty from ${sql.identifier(table)}
+            where id in (${sql.join(ids, sql`, `)})`)) {
+            local.set(state.id, state);
+          }
+        }
+
+        const result: AppliedPull = { changed: 0, skipped: 0, earliestDate: null };
+        for (const row of rows) {
+          const mine = local.get(row.id);
+          // Another person's row under the same id, or this phone's own edit still to be sent: keep it.
+          if (mine && (mine.userId !== userId || mine.dirty === 1)) {
+            result.skipped += 1;
+            continue;
+          }
+          try {
+            const values = columns.map((column) =>
+              toLocalValue(column, column === 'id' ? row.id : row.data[column]),
+            );
+            const value = (column: string) => values[columns.indexOf(column)];
+            if (value('deleted_at') !== null) {
+              if (mine) {
+                tx.run(
+                  sql`delete from ${sql.identifier(table)} where id = ${row.id} and user_id = ${userId}`,
+                );
+                result.changed += 1;
+              }
+              continue;
+            }
+            const updatedAt = value('updated_at');
+            if (mine && typeof updatedAt === 'string' && mine.updatedAt >= updatedAt) continue;
+            if (table === 'exercise_favourites') {
+              // One favourite per person and exercise: another phone's row for the same exercise replaces ours.
+              tx.run(sql`delete from exercise_favourites where user_id = ${userId}
+                and exercise_id = ${value('exercise_id')} and id <> ${row.id} and dirty = 0`);
+            }
+            const names = sql.join(
+              columns.map((column) => sql.identifier(column)),
+              sql`, `,
+            );
+            const params = sql.join(
+              values.map((v) => sql`${v}`),
+              sql`, `,
+            );
+            const updates = sql.join(
+              columns
+                .filter((column) => column !== 'id')
+                .map((column) => sql`${sql.identifier(column)} = excluded.${sql.identifier(column)}`),
+              sql`, `,
+            );
+            tx.run(sql`insert into ${sql.identifier(table)} (user_id, dirty, ${names})
+              values (${userId}, 0, ${params})
+              on conflict (id) do update set ${updates}, dirty = 0`);
+            result.changed += 1;
+            const date = value('date');
+            if (
+              table === 'workouts' &&
+              typeof date === 'string' &&
+              (!result.earliestDate || date < result.earliestDate)
+            ) {
+              result.earliestDate = date;
+            }
+          } catch {
+            // A value of the wrong kind, or a parent this phone doesn't have (a foreign key): left out.
+            result.skipped += 1;
+          }
+        }
+
+        tx.run(sql`insert into sync_bookmarks (user_id, table_name, synced_at, row_id)
+          values (${userId}, ${table}, ${next.syncedAt}, ${next.rowId})
+          on conflict (user_id, table_name) do update set synced_at = excluded.synced_at, row_id = excluded.row_id`);
+        return result;
       });
     },
   };
