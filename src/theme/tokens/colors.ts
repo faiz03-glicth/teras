@@ -35,6 +35,9 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     bodyCanvas: '#FAEDC2',
     bodySilhouette: '#EFDDA6',
     bodyMuscle: '#D7C27E',
+    muscleNone: '#B5AEA0',
+    muscleOnce: '#8A847A',
+    muscleTwice: '#3F3A34',
   },
   dark: {
     canvas: '#2A2119',
@@ -62,5 +65,8 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     bodyCanvas: '#3A2E24',
     bodySilhouette: '#57483A',
     bodyMuscle: '#A9927A',
+    muscleNone: '#4E4740',
+    muscleOnce: '#DAD6D0',
+    muscleTwice: '#8F8A83',
   },
 };

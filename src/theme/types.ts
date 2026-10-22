@@ -39,6 +39,13 @@ export interface SemanticColors {
   bodyCanvas: string;
   bodySilhouette: string;
   bodyMuscle: string;
+  /**
+   * A muscle's three looks in the muscle cards (this week's map, the history): not hit, hit once, hit
+   * twice or more (mockup, MuscleWeek board). In Parchment, darker means more.
+   */
+  muscleNone: string;
+  muscleOnce: string;
+  muscleTwice: string;
 }
 
 export type TypographyVariant =
