@@ -36,7 +36,7 @@ export function RestBar({ endsAt, onLess, onMore, onSkip, onOver }: RestBarProps
     <View style={styles.bar} testID="rest-bar">
       {/* What a screen reader hears instead of a ticking clock. */}
       <View style={styles.time} accessible accessibilityLabel={`Rest, ${formatRest(left)} left`}>
-        <Icon name="clock" size={18} color={theme.colors.accentText} />
+        <Icon name="clock" size={18} color={theme.colors.text2} />
         <Text variant="sub" tone="secondary">
           Rest
         </Text>
@@ -59,7 +59,7 @@ export function RestBar({ endsAt, onLess, onMore, onSkip, onOver }: RestBarProps
           onPress={onMore}
           accessibilityLabel="Add 15 seconds"
         />
-        <Button label="Skip" variant="ghost" size="sm" onPress={onSkip} accessibilityLabel="Skip rest" />
+        <Button label="Skip" variant="quiet" size="sm" onPress={onSkip} accessibilityLabel="Skip rest" />
       </View>
     </View>
   );
@@ -80,5 +80,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   time: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   clock: { fontVariant: ['tabular-nums'] },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs },
+  // Each small key reaches a 48dp touch target (6 of slop above, below and aside): wider apart than that.
+  actions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
 }));

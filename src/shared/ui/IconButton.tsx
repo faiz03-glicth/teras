@@ -23,11 +23,12 @@ export interface IconButtonProps {
   testID?: string;
 }
 
-/** A square key, and the smaller footprint of a plain icon; each extended to a 44pt touch target. */
+/** A square key, and the smaller footprint of a plain icon; each extended to a 48dp touch target. */
 const KEY_SIZE = 40;
 const PLAIN_SIZE = 34;
-const KEY_HIT_SLOP = (44 - KEY_SIZE) / 2;
-const PLAIN_HIT_SLOP = (44 - PLAIN_SIZE) / 2;
+const TOUCH_TARGET = 48;
+const KEY_HIT_SLOP = (TOUCH_TARGET - KEY_SIZE) / 2;
+const PLAIN_HIT_SLOP = (TOUCH_TARGET - PLAIN_SIZE) / 2;
 
 export function IconButton({
   icon,

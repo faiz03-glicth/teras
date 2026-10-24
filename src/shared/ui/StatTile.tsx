@@ -19,6 +19,11 @@ export interface StatTileProps {
   labelFirst?: boolean;
   /** What a screen reader says instead of "label, value": for a value with more to it ("…, personal record"). */
   accessibilityLabel?: string;
+  /**
+   * A reading, not a control: a flat tile (the surface colour and a 1px border, no lift and no shadow), so
+   * only the keys on a screen look raised. For stats nobody can press.
+   */
+  flat?: boolean;
   testID?: string;
 }
 
@@ -34,6 +39,7 @@ export function StatTile({
   footer,
   labelFirst = false,
   accessibilityLabel,
+  flat = false,
   testID,
 }: StatTileProps) {
   const caption = (
@@ -43,12 +49,12 @@ export function StatTile({
   );
   return (
     <View
-      style={styles.tile}
+      style={flat ? styles.flatTile : styles.tile}
       testID={testID}
       accessible
       accessibilityLabel={accessibilityLabel ?? `${label}, ${value}${suffix ?? ''}`}
     >
-      <CachedSurface style={styles.surface} />
+      {!flat && <CachedSurface style={styles.surface} />}
       {icon && <Icon name={icon.name} size={20} color={icon.color} />}
       {labelFirst && caption}
       <Text variant="numeric2" numberOfLines={1}>
@@ -67,6 +73,16 @@ export function StatTile({
 
 const styles = StyleSheet.create((theme) => ({
   tile: { flex: 1, gap: 6, padding: 14 },
+  // The 1px border takes a point of the padding, so a flat tile is the size of a raised one.
+  flatTile: {
+    flex: 1,
+    gap: 6,
+    padding: 13,
+    borderRadius: theme.radii.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
   surface: {
     borderRadius: theme.radii.card,
     backgroundColor: theme.material.raised.background,

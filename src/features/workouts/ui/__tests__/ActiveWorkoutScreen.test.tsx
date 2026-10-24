@@ -16,9 +16,10 @@ import { useRoutines } from '@/features/workouts/hooks/useWorkoutQueries';
 import { useRestTimerStore } from '@/features/workouts/state/restTimerStore';
 import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
+import { Icon } from '@/shared/ui';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
-import { renderInScheme } from '@test/render';
+import { renderInScheme, styleOf } from '@test/render';
 
 import { NothingToTickError } from '../../domain/tickFill';
 import { ActiveWorkoutScreen } from '../ActiveWorkoutScreen';
@@ -104,6 +105,31 @@ function answerAlert(label: string) {
   if (!button?.onPress) throw new Error(`No "${label}" button`);
   act(() => button.onPress?.());
 }
+
+/** What `toJSON` hands back, as far as the tests below read it. */
+interface JsonNode {
+  props: { testID?: string };
+  children: (JsonNode | string)[] | null;
+}
+
+/** Every testID on screen, in the order it is drawn from the top of the page. */
+function idsInOrder(): string[] {
+  const ids: string[] = [];
+  const walk = (node: JsonNode | string) => {
+    if (typeof node === 'string') return;
+    if (node.props.testID) ids.push(node.props.testID);
+    node.children?.forEach(walk);
+  };
+  const tree = screen.toJSON() as unknown as JsonNode | JsonNode[] | null;
+  [tree].flat().forEach((root) => root && walk(root));
+  return ids;
+}
+
+/** A control's reach: its own height and the slop around it, in dp. */
+const reach = (control: { props: { hitSlop?: unknown; style?: unknown } }) => {
+  const slop = typeof control.props.hitSlop === 'number' ? control.props.hitSlop : 0;
+  return (styleOf(control).height as number) + 2 * slop;
+};
 
 beforeEach(() => {
   jest.useFakeTimers({ now: NOW });
@@ -486,6 +512,193 @@ describe('leaving', () => {
   });
 });
 
+describe('the header and the end of the list', () => {
+  it('ends the list with Finish workout, and keeps Finish out of the header beside the options', async () => {
+    log(running([bench([set('s1', 'done')])]));
+    await screen.findByTestId('finish-workout');
+
+    const ids = idsInOrder();
+    expect(ids.filter((id) => id === 'finish-workout')).toHaveLength(1);
+    // The options stay up in the header; Finish comes after the last set and the Add exercise key.
+    expect(ids.indexOf('workout-options')).toBeLessThan(ids.indexOf('active-workout-stats'));
+    expect(ids.indexOf('finish-workout')).toBeGreaterThan(ids.indexOf('active-workout-stats'));
+    expect(ids.indexOf('finish-workout')).toBeGreaterThan(ids.indexOf('set-s1'));
+    expect(ids.indexOf('finish-workout')).toBeGreaterThan(ids.indexOf('add-exercise'));
+  });
+
+  it('is a full-width gold key 56 tall, with a check', async () => {
+    const { theme } = log(running([bench([set('s1', 'done')])]));
+
+    const finish = await screen.findByRole('button', { name: 'Finish workout' });
+    expect(styleOf(finish)).toMatchObject({ height: 56, alignSelf: 'stretch' });
+    const surface = styleOf(within(finish).getByTestId('cached-surface').props.children);
+    expect(surface.backgroundColor).toBe(theme.material.accent.background);
+    expect(within(finish).UNSAFE_getByType(Icon).props.name).toBe('check');
+  });
+
+  it('runs the finish flow: straight to saving with every set ticked', async () => {
+    const { repositories } = log(running([bench([set('s1', 'done')])]));
+
+    fireEvent.press(await screen.findByTestId('finish-workout'));
+
+    await waitFor(() => expect(repositories.workouts.finish).toHaveBeenCalledWith('w1'));
+    expect(Alert.alert).not.toHaveBeenCalled();
+    await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalledWith('w1'));
+  });
+
+  it('runs the finish flow: asks first when sets are unticked, as the header key did', async () => {
+    const { repositories } = log(running([bench([set('s1', 'done'), set('s2', 'pending')])]));
+
+    fireEvent.press(await screen.findByTestId('finish-workout'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Finish workout?',
+      "1 unticked set won't be saved. The 1 you completed already is.",
+      expect.any(Array),
+    );
+    expect(repositories.workouts.finish).not.toHaveBeenCalled();
+  });
+
+  it('is not offered on a workout with nothing in it: adding an exercise leads', async () => {
+    log(running([]));
+
+    await screen.findByText('Get started');
+    expect(screen.queryByTestId('finish-workout')).toBeNull();
+  });
+
+  it("is the past day's Save when a day is logged after the fact", async () => {
+    log({ ...running([bench([set('s1', 'done')])]), date: '2026-09-29' as ISODate, pastLog: true });
+
+    expect(await screen.findByRole('button', { name: 'Save' })).toBeTruthy();
+    expect(screen.getByTestId('finish-workout')).toBeTruthy();
+  });
+});
+
+describe('the saved chip', () => {
+  it('says the workout is saved on the phone, quietly, with a success check', async () => {
+    const { theme } = log(running([bench([set('s1', 'pending')])]));
+
+    const chip = await screen.findByLabelText('Workout saved on this phone');
+    const label = within(chip).getByText('Saved on this phone');
+    expect(styleOf(label)).toMatchObject({ color: theme.colors.text2 });
+    expect(styleOf(label).fontSize).toBeGreaterThanOrEqual(12);
+    expect(within(chip).UNSAFE_getByType(Icon).props).toMatchObject({
+      name: 'check',
+      color: theme.colors.success,
+    });
+    expect(styleOf(chip)).toMatchObject({
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.subtle,
+    });
+  });
+
+  it('sits beside the elapsed time in the header', async () => {
+    log(running([bench([set('s1', 'pending')])]));
+
+    await screen.findByLabelText('Workout saved on this phone');
+    expect(screen.getByTestId('elapsed-clock').children).toContain('12:00');
+    const ids = idsInOrder();
+    expect(ids.indexOf('elapsed-clock')).toBeLessThan(ids.indexOf('saved-chip'));
+    expect(ids.indexOf('saved-chip')).toBeLessThan(ids.indexOf('active-workout-stats'));
+  });
+
+  it('says Saving… while the workout is being finished', async () => {
+    log(running([bench([set('s1', 'done')])]), (fakes) => {
+      fakes.workouts.finish.mockReturnValue(new Promise(() => undefined));
+    });
+
+    fireEvent.press(await screen.findByTestId('finish-workout'));
+
+    expect(await screen.findByLabelText('Saving workout')).toBeTruthy();
+    expect(screen.getByText('Saving…')).toBeTruthy();
+    expect(screen.queryByText('Saved on this phone')).toBeNull();
+  });
+
+  it('shows no clock for a past day, which was never timed, but still says it is saved', async () => {
+    log({ ...running([bench([set('s1', 'done')])]), date: '2026-09-29' as ISODate, pastLog: true });
+
+    expect(await screen.findByLabelText('Workout saved on this phone')).toBeTruthy();
+    expect(screen.queryByTestId('elapsed-clock')).toBeNull();
+  });
+});
+
+describe('touch targets of 48dp or more', () => {
+  it('makes a set row 56 tall, with 48 tall fields and a 48 square tick', async () => {
+    log(running([bench([set('s1', 'pending')])]));
+
+    const row = await screen.findByTestId('set-s1');
+    expect(styleOf(row).minHeight).toBe(56);
+    expect(styleOf(screen.getByTestId('set-s1-weight')).minHeight).toBe(48);
+    expect(styleOf(screen.getByTestId('set-s1-reps')).minHeight).toBe(48);
+    expect(styleOf(screen.getByTestId('set-s1-tick'))).toMatchObject({ width: 48, height: 48 });
+  });
+
+  it('reaches 48 from the header keys, Add set and the exercise remove key', async () => {
+    log(running([bench([set('s1', 'pending')])]));
+
+    const keys = [
+      await screen.findByRole('button', { name: 'Minimize' }),
+      screen.getByRole('button', { name: 'Workout options' }),
+      screen.getByRole('button', { name: 'Remove Bench Press (Barbell)' }),
+      screen.getByRole('button', { name: 'Add set' }),
+    ];
+    keys.forEach((key) => expect(reach(key)).toBeGreaterThanOrEqual(48));
+  });
+
+  it('reaches 48 from the rest bar keys', async () => {
+    log(running([bench([set('s1', 'pending')])]));
+    await act(async () => fireEvent.press(await screen.findByTestId('set-s1-tick')));
+
+    ['Take off 15 seconds', 'Add 15 seconds', 'Skip rest'].forEach((name) =>
+      expect(reach(screen.getByRole('button', { name }))).toBeGreaterThanOrEqual(48),
+    );
+  });
+});
+
+describe('less gold, and text of 12 or more', () => {
+  it('writes the exercise name in the text colour, bold, and the quiet links in text2', async () => {
+    const { theme } = log(running([bench([set('s1', 'pending')])]));
+
+    const name = await screen.findByText('Bench Press (Barbell)');
+    expect(styleOf(name)).toMatchObject({ color: theme.colors.text, fontFamily: theme.fonts.semibold });
+    expect(styleOf(screen.getByText('Add set')).color).toBe(theme.colors.text2);
+
+    await act(async () => fireEvent.press(screen.getByTestId('set-s1-tick')));
+    expect(styleOf(screen.getByText('Skip')).color).toBe(theme.colors.text2);
+  });
+
+  it('names the columns at 12, and reads the previous set and the empty fields in text2', async () => {
+    const { theme } = log(running([bench([set('s1', 'pending', { weightKg: null })])]), (fakes) => {
+      fakes.workouts.previousSets.mockResolvedValue({
+        'bench-press-barbell': [{ weightKg: 60, reps: 8, seconds: null }],
+      });
+    });
+
+    await screen.findByText('60kg × 8');
+    ['SET', 'PREVIOUS', 'KG', 'REPS'].forEach((column) =>
+      expect(
+        styleOf(screen.getByText(column, { includeHiddenElements: true })).fontSize,
+      ).toBeGreaterThanOrEqual(12),
+    );
+    expect(styleOf(screen.getByTestId('set-s1-previous')).color).toBe(theme.colors.text2);
+    expect(screen.getByTestId('set-s1-previous').props.minimumFontScale).toBeGreaterThanOrEqual(12 / 13);
+    expect(screen.getByTestId('set-s1-weight').props.placeholderTextColor).toBe(theme.colors.text2);
+  });
+
+  it('draws the running numbers on a flat panel, with no inset shadow to blur', async () => {
+    const { theme } = log(running([bench([set('s1', 'pending')])]));
+
+    const panel = styleOf(await screen.findByTestId('active-workout-panel'));
+    expect(panel).toMatchObject({
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    });
+    expect(panel.boxShadow).toBeUndefined();
+  });
+});
+
 describe('finishing', () => {
   it('has the routine cards read their last-done line again once it is saved (S4)', async () => {
     const workout = running([bench([set('s1', 'done')])]);
@@ -514,7 +727,7 @@ describe('finishing', () => {
     );
     await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(1));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     await waitFor(() => expect(repositories.workouts.finish).toHaveBeenCalledWith('w1'));
     await waitFor(() => expect(repositories.workouts.routines).toHaveBeenCalledTimes(2));
@@ -523,7 +736,7 @@ describe('finishing', () => {
   it('saves straight away when every set is ticked, then shows what was saved', async () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     await waitFor(() => expect(repositories.workouts.finish).toHaveBeenCalledWith('w1'));
     expect(Alert.alert).not.toHaveBeenCalled();
@@ -533,7 +746,7 @@ describe('finishing', () => {
   it("finishes early only after saying which sets won't be saved", async () => {
     const { repositories } = log(running([bench([set('s1', 'done'), set('s2', 'pending')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     expect(Alert.alert).toHaveBeenCalledWith(
       'Finish workout?',
@@ -550,7 +763,7 @@ describe('finishing', () => {
     fireEvent.press(await screen.findByTestId('set-s1-tick'));
     await screen.findByTestId('rest-bar');
 
-    fireEvent.press(screen.getByRole('button', { name: 'Finish' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Finish workout' }));
     answerAlert('Finish');
 
     await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalled());
@@ -560,7 +773,7 @@ describe('finishing', () => {
   it('sends the day it lit to the server straight away, not at the next time the app is opened', async () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     await waitFor(() => expect(repositories.workoutDays.pushPending).toHaveBeenCalledWith('user-1'));
     // After the day was written, never before.
@@ -574,7 +787,7 @@ describe('finishing', () => {
     const { repositories } = log(running([bench([set('s1', 'done')])]));
     repositories.workoutDays.pushPending.mockRejectedValueOnce(new Error('offline'));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalledWith('w1'));
     await waitFor(() =>
@@ -589,7 +802,7 @@ describe('finishing', () => {
     });
     const { repositories } = log(running([bench([set('s1', 'done')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
 
     await waitFor(() => expect(actions.openWorkoutSaved).toHaveBeenCalledWith('w1'));
     expect(repositories.workoutDays.pushPending).not.toHaveBeenCalled();
@@ -598,7 +811,7 @@ describe('finishing', () => {
   it('sends nothing when nothing was completed and the workout is thrown away', async () => {
     const { repositories } = log(running([bench([set('s1', 'pending')])]));
 
-    fireEvent.press(await screen.findByRole('button', { name: 'Finish' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Finish workout' }));
     answerAlert('Discard');
 
     await waitFor(() => expect(repositories.workouts.discard).toHaveBeenCalledWith('w1'));

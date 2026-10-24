@@ -65,10 +65,12 @@ const styles = StyleSheet.create((theme) => ({
     boxShadow: theme.material.raised.shadow,
   },
   label: { flex: 1 },
+  // 40 tall and 8 of slop all round: a 56 touch target.
   undo: {
     height: 40,
     paddingHorizontal: 14,
     justifyContent: 'center',
   },
-  undoText: { color: theme.colors.accentText },
+  // A link in the text colour with an underline, not gold: it is tappable because it says so.
+  undoText: { color: theme.colors.text, textDecorationLine: 'underline' },
 }));

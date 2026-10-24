@@ -17,6 +17,11 @@ appId: ${TERAS_APP}
 - extendedWaitUntil:
     visible: { id: 'active-workout-screen' }
     timeout: 15000
+# Finish workout is the last key of the list, below the fold once the workout is long.
+- scrollUntilVisible:
+    element: { id: 'finish-workout' }
+    direction: DOWN
+    timeout: 10000
 - tapOn: { id: 'finish-workout' }
 # Asked only when some sets are not ticked; with every set done it saves straight away.
 - tapOn:

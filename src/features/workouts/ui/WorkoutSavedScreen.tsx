@@ -95,7 +95,13 @@ export function WorkoutSavedScreen({ id }: { id: string | null }) {
                   </View>
                   <View style={styles.cells}>
                     {vm.week.letters.map((letter, index) => (
-                      <Text key={index} variant="mini" tone="tertiary" align="center" style={styles.letter}>
+                      <Text
+                        key={index}
+                        variant="caption"
+                        tone="tertiary"
+                        align="center"
+                        style={styles.letter}
+                      >
                         {letter}
                       </Text>
                     ))}
@@ -119,7 +125,7 @@ export function WorkoutSavedScreen({ id }: { id: string | null }) {
           >
             {vm.stats.map((stat) => (
               <View key={stat.label} style={styles.tile}>
-                <StatTile label={stat.label} value={stat.value} labelFirst />
+                <StatTile label={stat.label} value={stat.value} labelFirst flat />
               </View>
             ))}
           </Animated.View>
@@ -127,7 +133,7 @@ export function WorkoutSavedScreen({ id }: { id: string | null }) {
           <Animated.View style={motion.staggerIn(3)}>
             <Card style={styles.records} testID="saved-records">
               <View style={styles.recordsHead}>
-                <Icon name="trophy" size={18} color={theme.colors.accentText} />
+                <Icon name="trophy" size={18} color={theme.colors.text2} />
                 <Text variant="headline">{vm.records.title}</Text>
               </View>
               {vm.records.rows.map((record) => (

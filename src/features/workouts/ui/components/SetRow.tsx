@@ -26,8 +26,12 @@ export interface SetRowProps {
 /** The table's fixed columns, shared by the header and every row so they always line up. */
 const NUMBER_WIDTH = 24;
 /** Room for "102.5kg × 10"; anything longer shrinks to fit rather than wrapping. */
-const PREVIOUS_WIDTH = 84;
-const TICK_SIZE = 44;
+const PREVIOUS_WIDTH = 76;
+/** The text beside the fields is 13pt and shrinks no further than 12: nothing meaningful is smaller. */
+const PREVIOUS_MIN_SCALE = 12 / 13;
+/** Every field and the tick are a 48dp target, and a row is 56 so one set's wells never touch the next's. */
+const TARGET_SIZE = 48;
+const ROW_HEIGHT = 56;
 
 /**
  * The column names above a set table, so a field is never a bare "–". Weight is named in the unit it is
@@ -38,15 +42,15 @@ export function SetTableHeader({ type, unit }: { type: WorkoutExercise['type']; 
   const columns = type === 'timed' ? ['Seconds'] : [weightColumn(type, unit), 'Reps'];
   return (
     <View style={styles.header} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Text variant="mini" tone="tertiary" weight="semibold" style={styles.number}>
+      <Text variant="caption" tone="tertiary" weight="semibold" style={styles.number}>
         SET
       </Text>
-      <Text variant="mini" tone="tertiary" weight="semibold" style={styles.previous}>
+      <Text variant="caption" tone="tertiary" weight="semibold" style={styles.previous}>
         PREVIOUS
       </Text>
       <View style={styles.fields}>
         {columns.map((column) => (
-          <Text key={column} variant="mini" tone="tertiary" weight="semibold" style={styles.column}>
+          <Text key={column} variant="caption" tone="tertiary" weight="semibold" style={styles.column}>
             {column.toUpperCase()}
           </Text>
         ))}
@@ -137,7 +141,7 @@ export const SetRow = memo(function SetRow({
         keyboardType="decimal-pad"
         selectTextOnFocus
         placeholder="–"
-        placeholderTextColor={theme.colors.text3}
+        placeholderTextColor={theme.colors.text2}
         accessibilityLabel={`${label}, set ${index + 1}`}
         {...deletable}
         style={styles.input}
@@ -158,10 +162,10 @@ export const SetRow = memo(function SetRow({
         </Text>
         <Text
           variant="footnote"
-          tone="tertiary"
+          tone="secondary"
           numberOfLines={1}
           adjustsFontSizeToFit
-          minimumFontScale={0.75}
+          minimumFontScale={PREVIOUS_MIN_SCALE}
           accessibilityLabel={previousLabel}
           {...deletable}
           style={styles.previous}
@@ -204,15 +208,15 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing.sm,
-    // 52 around a 44 field leaves a clear gap between one set's wells and the next.
-    minHeight: 52,
+    // 56 around a 48 field leaves a clear gap between one set's wells and the next.
+    minHeight: ROW_HEIGHT,
   },
   header: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, minHeight: 28 },
   number: { width: NUMBER_WIDTH, textAlign: 'center', fontVariant: ['tabular-nums'] },
   previous: { width: PREVIOUS_WIDTH, textAlign: 'center', fontVariant: ['tabular-nums'] },
   fields: { flex: 1, flexDirection: 'row', gap: theme.spacing.sm },
   column: { flex: 1, textAlign: 'center' },
-  tickColumn: { width: TICK_SIZE, alignItems: 'center' },
+  tickColumn: { width: TARGET_SIZE, alignItems: 'center' },
   // A field is a well pressed into the card. Once its set is done it fills gold-tinted, so a finished
   // row reads by its colour even where the inset shadow does not draw.
   field: { flex: 1, borderRadius: theme.radii.control },
@@ -223,8 +227,8 @@ const styles = StyleSheet.create((theme) => ({
   }),
   input: {
     flex: 1,
-    minHeight: 44,
-    paddingHorizontal: theme.spacing.sm,
+    minHeight: TARGET_SIZE,
+    paddingHorizontal: theme.spacing.xs,
     color: theme.colors.text,
     fontFamily: theme.fonts.semibold,
     fontSize: 17,
@@ -232,8 +236,8 @@ const styles = StyleSheet.create((theme) => ({
     fontVariant: ['tabular-nums' as const],
   },
   tick: {
-    width: TICK_SIZE,
-    height: TICK_SIZE,
+    width: TARGET_SIZE,
+    height: TARGET_SIZE,
     borderRadius: theme.radii.control,
     alignItems: 'center',
     justifyContent: 'center',

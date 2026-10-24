@@ -57,24 +57,24 @@ export function SessionScreen({ id }: { id: string | null }) {
             </Text>
           </View>
 
-          <Card>
-            <View
-              style={styles.stats}
-              accessible
-              accessibilityLabel={vm.stats.map((stat) => `${stat.label}, ${stat.value}`).join('. ')}
-            >
-              {vm.stats.map((stat) => (
-                <View key={stat.label} style={styles.stat}>
-                  <Text variant="caption" tone="secondary">
-                    {stat.label}
-                  </Text>
-                  <Text variant="headline" style={styles.number}>
-                    {stat.value}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </Card>
+          {/* The numbers are a reading, not a control: a flat panel, so only the keys look raised. */}
+          <View
+            style={styles.stats}
+            accessible
+            accessibilityLabel={vm.stats.map((stat) => `${stat.label}, ${stat.value}`).join('. ')}
+            testID="session-stats"
+          >
+            {vm.stats.map((stat) => (
+              <View key={stat.label} style={styles.stat}>
+                <Text variant="caption" tone="secondary">
+                  {stat.label}
+                </Text>
+                <Text variant="headline" style={styles.number}>
+                  {stat.value}
+                </Text>
+              </View>
+            ))}
+          </View>
 
           {vm.exercises.map((exercise) => (
             <Card key={exercise.id} testID={`session-exercise-${exercise.id}`} style={styles.exercise}>
@@ -141,12 +141,20 @@ const styles = StyleSheet.create((theme) => ({
   head: { gap: theme.spacing.xs },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
   title: { flex: 1 },
-  stats: { flexDirection: 'row', gap: theme.spacing.md },
+  stats: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    padding: theme.spacing.lg - 1,
+    borderRadius: theme.radii.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
   stat: { flex: 1, gap: 2 },
   number: { fontVariant: ['tabular-nums'] },
   exercise: { gap: theme.spacing.sm },
-  // The whole heading is the target, at least 44 pt tall like every other control.
-  exerciseHead: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, minHeight: 44 },
+  // The whole heading is the target, at least 48 dp tall like every other control.
+  exerciseHead: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, minHeight: 48 },
   exerciseHeadPressed: {
     backgroundColor: theme.material.inset.background,
     borderRadius: theme.radii.controlSm,
