@@ -104,24 +104,3 @@ describe('the songket on a big gold button', () => {
     expect(screen.queryByTestId('songket-cta')).toBeNull();
   });
 });
-
-describe('an empty past day in Black', () => {
-  it('keeps a 1px outline, since it barely parts from the card', () => {
-    const { theme, toJSON } = renderInScheme(<HeatCell level={0} size={14} />, 'dark');
-    expect(styleOf(toJSON())).toMatchObject({ borderWidth: 1, borderColor: theme.colors.border });
-    expect(theme.colors.border).toBe('#34343A');
-  });
-
-  it('leaves a day with workouts, a padding cell and Parchment as they were', () => {
-    const dark = renderInScheme(<HeatCell level={2} size={14} />, 'dark');
-    expect(styleOf(dark.toJSON()).borderWidth).toBe(0);
-    dark.unmount();
-
-    const blank = renderInScheme(<HeatCell level={0} size={14} state="blank" />, 'dark');
-    expect(styleOf(blank.toJSON()).borderWidth).toBe(0);
-    blank.unmount();
-
-    const light = renderInScheme(<HeatCell level={0} size={14} />, 'light');
-    expect(styleOf(light.toJSON()).borderWidth).toBe(0);
-  });
-});

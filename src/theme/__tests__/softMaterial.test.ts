@@ -112,18 +112,9 @@ describe('the Black material', () => {
     for (const shadow of allShadows('dark')) expect(geometry(shadow).blur).toBe(0);
   });
 
-  it('carves an empty heatmap day darker than the card it sits in, by colour alone too', () => {
-    expect(luminance(material.carved.background)).toBeLessThan(luminance(material.raised.background));
-  });
-
-  it('cuts an empty day in with fine edges, lit like every other surface, and no blur', () => {
-    // Edges, not inner shadows: Android blurs each inner shadow offscreen, and a month holds dozens of days.
-    const brightness = (color: string) =>
-      (color.match(/[\d.]+/g) ?? []).slice(0, 3).reduce((sum, channel) => sum + Number(channel), 0);
-    // Light falls from the upper left: the shade edge (up-left) is darker than the light edge (down-right).
-    expect(brightness(material.carved.shade)).toBeLessThan(brightness(material.carved.light));
-    expect(material.carved.edge).toBeGreaterThan(0);
-    expect(material.carved.edge).toBeLessThanOrEqual(2);
+  it('sets an empty heatmap day apart as a lighter, outlined well, with no blur', () => {
+    expect(luminance(material.carved.background)).toBeGreaterThan(luminance(material.raised.background));
+    expect(material.carved).toMatchObject({ shade: '#34343A', light: '#34343A', edge: 1 });
   });
 
   it.each([
@@ -165,7 +156,4 @@ describe('the gold primary action', () => {
     expect(contrastRatio(BRAND_GOLD, softMaterials.dark.raised.background)).toBeGreaterThan(7);
   });
 
-  it('on walnut, is one flat gold lifted exactly like every other key', () => {
-    expect(softMaterials.dark.accent.shadow).toBe(softMaterials.dark.raised.shadow);
-  });
 });

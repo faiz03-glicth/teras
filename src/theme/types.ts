@@ -28,6 +28,8 @@ export interface SemanticColors {
   accentSoft: string;
   accentText: string;
   onAccent: string;
+  /** Saved, synced and other good news: a green that never competes with the gold. */
+  success: string;
   danger: string;
   dangerSoft: string;
   /** Text and icons on a `danger` fill (an armed Delete). */

@@ -77,8 +77,8 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
     pressed: {
       shadow: 'inset 0 2px 0 rgba(0,0,0,0.55), inset 0 0 0 1px #34343A',
     },
-    // A crisp dent with no light edge: Black has no highlight, only the hard shade.
-    carved: { background: '#26262B', shade: 'rgba(0,0,0,0.45)', light: 'rgba(0,0,0,0)', edge: 1 },
+    // An empty day is a flat well a step lighter than the card, outlined in the border grey: no blur, no glow.
+    carved: { background: '#26262B', shade: '#34343A', light: '#34343A', edge: 1 },
     bar: { background: '#141416', shadow: 'inset 0px 1px 0px #2E2E33' },
     accent: {
       background: BRAND_GOLD,

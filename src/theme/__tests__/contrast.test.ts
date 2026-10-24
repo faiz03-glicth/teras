@@ -34,12 +34,8 @@ describe.each(['light', 'dark'] as const)('%s colours', (scheme) => {
     ['gold text on the active surface (selected tab)', c.accentText, c.accentSoft],
     ['errors on cards', c.danger, c.surface],
     ['errors on the error banner', c.danger, c.dangerSoft],
-<<<<<<< HEAD
     ['an armed Delete key', c.onDanger, c.danger],
-=======
-    ['text and icons on a filled error', c.onDanger, c.danger],
     ['saved and synced marks on cards', c.success, c.surface],
->>>>>>> 84a6fdf (feat(theme): black theme with flat ledges and songket)
   ])('%s meets AA (≥ 4.5:1)', (_name, foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
   });
