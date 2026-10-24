@@ -10,6 +10,7 @@ import { motion } from '@/theme';
 
 import { PressDelay } from './pressDelay';
 import { useTabBarClearance } from './tabBarClearance';
+import { SongketWall } from './SongketWall';
 
 export interface ScreenProps {
   children: ReactNode;
@@ -78,6 +79,7 @@ export function Screen({
   const content = [styles.content(inset, withTabBar ? room : 0), contentStyle];
   return (
     <SafeAreaView edges={edges} style={styles.root} testID={testID}>
+      <SongketWall />
       {list ? (
         <PressDelay value={motion.scroll.pressDelayMs}>{children}</PressDelay>
       ) : scroll ? (

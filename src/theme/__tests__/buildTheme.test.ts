@@ -44,16 +44,56 @@ describe('buildTheme', () => {
     const light = buildTheme('light', 'amber');
     const dark = buildTheme('dark', 'amber');
 
+<<<<<<< HEAD
     // Parchment, and Walnut A (lifted): a ground light enough for both the highlight and the shade to show.
     expect(light.colors.canvas).toBe('#F6E7B6');
     expect(dark.colors.canvas).toBe('#2A2119');
     expect(dark.material.raised.background).toBe('#2F261D');
+=======
+    // Parchment and Black.
+    expect(light.colors.canvas).toBe('#F6E7B6');
+    expect(dark.colors.canvas).toBe('#0B0B0C');
+    expect(dark.colors).toMatchObject({
+      surface: '#1B1B1E',
+      surfaceRaised: '#1B1B1E',
+      subtle: '#26262B',
+      border: '#34343A',
+      border2: '#6E6E74',
+      text: '#F4F4F5',
+      text2: '#BDBDC2',
+      text3: '#A0A0A6',
+      accentEdge: '#9A6F20',
+      accentSoft: '#2E2717',
+      danger: '#FF5A5F',
+      dangerSoft: '#3A1A1C',
+      onDanger: '#1A0B0C',
+      bodyCanvas: '#1B1B1E',
+      bodySilhouette: '#2C2C31',
+      bodyMuscle: '#7A7A80',
+      muscleNone: '#3A3A40',
+      muscleOnce: '#7A7A80',
+      muscleTwice: '#B8B8BE',
+    });
+>>>>>>> 84a6fdf (feat(theme): black theme with flat ledges and songket)
     // The brand gold and its ink, identical in both schemes.
     expect(light.colors.accent).toBe('#FFD179');
     expect(dark.colors.accent).toBe('#FFD179');
     expect(dark.colors.onAccent).toBe('#2B1D0B');
     expect(light.heat).toEqual(['#EBDBA6', '#FBE3A0', '#F2C14E', '#C98A1E', '#7A4A12']);
+<<<<<<< HEAD
     expect(dark.heat).toEqual(['#382D23', '#5A4320', '#946B22', '#D9A040', '#FFD179']);
+=======
+    expect(dark.heat).toEqual(['#26262B', '#5E4519', '#9A6F20', '#D19A3A', '#FFD179']);
+  });
+
+  it('gives every scheme a success green and a tier for each muscle count', () => {
+    expect(buildTheme('light', 'amber').colors.success).toBe('#4F7A1E');
+    expect(buildTheme('dark', 'amber').colors.success).toBe('#7FD08A');
+    for (const scheme of SCHEMES) {
+      const { colors } = buildTheme(scheme, 'amber');
+      expect(new Set([colors.muscleNone, colors.muscleOnce, colors.muscleTwice]).size).toBe(3);
+    }
+>>>>>>> 84a6fdf (feat(theme): black theme with flat ledges and songket)
   });
 
   it('is pure: identical inputs give equal themes', () => {

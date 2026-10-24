@@ -19,7 +19,7 @@ import { useWeeklyChart } from './useWeeklyChart';
 export const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Parchment' },
-  { value: 'dark', label: 'Walnut' },
+  { value: 'dark', label: 'Black' },
 ] as const satisfies readonly { value: ThemePreference; label: string }[];
 
 export const REDUCE_MOTION_OPTIONS = [

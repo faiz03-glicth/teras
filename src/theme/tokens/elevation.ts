@@ -8,6 +8,6 @@ export const elevation: Record<ColorScheme, Elevation> = {
   },
   dark: {
     card: null,
-    raised: '0px 10px 30px rgba(0,0,0,0.45)',
+    raised: '0px 3px 0px #050506',
   },
 };

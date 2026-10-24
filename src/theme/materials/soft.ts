@@ -2,24 +2,29 @@ import type { ColorScheme, SoftMaterial } from '../types';
 import { BRAND_GOLD } from '../tokens/brand';
 import { semanticColors } from '../tokens/colors';
 
-/** Walnut's lift, shared by cards, keys and the gold: every raised thing is the same flat stuff. */
-const WALNUT_LIFT = '-5px -5px 12px rgba(255,236,200,0.085), 6px 6px 14px rgba(0,0,0,0.50)';
-
 /**
- * Teras's material: one physical stuff — parchment by day, walnut by night — that controls are raised out
- * of or pressed into. Light falls from the upper left, so a raised surface carries a highlight up-left and a
- * shade down-right; an inset surface carries the same pair on its inside.
+ * Teras's material, one per scheme.
+ *
+ * **Parchment (light)** is one soft stuff that controls are raised out of or pressed into. Light falls from
+ * the upper left, so a raised surface carries a highlight up-left and a shade down-right; an inset surface
+ * carries the same pair on its inside.
+ *
+ * **Black (dark)** is flat: no blur, no glow, no gradient. A solid graphite surface with a 1px inner rim,
+ * and raised things stand on a hard ledge below them (a game button's base, not a soft shadow). Pressing
+ * drops the ledge. A well is a flat step LIGHTER than the card it sits in, with a hard lip along its top.
+ * Every Black shadow has zero blur, which is also cheaper: Android draws a blurred boxShadow offscreen on
+ * every frame, a hard one needs no blur pass.
  *
  * Every depth value in the app lives here. Components ask for `raised`, `inset` or `pressed` and never write
  * a shadow of their own, so the whole material can be retuned from this file.
  *
  * Three rules hold the material honest:
- * - **Small and soft.** Offsets stay within 6px and blurs within 16px: a pressed-out object, not a floating
- *   bubble. List rows and the days you trained stay flat; depth is spent on containers and controls, and on
- *   the one exception, an empty heatmap day, carved into its card as a small dent (`carved`).
- * - **Colour carries the state too.** An inset surface is also a darker fill, because inset shadows need
+ * - **Small.** Offsets stay within 6px and blurs within 16px (Black has none): a pressed-out object, not a
+ *   floating bubble. List rows and the days you trained stay flat; depth is spent on containers and controls,
+ *   and on the one exception, an empty heatmap day, carved into its card as a small dent (`carved`).
+ * - **Colour carries the state too.** An inset surface is also a different fill, because inset shadows need
  *   Android 10+, and because no state may be readable only from its shadow.
- * - **The palette is the brand's.** Parchment and walnut come from the semantic colours; the gold is
+ * - **The palette is the brand's.** Parchment and Black come from the semantic colours; the gold is
  *   BRAND_GOLD in both schemes. On parchment the gold keeps its dark edge: gold on cream separates by
  *   barely 1.2:1, and the edge is what makes the button an object rather than a stain.
  */
@@ -57,31 +62,31 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
   },
   dark: {
     ground: semanticColors.dark.canvas,
-    raised: { background: semanticColors.dark.surface, shadow: WALNUT_LIFT },
+    raised: {
+      background: '#1B1B1E',
+      shadow: 'inset 0 0 0 1px #2E2E33, 0 3px 0 #050506',
+    },
     raisedSm: {
-      background: semanticColors.dark.surface,
-      shadow: '-3px -3px 7px rgba(255,236,200,0.08), 3px 3px 8px rgba(0,0,0,0.48)',
+      background: '#1B1B1E',
+      shadow: 'inset 0 0 0 1px #2E2E33, 0 2px 0 #050506',
     },
     inset: {
-      background: '#221A13',
-      shadow: 'inset 3px 3px 7px rgba(0,0,0,0.50), inset -3px -3px 6px rgba(255,236,200,0.07)',
+      background: '#26262B',
+      shadow: 'inset 0 0 0 1px #34343A, inset 0 2px 0 rgba(0,0,0,0.45)',
     },
     pressed: {
-      shadow: 'inset 3px 3px 6px rgba(0,0,0,0.50), inset -2px -2px 5px rgba(255,236,200,0.07)',
+      shadow: 'inset 0 2px 0 rgba(0,0,0,0.55), inset 0 0 0 1px #34343A',
     },
-    carved: { background: '#221A13', shade: 'rgba(0,0,0,0.55)', light: 'rgba(255,236,200,0.08)', edge: 1.5 },
-    // Its top edge catches the light, and it casts upward onto the content scrolling beneath it.
-    bar: {
-      background: semanticColors.dark.surface,
-      shadow: 'inset 0px 1px 0px rgba(255,236,200,0.07), 0px -6px 14px rgba(0,0,0,0.32)',
-    },
+    // A crisp dent with no light edge: Black has no highlight, only the hard shade.
+    carved: { background: '#26262B', shade: 'rgba(0,0,0,0.45)', light: 'rgba(0,0,0,0)', edge: 1 },
+    bar: { background: '#141416', shadow: 'inset 0px 1px 0px #2E2E33' },
     accent: {
       background: BRAND_GOLD,
-      // One flat gold, lifted exactly like every other key: no gradient, no glow.
-      shadow: WALNUT_LIFT,
-      pressedShadow: 'inset 3px 3px 6px rgba(122,74,18,0.50), inset -2px -2px 4px rgba(255,240,200,0.35)',
-      // Gold on walnut stands out by itself; an edge here would only add noise.
-      edge: null,
+      // A hard base in a darker gold, like the ledge under a game button.
+      shadow: '0 3px 0 #9A6F20',
+      pressedShadow: 'inset 0 2px 0 rgba(122,74,18,0.55)',
+      // The same darker gold as the ledge, so the button reads as one object standing on its base.
+      edge: semanticColors.dark.accentEdge,
     },
   },
 };

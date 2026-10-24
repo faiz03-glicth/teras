@@ -6,7 +6,7 @@ It is the companion app to **Streak**, a habit-logging app. Both apps share one 
 
 ## Status
 
-**First slice built:** Get Started → Set up → Sign in → Home, with Parchment and Walnut themes, plus the
+**First slice built:** Get Started → Set up → Sign in → Home, with Parchment and Black themes, plus the
 `workout_days` contract with Streak. Workout logging, the exercise library and the heatmap come next.
 
 | Doc | What it holds |

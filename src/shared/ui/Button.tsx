@@ -1,4 +1,5 @@
-import { ActivityIndicator } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, type LayoutChangeEvent } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { useStateTransition, type Theme } from '@/theme';
@@ -7,7 +8,12 @@ import { ContentSwap } from './ContentSwap';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
 import { PressableScale } from './PressableScale';
+import { ctaMotifFits, SongketCta } from './SongketCta';
 import { Text } from './Text';
+
+const ICON_SIZE = 18;
+/** The icon and the gap between it and the label, which the centred content also takes. */
+const ICON_AND_GAP = ICON_SIZE + 8;
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'quiet' | 'danger';
 export type ButtonSize = 'lg' | 'md' | 'sm';
@@ -65,10 +71,26 @@ export function Button({
   const fade = useStateTransition('opacity');
   const shownLabel = loading ? (loadingLabel ?? label) : label;
 
+  // Black presses songket thread into the big gold calls to action. Only those pay for measuring.
+  const carriesMotif = variant === 'primary' && size === 'md' && theme.scheme === 'dark';
+  const [box, setBox] = useState({ width: 0, height: 0 });
+  const [labelWidth, setLabelWidth] = useState(0);
+  const showMotif =
+    carriesMotif && ctaMotifFits(box.width, box.height, labelWidth + (icon || loading ? ICON_AND_GAP : 0));
+  const measureBox = ({ nativeEvent: { layout } }: LayoutChangeEvent) =>
+    setBox((prev) =>
+      prev.width === layout.width && prev.height === layout.height
+        ? prev
+        : { width: layout.width, height: layout.height },
+    );
+  const measureLabel = ({ nativeEvent: { layout } }: LayoutChangeEvent) =>
+    setLabelWidth((prev) => (prev === layout.width ? prev : layout.width));
+
   return (
     <PressableScale
       testID={testID}
       onPress={onPress}
+      onLayout={carriesMotif ? measureBox : undefined}
       disabled={inactive}
       hitSlop={size === 'sm' ? SMALL_HIT_SLOP : undefined}
       accessibilityRole="button"
@@ -82,17 +104,19 @@ export function Button({
         bleed: variant === 'primary' || variant === 'secondary' ? 'card' : 'key',
       }}
     >
+      {showMotif && <SongketCta />}
       <ContentSwap id={loading ? `busy:${shownLabel}` : label} style={styles.content}>
         {loading ? (
           <ActivityIndicator size="small" color={color} />
         ) : (
-          icon && <Icon name={icon} size={18} color={color} />
+          icon && <Icon name={icon} size={ICON_SIZE} color={color} />
         )}
         <Text
           variant={size === 'sm' ? 'sub' : 'headline'}
           weight="semibold"
           style={{ color }}
           numberOfLines={1}
+          onLayout={carriesMotif ? measureLabel : undefined}
         >
           {shownLabel}
         </Text>
