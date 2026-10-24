@@ -166,3 +166,45 @@ describe('the bodyweight card', () => {
     expect(action).toHaveBeenCalled();
   });
 });
+
+describe('the muscle cards', () => {
+  it('puts the history above the bodyweight and the balance under it', async () => {
+    profile();
+    await screen.findByText('Log a workout to see your balance');
+
+    const tree = JSON.stringify(screen.toJSON());
+    const at = (testID: string) => tree.indexOf(`"testID":"${testID}"`);
+    expect(at('profile-chart')).toBeGreaterThan(-1);
+    expect(at('muscle-history-card')).toBeGreaterThan(at('profile-chart'));
+    expect(at('profile-body')).toBeGreaterThan(at('muscle-history-card'));
+    expect(at('muscle-balance-card')).toBeGreaterThan(at('profile-body'));
+  });
+
+  it('reads the last 8 weeks once for both cards, up to Thursday 1 Oct', async () => {
+    const { repositories } = profile();
+    await screen.findByText('Log a workout to see your balance');
+
+    expect(repositories.workouts.muscleSets).toHaveBeenCalledTimes(1);
+    expect(repositories.workouts.muscleSets).toHaveBeenCalledWith('user-1', '2026-08-07', '2026-10-01');
+  });
+
+  it("flags this week's muscles that are behind, and draws the balance from the same rows", async () => {
+    profile({
+      prepare: (fakes) =>
+        void fakes.workouts.muscleSets.mockResolvedValue(
+          ['2026-09-28', '2026-09-30'].map((date, index) => ({
+            workoutId: `w${index}`,
+            date: date as ISODate,
+            primaryMuscle: 'chest' as const,
+            secondaryMuscles: [],
+            doneSets: 4,
+          })),
+        ),
+    });
+
+    expect(await screen.findByText('+8 sets')).toBeTruthy();
+    expect(screen.getByText(/All twice:.*0 of 2.*weeks/)).toBeTruthy();
+    // Chest is twice this week; the other nine are behind.
+    expect(screen.getAllByText('•')).toHaveLength(9);
+  });
+});

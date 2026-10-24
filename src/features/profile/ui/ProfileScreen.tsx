@@ -1,6 +1,8 @@
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { MuscleBalanceCard } from '@/features/muscles/ui/MuscleBalanceCard';
+import { MuscleHistoryCard } from '@/features/muscles/ui/MuscleHistoryCard';
 import {
   BarChart,
   Button,
@@ -18,8 +20,8 @@ import { BmiScale } from './components/BmiScale';
 import { useProfileViewModel } from './useProfileViewModel';
 
 /**
- * Profile: the account, the last twelve weeks of training, the bodyweight and BMI, and how the app looks,
- * moves, sounds and feels. The dashboard opens Records, the exercise library and the Calendar.
+ * Profile: the account, the last twelve weeks of training, the muscle history, the bodyweight and BMI, the
+ * muscle balance, and how the app looks, moves, sounds and feels. The dashboard opens Records, the exercise library and the Calendar.
  */
 export function ProfileScreen() {
   const vm = useProfileViewModel();
@@ -91,6 +93,8 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      <MuscleHistoryCard />
+
       <Card style={styles.body} testID="profile-body">
         <Text variant="headline" accessibilityRole="header">
           Bodyweight · BMI
@@ -134,6 +138,8 @@ export function ProfileScreen() {
           BMI is a rough estimate for adults and does not reflect individual health. Not medical advice.
         </Text>
       </Card>
+
+      <MuscleBalanceCard />
 
       <View style={styles.group}>
         <SectionLabel>Theme</SectionLabel>
