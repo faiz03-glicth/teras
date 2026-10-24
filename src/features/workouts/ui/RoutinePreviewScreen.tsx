@@ -123,8 +123,8 @@ export function RoutinePreviewScreen({ id }: { id: string | null }) {
                     {exercise.target && (
                       <View style={styles.beat}>
                         <View style={styles.target}>
-                          <Icon name="trending-up" size={14} color={theme.colors.accentText} />
-                          <Text variant="sub" weight="semibold" tone="accent">
+                          <Icon name="trending-up" size={14} color={theme.colors.text2} />
+                          <Text variant="sub" weight="semibold">
                             {exercise.target}
                           </Text>
                         </View>

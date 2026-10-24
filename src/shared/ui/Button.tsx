@@ -10,7 +10,7 @@ import { PressableScale } from './PressableScale';
 import { Text } from './Text';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'quiet' | 'danger';
-export type ButtonSize = 'lg' | 'md' | 'sm';
+export type ButtonSize = 'xl' | 'lg' | 'md' | 'sm';
 
 export interface ButtonProps {
   label: string;
@@ -26,10 +26,13 @@ export interface ButtonProps {
   testID?: string;
 }
 
-/** `lg` stands level with the sign-in provider buttons, so a Button can share their stack. */
-const HEIGHT: Record<ButtonSize, number> = { lg: 52, md: 50, sm: 36 };
-/** Extends a small key to a 44pt touch target. */
-const SMALL_HIT_SLOP = (44 - HEIGHT.sm) / 2;
+/**
+ * `lg` stands level with the sign-in provider buttons, so a Button can share their stack. `xl` is the one
+ * action that ends a screen (Finish workout): a full-width key, 56 tall.
+ */
+const HEIGHT: Record<ButtonSize, number> = { xl: 56, lg: 52, md: 50, sm: 36 };
+/** Extends a small key to a 48dp touch target. */
+const SMALL_HIT_SLOP = (48 - HEIGHT.sm) / 2;
 
 const foreground = (theme: Theme, variant: ButtonVariant): string =>
   ({

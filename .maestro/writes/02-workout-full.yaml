@@ -22,6 +22,12 @@ appId: com.faiz.teras.local
 - assertVisible:
     id: 'rest-bar'
     optional: true
+# Finish workout is the last key of the list, below the fold once the workout is long.
+- scrollUntilVisible:
+    element:
+      id: 'finish-workout'
+    direction: DOWN
+    timeout: 10000
 - tapOn:
     id: 'finish-workout'
 - tapOn:

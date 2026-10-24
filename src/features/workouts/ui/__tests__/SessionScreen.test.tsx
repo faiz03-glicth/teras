@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { Alert, type AlertButton } from 'react-native';
 import { toast } from 'sonner-native';
 
@@ -10,7 +10,7 @@ import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
-import { renderInScheme } from '@test/render';
+import { renderInScheme, styleOf } from '@test/render';
 
 import { SessionScreen } from '../SessionScreen';
 import { FIRST_EXERCISES } from '../useSessionViewModel';
@@ -119,6 +119,27 @@ describe('a logged workout', () => {
 
     // 60 × 8 + 62.5 × 6: the unticked set is not part of the record.
     expect(await screen.findByLabelText('Time, 62 min. Volume, 855 kg. Sets, 2')).toBeTruthy();
+  });
+
+  it('reads its numbers on a flat panel, a surface and a 1px border with no lift', async () => {
+    const { theme } = session('w1');
+
+    const stats = await screen.findByTestId('session-stats');
+    expect(styleOf(stats)).toMatchObject({
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    });
+    expect(styleOf(stats).boxShadow).toBeUndefined();
+    expect(within(stats).queryByTestId('cached-surface')).toBeNull();
+  });
+
+  it('keeps an exercise heading, the name in the text colour, a 48dp target', async () => {
+    const { theme } = session('w1');
+
+    const heading = await screen.findByTestId('session-exercise-open-we1');
+    expect(styleOf(heading).minHeight).toBe(48);
+    expect(styleOf(screen.getByText('Bench Press (Barbell)')).color).toBe(theme.colors.text);
   });
 
   it('lists only completed sets, numbered in order, and leaves out exercises with none', async () => {

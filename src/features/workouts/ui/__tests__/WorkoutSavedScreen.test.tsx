@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
@@ -6,9 +6,10 @@ import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
 import type { Workout, WorkoutSet } from '@/features/workouts/data/WorkoutRepository';
 import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
+import { Icon } from '@/shared/ui';
 import { createFakeRepositories, testUser } from '@test/fakes/fakeRepositories';
 import { createWrapper } from '@test/providers';
-import { renderInScheme } from '@test/render';
+import { renderInScheme, styleOf } from '@test/render';
 
 import { WorkoutSavedScreen } from '../WorkoutSavedScreen';
 
@@ -105,6 +106,33 @@ describe('a saved workout', () => {
     expect(
       await screen.findByLabelText('Duration, 62 min. Volume, 855 kg. Sets, 2/4. Exercises, 1/2'),
     ).toBeTruthy();
+  });
+
+  it('draws its numbers as flat tiles, a surface and a 1px border, not raised keys', async () => {
+    const { theme } = saved('w1');
+
+    const tile = await screen.findByLabelText('Duration, 62 min');
+    expect(styleOf(tile)).toMatchObject({
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    });
+    expect(styleOf(tile).boxShadow).toBeUndefined();
+    expect(within(tile).queryByTestId('cached-surface')).toBeNull();
+  });
+
+  it('writes the weekday letters at 12 or more, and the records trophy in a quiet colour', async () => {
+    const { theme } = saved('w1', (fakes) => {
+      fakes.workouts.newRecords.mockResolvedValue([
+        { exerciseId: 'bench-press-barbell', name: 'Bench Press (Barbell)', type: 'weighted', value: 62.5 },
+      ]);
+    });
+
+    await screen.findByText('1 new personal record');
+    // Monday is the one "M" of the week.
+    expect(styleOf(screen.getByText('M')).fontSize).toBeGreaterThanOrEqual(12);
+    const trophy = within(screen.getByTestId('saved-records')).UNSAFE_getAllByType(Icon)[0];
+    expect(trophy?.props.color).toBe(theme.colors.text2);
   });
 
   it('shows the level its day was recorded at, and what it was judged against', async () => {

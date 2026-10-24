@@ -6,8 +6,10 @@ import { Button, Card, EmptyState, IconButton, Screen, Text } from '@/shared/ui'
 
 import { formatMinutes } from '../domain/duration';
 import { PAST_LOG_SECONDS } from '../domain/pastLog';
+import { ElapsedClock } from './components/ElapsedClock';
 import { LiveStats } from './components/LiveStats';
 import { RestBar } from './components/RestBar';
+import { SavedChip } from './components/SavedChip';
 import { SetRow, SetTableHeader } from './components/SetRow';
 import { StatsRow } from './components/StatsRow';
 import { UndoBar } from './components/UndoBar';
@@ -15,10 +17,11 @@ import { WorkoutOptionsMenu } from './components/WorkoutOptionsMenu';
 import { useActiveWorkoutViewModel } from './useActiveWorkoutViewModel';
 
 /**
- * The workout in progress. Its top bar holds what is always in reach: Minimize, its name, its options
- * (Add exercise, and Discard, confirmed) and the gold Finish. Below: its running numbers and one set
- * table per exercise. The rest bar docks under it all, so the countdown stays in view while sets are
- * filled in.
+ * The workout in progress. Its top bar holds what is always in reach: Minimize, its name with how long it
+ * has run and that it is saved, and its options (Add exercise, and Discard, confirmed). Below: its running
+ * numbers and one set table per exercise, and at the very end the gold Finish workout, well away from the
+ * options so the header can never end a workout by accident. The rest bar docks under it all, so the
+ * countdown stays in view while sets are filled in.
  */
 export function ActiveWorkoutScreen() {
   const vm = useActiveWorkoutViewModel();
@@ -59,29 +62,28 @@ export function ActiveWorkoutScreen() {
           accessibilityLabel={vm.pastLog ? 'Close' : 'Minimize'}
           testID="minimize-workout"
         />
-        <Text variant="headline" numberOfLines={1} accessibilityRole="header" style={styles.title}>
-          {workout?.name ?? 'Workout'}
-        </Text>
+        <View style={styles.heading}>
+          <Text variant="headline" numberOfLines={1} accessibilityRole="header" style={styles.title}>
+            {workout?.name ?? 'Workout'}
+          </Text>
+          {workout && (
+            <View style={styles.status}>
+              {/* A past day's log was never timed: there is no clock to show beside the chip. */}
+              {!vm.pastLog && <ElapsedClock startedAt={workout.startedAt} />}
+              <SavedChip saving={vm.finishing} />
+            </View>
+          )}
+        </View>
         <IconButton
           icon="more"
           onPress={() => setOptions(true)}
           accessibilityLabel="Workout options"
           testID="workout-options"
         />
-        {!empty && (
-          <Button
-            label={vm.pastLog ? 'Save' : 'Finish'}
-            size="sm"
-            onPress={vm.onFinish}
-            loading={vm.finishing}
-            loadingLabel="Saving"
-            testID="finish-workout"
-          />
-        )}
       </View>
 
       {workout && (
-        <View style={styles.stats}>
+        <View style={styles.stats} testID="active-workout-panel">
           {/* A past day's log was never timed: its Time is the length it is saved with, not a clock. */}
           {vm.pastLog ? (
             <StatsRow
@@ -133,7 +135,7 @@ export function ActiveWorkoutScreen() {
             ))}
             <Button
               label="Add set"
-              variant="ghost"
+              variant="quiet"
               size="sm"
               onPress={() => vm.onAddSet(exercise.id)}
               testID={`add-set-${exercise.id}`}
@@ -150,6 +152,18 @@ export function ActiveWorkoutScreen() {
         onPress={vm.onAddExercise}
         testID="add-exercise"
       />
+      {/* The end of the list: one full-width key, nowhere near the header's options. */}
+      {!empty && (
+        <Button
+          label={vm.pastLog ? 'Save' : 'Finish workout'}
+          icon="check"
+          size="xl"
+          onPress={vm.onFinish}
+          loading={vm.finishing}
+          loadingLabel="Saving"
+          testID="finish-workout"
+        />
+      )}
 
       <WorkoutOptionsMenu
         visible={options}
@@ -164,14 +178,18 @@ export function ActiveWorkoutScreen() {
 
 const styles = StyleSheet.create((theme) => ({
   content: { gap: theme.spacing.lg, paddingBottom: theme.spacing.xxl },
-  topBar: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  title: { flex: 1, textAlign: 'center' },
-  // The running numbers sit in a well pressed into the page, as the other live readouts do.
+  topBar: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
+  heading: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2 },
+  title: { textAlign: 'center' },
+  status: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
+  // The running numbers are a reading, not a control: a flat panel (surface and a 1px border, no lift, no
+  // inset shadow to blur), so only the keys look raised.
   stats: {
     padding: theme.spacing.md,
     borderRadius: theme.radii.card,
-    backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   group: { gap: theme.spacing.sm },
   undoDock: { position: 'absolute', left: 0, right: 0, bottom: '100%' },

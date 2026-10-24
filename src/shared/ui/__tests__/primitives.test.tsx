@@ -82,9 +82,15 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(surfaceOf(key()).boxShadow).toBe(theme.material.raisedSm.shadow);
   });
 
-  it('a small Button still reaches a 44pt touch target', () => {
+  it('a small Button still reaches a 48dp touch target', () => {
     renderInScheme(<Button label="Skip" variant="ghost" size="sm" onPress={jest.fn()} />, scheme);
-    expect(screen.getByRole('button', { name: 'Skip' }).props.hitSlop).toBe(4);
+    // 36 tall + 6 above and below.
+    expect(screen.getByRole('button', { name: 'Skip' }).props.hitSlop).toBe(6);
+  });
+
+  it('an extra-large Button is the 56 tall key that ends a screen', () => {
+    renderInScheme(<Button label="Finish workout" size="xl" onPress={jest.fn()} />, scheme);
+    expect(styleOf(screen.getByRole('button', { name: 'Finish workout' })).height).toBe(56);
   });
 
   it('a large Button stands as tall as the sign-in buttons', () => {
@@ -95,7 +101,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(styleOf(screen.getByRole('button', { name: 'Continue with email' })).height).toBe(52);
   });
 
-  it('IconButton is a raised square key with a 44pt touch target', () => {
+  it('IconButton is a raised square key with a 48dp touch target', () => {
     const { theme } = renderInScheme(
       <IconButton icon="chevron-left" onPress={jest.fn()} accessibilityLabel="Back" />,
       scheme,
@@ -107,20 +113,20 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
       backgroundColor: theme.material.raisedSm.background,
       boxShadow: theme.material.raisedSm.shadow,
     });
-    expect(button.props.hitSlop).toBe(2);
+    expect(button.props.hitSlop).toBe(4);
     fireEvent(button, 'pressIn');
     expect(surfaceOf(screen.getByRole('button', { name: 'Back' })).boxShadow).toBe(
       theme.material.pressed.shadow,
     );
   });
 
-  it('a plain IconButton is an icon printed on the surface, still a 44pt target', () => {
+  it('a plain IconButton is an icon printed on the surface, still a 48dp target', () => {
     renderInScheme(<IconButton icon="pencil" plain onPress={jest.fn()} accessibilityLabel="Edit" />, scheme);
     const button = screen.getByRole('button', { name: 'Edit' });
     expect(styleOf(button).backgroundColor).toBeUndefined();
     expect(styleOf(button).boxShadow).toBeUndefined();
     expect(within(button).queryByTestId('cached-surface')).toBeNull();
-    expect(button.props.hitSlop).toBe(5);
+    expect(button.props.hitSlop).toBe(7);
   });
 
   it('a danger IconButton keeps its key and draws the icon in the danger colour', () => {
