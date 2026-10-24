@@ -155,5 +155,4 @@ describe('the gold primary action', () => {
     expect(softMaterials.dark.accent.shadow).toBe(`0 3px 0 ${semanticColors.dark.accentEdge}`);
     expect(contrastRatio(BRAND_GOLD, softMaterials.dark.raised.background)).toBeGreaterThan(7);
   });
-
 });

@@ -3,7 +3,6 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { renderInScheme, styleOf } from '@test/render';
 
 import { Button } from '../Button';
-import { HeatCell } from '../HeatCell';
 import { Screen } from '../Screen';
 import { ctaMotifFits } from '../SongketCta';
 import { Text } from '../Text';

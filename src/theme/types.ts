@@ -34,8 +34,6 @@ export interface SemanticColors {
   dangerSoft: string;
   /** Text and icons on a `danger` fill (an armed Delete). */
   onDanger: string;
-  /** Saved and synced: the check beside "Saved on this phone". Never body text. */
-  success: string;
   scrim: string;
   /** Switch knob: white in both schemes, like the platform's own switches. */
   thumb: string;
