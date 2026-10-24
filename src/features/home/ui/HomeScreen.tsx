@@ -4,6 +4,7 @@ import { View, type ViewProps } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { TrainingWave } from '@/features/heatmap/ui/components/TrainingWave';
+import { MusclesThisWeekCard } from '@/features/muscles/ui/MusclesThisWeekCard';
 import { haptics } from '@/shared/lib/haptics';
 import {
   Button,
@@ -33,7 +34,7 @@ const feedKey = (entry: FeedEntry | undefined, index: number): string => entry?.
 const KEEP_PLACE = { disabled: true } as const;
 
 /**
- * Home: the training wave on top, then the workouts behind it. The workouts are a recycling list: only the
+ * Home: the training wave on top, the week's muscles, then the workouts behind them. The workouts are a recycling list: only the
  * cards on screen and a little below exist, so coming back to Home (from another tab, or a workout opened
  * from it) attaches and draws a screenful again, not the whole feed.
  */
@@ -99,6 +100,8 @@ function HomeHeader({ vm }: { vm: HomeViewModel }) {
           testID="home-start-workout"
         />
       )}
+
+      <MusclesThisWeekCard />
 
       <View style={[styles.group, vm.entries.length > 0 && styles.beforeCards]}>
         <SectionLabel>Workouts</SectionLabel>

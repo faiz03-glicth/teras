@@ -7,7 +7,7 @@ import { useAuthStore } from '@/features/auth/state/authStore';
 import { useSelectedDayStore } from '@/features/heatmap/state/selectedDayStore';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import type { WorkoutDay } from '@/features/workoutDays/domain/WorkoutDay';
-import type { Workout, WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
+import type { MuscleSetRow, Workout, WorkoutSummary } from '@/features/workouts/data/WorkoutRepository';
 import { workoutKeys } from '@/features/workouts/hooks/useWorkoutQueries';
 import * as actions from '@/shared/actions';
 import type { ISODate } from '@/shared/lib/date/isoDate';
@@ -398,5 +398,55 @@ describe('the week so far', () => {
 
     expect(await screen.findByText('2 this week')).toBeTruthy();
     expect(screen.getByLabelText('Trained 2 days this week')).toBeTruthy();
+  });
+});
+
+describe("the week's muscles", () => {
+  const workedOut = (id: string, date: string, muscles: MuscleSetRow['primaryMuscle'][]): MuscleSetRow[] =>
+    muscles.map((muscle) => ({
+      workoutId: id,
+      date: date as ISODate,
+      primaryMuscle: muscle,
+      secondaryMuscles: [],
+      doneSets: 3,
+    }));
+
+  it('reads the last 8 weeks once, and counts this week from Monday 28 Sep', async () => {
+    const { repositories } = home({
+      prepare: (fakes) =>
+        void fakes.workouts.muscleSets.mockResolvedValue([
+          ...workedOut('a', '2026-09-28', ['chest', 'quads']),
+          ...workedOut('b', '2026-09-30', ['chest']),
+          // Sunday before: another week.
+          ...workedOut('c', '2026-09-27', ['quads', 'lats']),
+        ]),
+    });
+
+    expect(await screen.findByText('1 of 10 muscles hit twice')).toBeTruthy();
+    expect(screen.getByText('Muscles this week')).toBeTruthy();
+    expect(repositories.workouts.muscleSets).toHaveBeenCalledTimes(1);
+    expect(repositories.workouts.muscleSets).toHaveBeenCalledWith('user-1', '2026-08-08', '2026-10-02');
+  });
+
+  it('sits under the wave and Start workout, above the workouts', async () => {
+    home({ feed: [summary()] });
+    await screen.findByText('0 of 10 muscles hit twice');
+
+    const tree = JSON.stringify(screen.toJSON());
+    const at = (testID: string) => tree.indexOf(`"testID":"${testID}"`);
+    expect(at('training-wave')).toBeGreaterThan(-1);
+    expect(at('home-start-workout')).toBeGreaterThan(at('training-wave'));
+    expect(at('muscles-week-card')).toBeGreaterThan(at('home-start-workout'));
+    expect(tree.indexOf('Push Day')).toBeGreaterThan(at('muscles-week-card'));
+  });
+
+  it('keeps Home working when the muscles cannot be read', async () => {
+    home({
+      feed: [summary()],
+      prepare: (fakes) => void fakes.workouts.muscleSets.mockRejectedValue(new Error('disk')),
+    });
+
+    expect(await screen.findByText("Couldn't load this week")).toBeTruthy();
+    expect(await screen.findByText('Push Day')).toBeTruthy();
   });
 });
