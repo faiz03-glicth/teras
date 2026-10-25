@@ -20,6 +20,7 @@ import { useWorkoutSavedViewModel } from './useWorkoutSavedViewModel';
 
 const MEDAL = 76;
 const CELL = 18;
+const SHARE_KEY = 124;
 
 /**
  * Straight after Finish: the save confirmed, where its day landed on the training wave this week, what
@@ -39,7 +40,21 @@ export function WorkoutSavedScreen({ id }: { id: string | null }) {
       footer={
         vm.status !== 'loading' && (
           <Animated.View style={[styles.footer, vm.status === 'ready' && motion.staggerIn(5)]}>
-            <Button label="Done" onPress={vm.onDone} testID="saved-done" />
+            {vm.status === 'ready' && (
+              <View style={styles.share}>
+                <Button
+                  label="Share"
+                  icon="share"
+                  variant="secondary"
+                  onPress={vm.onShare}
+                  accessibilityHint="Opens the picture and text to share"
+                  testID="saved-share"
+                />
+              </View>
+            )}
+            <View style={styles.done}>
+              <Button label="Done" onPress={vm.onDone} testID="saved-done" />
+            </View>
           </Animated.View>
         )
       }
@@ -190,9 +205,14 @@ const styles = StyleSheet.create((theme) => ({
   record: { flexDirection: 'row', alignItems: 'baseline', gap: theme.spacing.sm },
   recordName: { flex: 1 },
   footer: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
     paddingHorizontal: theme.spacing.gutter,
     paddingTop: theme.spacing.sm,
     paddingBottom: theme.spacing.md,
     backgroundColor: theme.colors.canvas,
   },
+  // Share is the shorter key; Done takes the rest, and stays under the thumb.
+  share: { width: SHARE_KEY },
+  done: { flex: 1 },
 }));

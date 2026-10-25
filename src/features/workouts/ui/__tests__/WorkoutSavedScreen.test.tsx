@@ -188,6 +188,24 @@ describe('a saved workout', () => {
 
     expect(actions.goHome).toHaveBeenCalled();
   });
+
+  it('offers Share beside Done, and opens the share sheet for this workout', async () => {
+    saved('w1');
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Share' }));
+
+    expect(actions.openShare).toHaveBeenCalledWith('w1');
+    expect(actions.goHome).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
+  });
+
+  it('offers no Share while the workout is missing, only Done', async () => {
+    saved('w1', (fakes) => fakes.workouts.logged.mockResolvedValue(null));
+
+    expect(await screen.findByText('Workout not found')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
+  });
 });
 
 describe('states', () => {

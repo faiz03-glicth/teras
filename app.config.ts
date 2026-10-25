@@ -75,7 +75,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     privacyManifests: {
       NSPrivacyAccessedAPITypes: [
         {
-          // react-native, @react-native-async-storage/async-storage, expo-file-system
+          // react-native, @react-native-async-storage/async-storage, expo-file-system, expo-media-library
           NSPrivacyAccessedAPIType: 'NSPrivacyAccessedAPICategoryFileTimestamp',
           NSPrivacyAccessedAPITypeReasons: ['C617.1', '0A2A.1', '3B52.1'],
         },
@@ -109,13 +109,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     predictiveBackGestureEnabled: false,
     /**
      * Permissions Teras never uses, removed from release builds. They come from Expo's default template
-     * (storage, drawing over other apps) and expo-secure-store's optional biometric lock (Teras keeps its
-     * session without one). `permissions` can't do this: it only adds; libraries' own entries still merge.
-     * Debug builds keep SYSTEM_ALERT_WINDOW from their own manifest, for the dev menu.
+     * (drawing over other apps), expo-secure-store's optional biometric lock (Teras keeps its session without
+     * one) and expo-media-library (Teras only ever saves a picture to Photos; it never reads the library).
+     * `permissions` can't do this: it only adds; libraries' own entries still merge. Debug builds keep
+     * SYSTEM_ALERT_WINDOW from their own manifest, for the dev menu.
+     * WRITE_EXTERNAL_STORAGE is deliberately NOT blocked: Android 10 and older cannot add a picture to
+     * Photos without it (Android 11 and later ignore it, and the app does not ask there).
      */
     blockedPermissions: [
       'android.permission.READ_EXTERNAL_STORAGE',
-      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.USE_BIOMETRIC',
       'android.permission.USE_FINGERPRINT',
@@ -142,6 +145,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-sqlite',
     'expo-secure-store',
     'expo-web-browser',
+    [
+      'expo-media-library',
+      {
+        // Share a workout → Save image adds a picture to Photos. The app asks for add-only access, and only
+        // then; the read string is the App Store's required companion to the library and is never shown.
+        savePhotosPermission: 'Teras saves the workout pictures you choose to keep to your photos.',
+        photosPermission: 'Teras only adds workout pictures to your photos; it does not read your library.',
+        // No READ_MEDIA_* permissions: saving never reads the library, and Google Play restricts them.
+        granularPermissions: [],
+      },
+    ],
     'expo-apple-authentication',
     ['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme() }],
     'react-native-edge-to-edge',

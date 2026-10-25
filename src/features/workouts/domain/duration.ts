@@ -10,6 +10,11 @@ export function sessionSeconds(startedAt: string, endedAt: string | null): numbe
  * least "1 min", so a quick one never looks like it never happened.
  */
 export function formatMinutes(totalSeconds: number): string {
-  if (!(totalSeconds > 0)) return '0 min';
-  return `${Math.max(1, Math.round(totalSeconds / 60))} min`;
+  return `${wholeMinutes(totalSeconds)} min`;
+}
+
+/** PURE: the minutes in `formatMinutes`, as a number: 0 for none, otherwise at least 1. */
+export function wholeMinutes(totalSeconds: number): number {
+  if (!(totalSeconds > 0)) return 0;
+  return Math.max(1, Math.round(totalSeconds / 60));
 }

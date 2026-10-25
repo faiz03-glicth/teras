@@ -33,4 +33,5 @@ export const routes = {
   equipmentFilter: (): Href => '/equipment-filter',
   createExercise: (): Href => '/create-exercise',
   workoutSaved: (id: string): Href => ({ pathname: '/workout/saved/[id]', params: { id } }),
+  share: (workoutId: string): Href => ({ pathname: '/share/[workoutId]', params: { workoutId } }),
 };

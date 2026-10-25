@@ -95,6 +95,11 @@ export function openWorkoutSaved(id: string): void {
   router.replace(routes.workoutSaved(id));
 }
 
+/** Form sheet over a finished workout: share it as a picture or as text. */
+export function openShare(workoutId: string): void {
+  router.push(routes.share(workoutId));
+}
+
 /** The exercise library, for adding one to the workout in progress, or to the routine being edited. */
 export function openAddExercise(target: AddExerciseTarget = 'workout'): void {
   router.push(routes.addExercise(target));

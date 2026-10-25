@@ -7,6 +7,7 @@ import {
   EmptyState,
   ErrorState,
   Icon,
+  IconButton,
   LevelChip,
   LoadingState,
   NavBar,
@@ -29,7 +30,19 @@ export function SessionScreen({ id }: { id: string | null }) {
 
   return (
     <Screen scroll testID="session-screen" contentStyle={styles.content}>
-      <NavBar onBack={vm.onBack} />
+      <NavBar
+        onBack={vm.onBack}
+        right={
+          vm.status === 'ready' ? (
+            <IconButton
+              icon="share"
+              onPress={vm.onShare}
+              accessibilityLabel="Share workout"
+              testID="session-share"
+            />
+          ) : undefined
+        }
+      />
 
       {vm.status === 'loading' && <LoadingState label="Loading the workout" testID="session-loading" />}
       {vm.status === 'error' && (

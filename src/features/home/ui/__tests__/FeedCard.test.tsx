@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 
 import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
@@ -27,11 +27,16 @@ const entry: FeedEntry = {
  */
 describe.each(SCHEMES)('a feed card in %s', (scheme) => {
   it('draws its fill and shadows behind its content, not on the card', () => {
-    const { theme } = renderInScheme(<FeedCard entry={entry} onPress={jest.fn()} />, scheme);
+    const { theme } = renderInScheme(
+      <FeedCard entry={entry} onPress={jest.fn()} onShare={jest.fn()} />,
+      scheme,
+    );
 
     expect(styleOf(screen.getByTestId('feed-w1')).boxShadow).toBeUndefined();
     expect(styleOf(screen.getByTestId('feed-w1')).backgroundColor).toBeUndefined();
-    expect(styleOf(screen.getByTestId('cached-surface').props.children)).toMatchObject({
+    expect(
+      styleOf(within(screen.getByTestId('feed-w1')).getByTestId('cached-surface').props.children),
+    ).toMatchObject({
       backgroundColor: theme.material.raised.background,
       boxShadow: theme.material.raised.shadow,
       borderRadius: theme.radii.card,
@@ -39,13 +44,37 @@ describe.each(SCHEMES)('a feed card in %s', (scheme) => {
   });
 
   it('sinks into the material while held, and rises again when let go', () => {
-    const { theme } = renderInScheme(<FeedCard entry={entry} onPress={jest.fn()} />, scheme);
-    const look = () => styleOf(screen.getByTestId('cached-surface').props.children);
+    const { theme } = renderInScheme(
+      <FeedCard entry={entry} onPress={jest.fn()} onShare={jest.fn()} />,
+      scheme,
+    );
+    const look = () =>
+      styleOf(within(screen.getByTestId('feed-w1')).getByTestId('cached-surface').props.children);
 
     fireEvent(screen.getByTestId('feed-w1'), 'pressIn');
     expect(look().boxShadow).toBe(theme.material.pressed.shadow);
 
     fireEvent(screen.getByTestId('feed-w1'), 'pressOut');
     expect(look().boxShadow).toBe(theme.material.raised.shadow);
+  });
+});
+
+describe('the Share key of a feed card', () => {
+  it('shares that workout without opening it', () => {
+    const onPress = jest.fn();
+    const onShare = jest.fn();
+    renderInScheme(<FeedCard entry={entry} onPress={onPress} onShare={onShare} />, 'light');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Share Push Day' }));
+
+    expect(onShare).toHaveBeenCalledWith('w1');
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('is its own button beside the level, so the card is still one button too', () => {
+    renderInScheme(<FeedCard entry={entry} onPress={jest.fn()} onShare={jest.fn()} />, 'light');
+
+    expect(screen.getByRole('button', { name: 'Push Day, today' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Share Push Day' })).toBeTruthy();
   });
 });

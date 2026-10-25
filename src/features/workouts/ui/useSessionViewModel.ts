@@ -8,7 +8,7 @@ import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { pushDaysNow } from '@/features/workoutDays/data/pushDaysNow';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
-import { goBack, openActiveWorkout, openExercise, useScreenSettled } from '@/shared/actions';
+import { goBack, openActiveWorkout, openExercise, openShare, useScreenSettled } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, shortDay } from '@/shared/lib/format/dates';
 import { haptics } from '@/shared/lib/haptics';
@@ -208,6 +208,9 @@ export function useSessionViewModel(id: string | null) {
     onDelete,
     onRetry,
     onOpenExercise: openExercise,
+    onShare: () => {
+      if (id !== null) openShare(id);
+    },
     onBack: () => goBack(),
   };
 }

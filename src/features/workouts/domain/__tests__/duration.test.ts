@@ -1,4 +1,4 @@
-import { formatMinutes, sessionSeconds } from '../duration';
+import { formatMinutes, sessionSeconds, wholeMinutes } from '../duration';
 
 describe('sessionSeconds', () => {
   it('is the whole seconds from start to finish', () => {
@@ -30,5 +30,14 @@ describe('formatMinutes', () => {
   it('reads nothing as 0, and never as negative', () => {
     expect(formatMinutes(0)).toBe('0 min');
     expect(formatMinutes(-30)).toBe('0 min');
+  });
+});
+
+describe('wholeMinutes', () => {
+  it('is the number formatMinutes words', () => {
+    expect(wholeMinutes(62 * 60 + 30)).toBe(63);
+    expect(wholeMinutes(20)).toBe(1);
+    expect(wholeMinutes(0)).toBe(0);
+    expect(wholeMinutes(-5)).toBe(0);
   });
 });
