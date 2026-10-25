@@ -24,7 +24,7 @@ import {
   useWorkoutOwner,
 } from '@/features/workouts/hooks/useWorkoutQueries';
 import { useStartWorkout } from '@/features/workouts/hooks/useStartWorkout';
-import { openDay, openSession } from '@/shared/actions';
+import { openDay, openSession, openShare } from '@/shared/actions';
 import { eachDay, firstOfMonth, monthOf, startOfWeek, weekdayLetters } from '@/shared/lib/date/calendar';
 import { isISODate, type ISODate } from '@/shared/lib/date/isoDate';
 import { useToday } from '@/shared/lib/date/useToday';
@@ -171,6 +171,7 @@ export function useHomeViewModel() {
     openDay(day);
   }, []);
   const onOpenWorkout = useCallback((id: string) => openSession(id), []);
+  const onShareWorkout = useCallback((id: string) => openShare(id), []);
 
   return {
     dateLine: longDate(today),
@@ -197,6 +198,7 @@ export function useHomeViewModel() {
 
     onDayPress,
     onOpenWorkout,
+    onShareWorkout,
     onStartWorkout: () => void start(),
     onRetry,
   };

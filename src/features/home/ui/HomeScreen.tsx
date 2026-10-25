@@ -41,11 +41,11 @@ const KEEP_PLACE = { disabled: true } as const;
 export function HomeScreen() {
   const vm = useHomeViewModel();
   const room = useTabBarRoom();
-  const { onOpenWorkout } = vm;
+  const { onOpenWorkout, onShareWorkout } = vm;
   const renderItem: ListRenderItem<FeedEntry> = useCallback(
     ({ item }: { item: FeedEntry | undefined }) =>
-      item === undefined ? null : <FeedCard entry={item} onPress={onOpenWorkout} />,
-    [onOpenWorkout],
+      item === undefined ? null : <FeedCard entry={item} onPress={onOpenWorkout} onShare={onShareWorkout} />,
+    [onOpenWorkout, onShareWorkout],
   );
 
   return (

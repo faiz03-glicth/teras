@@ -184,6 +184,21 @@ describe('a logged workout', () => {
 
     expect(actions.goBack).toHaveBeenCalled();
   });
+
+  it('offers to share the workout, from the top bar', async () => {
+    session('w1');
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Share workout' }));
+
+    expect(actions.openShare).toHaveBeenCalledWith('w1');
+  });
+
+  it('offers no Share while the workout is missing', async () => {
+    session('w1', { workout: null });
+
+    await screen.findByText('Workout not found');
+    expect(screen.queryByRole('button', { name: 'Share workout' })).toBeNull();
+  });
 });
 
 describe('deleting a workout', () => {

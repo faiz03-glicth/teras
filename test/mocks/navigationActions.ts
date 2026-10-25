@@ -35,6 +35,7 @@ export const openFfmi = jest.fn();
 export const openDay = jest.fn();
 export const openSession = jest.fn();
 export const openWorkoutSaved = jest.fn();
+export const openShare = jest.fn();
 export const openLegal = jest.fn(async () => undefined);
 export const openHelpCenter = jest.fn(async () => undefined);
 export const sendFeedback = jest.fn(async () => undefined);

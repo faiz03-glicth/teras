@@ -74,8 +74,13 @@ export function formatWeight(kg: number, unit: WeightUnit): string {
  * rather than by the locale, so the number reads the same on every phone.
  */
 export function formatVolume(kg: number, unit: WeightUnit): string {
+  return `${volumeNumber(kg, unit)} ${unit}`;
+}
+
+/** PURE: the number in `formatVolume`, without the unit: "4,820". */
+export function volumeNumber(kg: number, unit: WeightUnit): string {
   const shown = Math.round(unit === 'kg' ? kg : kg * LB_PER_KG);
-  return `${String(shown).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ${unit}`;
+  return String(shown).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 /** PURE: "170 cm" or "5 ft 7 in". Rounds only for display. */

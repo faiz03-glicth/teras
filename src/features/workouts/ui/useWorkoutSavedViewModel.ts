@@ -8,7 +8,7 @@ import { formatVolume } from '@/features/training/domain/preferences';
 import { useTrainingPreferencesStore } from '@/features/training/state/trainingPreferencesStore';
 import { dayStanding } from '@/features/workoutDays/domain/heatLevel';
 import { LEVEL_NAMES } from '@/features/workoutDays/domain/WorkoutDay';
-import { goHome } from '@/shared/actions';
+import { goHome, openShare } from '@/shared/actions';
 import { addDays, eachDay, startOfWeek, weekdayLetters } from '@/shared/lib/date/calendar';
 import { useToday } from '@/shared/lib/date/useToday';
 import { clockTime, dayLabel } from '@/shared/lib/format/dates';
@@ -123,6 +123,9 @@ export function useWorkoutSavedViewModel(id: string | null) {
       .join('. ')}`,
     onRetry,
     onDone: () => goHome(),
+    onShare: () => {
+      if (id !== null) openShare(id);
+    },
   };
 }
 

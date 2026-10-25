@@ -268,6 +268,15 @@ describe('the workout feed', () => {
     expect(actions.openSession).toHaveBeenCalledWith('w1');
   });
 
+  it('opens the share sheet for the workout whose Share key was tapped', async () => {
+    home({ feed: [summary(), summary({ id: 'w2', name: 'Pull Day' })] });
+
+    fireEvent.press(await screen.findByRole('button', { name: 'Share Pull Day' }));
+
+    expect(actions.openShare).toHaveBeenCalledWith('w2');
+    expect(actions.openSession).not.toHaveBeenCalled();
+  });
+
   it('shows weights in the unit the person chose', async () => {
     act(() => useTrainingPreferencesStore.setState({ unit: 'lb' }));
     home({ feed: [summary()] });

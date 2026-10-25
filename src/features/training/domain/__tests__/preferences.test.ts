@@ -5,6 +5,7 @@ import {
   formatHeight,
   formatRest,
   formatVolume,
+  volumeNumber,
   formatWeight,
   HEIGHT_CM,
   heightFields,
@@ -174,5 +175,13 @@ describe('weightNumber', () => {
 
   it('is what formatWeight puts before the unit', () => {
     expect(formatWeight(70.5, 'kg')).toBe(`${weightNumber(70.5, 'kg')} kg`);
+  });
+});
+
+describe('volumeNumber', () => {
+  it('is the number formatVolume words, grouped by thousands, in the unit chosen', () => {
+    expect(volumeNumber(4820, 'kg')).toBe('4,820');
+    expect(volumeNumber(950, 'kg')).toBe('950');
+    expect(volumeNumber(4820, 'lb')).toBe('10,626');
   });
 });

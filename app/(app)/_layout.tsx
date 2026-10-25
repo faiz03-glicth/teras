@@ -44,6 +44,8 @@ export default function AppLayout() {
       <Stack.Screen name="create-exercise" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       <Stack.Screen name="log-weight" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       <Stack.Screen name="ffmi" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
+      {/* The picture preview, the pickers and the keys fill a phone: this sheet opens at full height. */}
+      <Stack.Screen name="share/[workoutId]" options={{ ...sheet, sheetAllowedDetents: [1] }} />
     </Stack>
   );
 }
