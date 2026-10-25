@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { LevelChip, PressableScale, Text } from '@/shared/ui';
-import { motion } from '@/theme';
+import { depthStyle, motion, surfaceStyle } from '@/theme';
 
 import type { FeedEntry } from '../useHomeViewModel';
 
@@ -86,10 +86,9 @@ const styles = StyleSheet.create((theme) => ({
   // again on every frame Home fades in, slides back or scrolls.
   surface: {
     borderRadius: theme.radii.card,
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
+    ...surfaceStyle(theme.material.raised),
   },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  pressed: depthStyle(theme.material.pressed),
   heading: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   name: { flex: 1 },
   stats: { flexDirection: 'row', gap: theme.spacing.xxl, marginTop: theme.spacing.sm },

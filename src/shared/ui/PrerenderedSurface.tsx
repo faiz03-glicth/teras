@@ -49,17 +49,21 @@ function Surface({ frame, style }: SurfaceProps) {
   // withUnistyles hands one merged style already; merging again is a no-op there and covers tests.
   const merged: ViewStyle = Object.assign({}, ...styleList(style));
   const look = lib ? toPrerenderedLook(merged) : null;
+  // Only a box-shadow is worth caching. A surface with none (Black draws its depth as borders, part of the
+  // view's own background drawable) is cheaper drawn live than composited from a layer of its own.
+  const shadowed = merged.boxShadow !== undefined;
+  const prerendered = look !== null && look.shadows.length > 0;
   return (
     <View
       style={frame}
       pointerEvents="none"
       collapsable={false}
       // Drawn from bitmaps, the surface costs little to draw again, less than rebuilding a cached layer
-      // whenever its screen comes back. A surface left to React Native keeps the cache.
-      renderToHardwareTextureAndroid={!lib || !look}
+      // whenever its screen comes back. A shadowed surface left to React Native keeps the cache.
+      renderToHardwareTextureAndroid={shadowed && !(lib && prerendered)}
       testID="cached-surface"
     >
-      {lib && look ? (
+      {lib && look && prerendered ? (
         <lib.View style={look.style} fill={look.fill} radius={look.radius} shadows={look.shadows} />
       ) : (
         <View style={merged} />
@@ -71,8 +75,9 @@ function Surface({ frame, style }: SurfaceProps) {
 /**
  * A surface's fill and box shadows drawn from bitmaps rendered once per shadow and size class (see
  * ShadowTiles.kt), not blurred again on every draw, inside CachedSurface's frame. Same look as a View
- * with the same style; a surface it can't draw that way (an edge, uneven corners) stays a View in a
- * cached layer, as before. withUnistyles re-renders it when the theme changes, since its props are not
- * styles Unistyles can update by itself.
+ * with the same style; a shadowed surface it can't draw that way (an edge, uneven corners) stays a View in
+ * a cached layer, as before. A surface with no shadow at all (Black's, drawn with borders) stays a plain
+ * View with no layer: its fill and edges are one background drawable. withUnistyles re-renders it when the
+ * theme changes, since its props are not styles Unistyles can update by itself.
  */
 export const PrerenderedSurface = withUnistyles(Surface);

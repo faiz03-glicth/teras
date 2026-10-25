@@ -3,6 +3,7 @@ import { TextInput, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { haptics } from '@/shared/lib/haptics';
+import { depthStyle, shadowStyle } from '@/theme';
 
 import { IconButton } from './IconButton';
 import { PressableScale } from './PressableScale';
@@ -248,15 +249,17 @@ const styles = StyleSheet.create((theme) => ({
   // Held (on the way to typing), the value sinks into the row: the well it is about to become.
   valuePressed: {
     backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.pressed.shadow,
+    ...depthStyle(theme.material.pressed),
   },
   number: { fontVariant: ['tabular-nums'] },
   well: {
     flexDirection: 'row',
     gap: theme.spacing.xs,
     paddingHorizontal: theme.spacing.sm,
+    // The well's fill and (in Parchment) its inner shadow; the gold edge below is its outline in both
+    // schemes, so Black's own well edges are left off.
     backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    ...shadowStyle(theme.material.inset),
     borderWidth: 1,
     borderColor: theme.colors.accentText,
   },

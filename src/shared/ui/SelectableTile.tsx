@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import Animated from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { useSelectionMotion, useStateTransition } from '@/theme';
+import { depthStyle, useSelectionMotion, useStateTransition, type SurfaceStyle } from '@/theme';
 
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
@@ -75,5 +75,11 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: 16,
     borderWidth: 1.5,
   },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  // Held, the tile sinks along its top and bottom; its sides keep the colour of its selection.
+  pressed: withoutRim(depthStyle(theme.material.pressed)),
 }));
+
+function withoutRim(press: SurfaceStyle): SurfaceStyle {
+  const { borderWidth: _width, borderColor: _color, ...rest } = press;
+  return rest;
+}

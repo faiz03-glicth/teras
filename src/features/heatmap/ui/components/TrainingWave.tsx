@@ -4,7 +4,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Card, HeatmapMonths, Icon, Legend, PressableScale, Text, type HeatmapMonth } from '@/shared/ui';
-import { motion, useReduceMotion } from '@/theme';
+import { motion, surfaceStyle, useReduceMotion } from '@/theme';
 
 export interface TrainingWaveHeader {
   /** "Training wave". */
@@ -132,8 +132,7 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.radii.key,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.material.raisedSm.background,
-    boxShadow: theme.material.raisedSm.shadow,
+    ...surfaceStyle(theme.material.raisedSm),
   },
   chevron: (open: boolean) => ({ transform: [{ rotate: open ? '180deg' : '0deg' }] }),
   rows: { gap: 18 },

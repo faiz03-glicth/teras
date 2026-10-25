@@ -2,6 +2,8 @@ import { fireEvent, screen } from '@testing-library/react-native';
 
 import { renderInScheme, SCHEMES, styleOf } from '@test/render';
 
+import { depthStyle, surfaceStyle } from '@/theme';
+
 import { FeedCard } from '../components/FeedCard';
 import type { FeedEntry } from '../useHomeViewModel';
 
@@ -22,8 +24,8 @@ const entry: FeedEntry = {
 };
 
 /**
- * Home fades in, slides back and scrolls under its cards: a card's two shadows are drawn behind it from
- * prerendered bitmaps (CachedSurface), never blurred again on the card itself.
+ * Home fades in, slides back and scrolls under its cards: a card's depth is drawn behind it (CachedSurface), in
+ * Parchment from prerendered shadow bitmaps, in Black as plain borders, never on the card itself.
  */
 describe.each(SCHEMES)('a feed card in %s', (scheme) => {
   it('draws its fill and shadows behind its content, not on the card', () => {
@@ -32,8 +34,7 @@ describe.each(SCHEMES)('a feed card in %s', (scheme) => {
     expect(styleOf(screen.getByTestId('feed-w1')).boxShadow).toBeUndefined();
     expect(styleOf(screen.getByTestId('feed-w1')).backgroundColor).toBeUndefined();
     expect(styleOf(screen.getByTestId('cached-surface').props.children)).toMatchObject({
-      backgroundColor: theme.material.raised.background,
-      boxShadow: theme.material.raised.shadow,
+      ...surfaceStyle(theme.material.raised),
       borderRadius: theme.radii.card,
     });
   });
@@ -43,9 +44,9 @@ describe.each(SCHEMES)('a feed card in %s', (scheme) => {
     const look = () => styleOf(screen.getByTestId('cached-surface').props.children);
 
     fireEvent(screen.getByTestId('feed-w1'), 'pressIn');
-    expect(look().boxShadow).toBe(theme.material.pressed.shadow);
+    expect(look()).toMatchObject(depthStyle(theme.material.pressed));
 
     fireEvent(screen.getByTestId('feed-w1'), 'pressOut');
-    expect(look().boxShadow).toBe(theme.material.raised.shadow);
+    expect(look()).toMatchObject(depthStyle(theme.material.raised));
   });
 });

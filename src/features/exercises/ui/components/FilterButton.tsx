@@ -1,6 +1,7 @@
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Icon, PressableScale, Text } from '@/shared/ui';
+import { depthStyle, surfaceStyle } from '@/theme';
 
 export interface FilterButtonProps {
   label: string;
@@ -59,9 +60,9 @@ const styles = StyleSheet.create((theme) => ({
   },
   // The look, drawn once into a texture behind the label (PressableScale's `surface`).
   surface: { borderRadius: theme.radii.control },
-  idle: { backgroundColor: theme.material.raised.background, boxShadow: theme.material.raisedSm.shadow },
-  // Selected states are pressed in, a darker fill as well as the inner shadow.
-  active: { backgroundColor: theme.material.inset.background, boxShadow: theme.material.inset.shadow },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  idle: surfaceStyle(theme.material.raisedSm),
+  // Selected states are pressed in, a darker fill as well as the inner shadow or lip.
+  active: surfaceStyle(theme.material.inset),
+  pressed: depthStyle(theme.material.pressed),
   label: { flexShrink: 1 },
 }));

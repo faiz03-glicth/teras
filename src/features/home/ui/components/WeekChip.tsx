@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { CachedSurface, HeatCell, Text } from '@/shared/ui';
+import { surfaceStyle } from '@/theme';
 
 /**
  * "2 this week" beside Home's title: a small well pressed into the page, with a swatch of the wave's colour.
@@ -30,7 +31,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   well: {
     borderRadius: 16,
-    backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    ...surfaceStyle(theme.material.inset),
   },
 }));

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { haptics } from '@/shared/lib/haptics';
-import { motion } from '@/theme';
+import { motion, surfaceStyle } from '@/theme';
 
 import type { TabId, TabItem } from '../config/tabs';
 import { CachedSurface } from './CachedSurface';
@@ -141,8 +141,8 @@ const styles = StyleSheet.create((theme) => ({
   bar: {
     flexDirection: 'row',
     paddingTop: theme.spacing.sm,
-    backgroundColor: theme.material.bar.background,
-    boxShadow: theme.material.bar.shadow,
+    // Black parts the bar from the page with a one-pixel top border, inside the bar's box.
+    ...surfaceStyle(theme.material.bar),
   },
   // The one moving well: it alone carries the pressed-in fill and shadow now, sliding under whichever
   // tab is active instead of each tab showing and hiding its own.
@@ -156,8 +156,7 @@ const styles = StyleSheet.create((theme) => ({
   // change, a push and a pop, and under every scroll.
   liquidSurface: {
     borderRadius: WELL_RADIUS,
-    backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    ...surfaceStyle(theme.material.inset),
   },
   tab: { flex: 1, alignItems: 'center' },
   well: {

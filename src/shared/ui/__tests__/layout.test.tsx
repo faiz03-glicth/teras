@@ -4,7 +4,8 @@ import { toast } from 'sonner-native';
 
 import { TAB_ITEMS } from '@/shared/config/tabs';
 import { setTestTheme } from '@test/mocks/unistyles';
-import { renderInScheme, SCHEMES, styleOf } from '@test/render';
+import { cachedLookOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
+import { surfaceStyle } from '@/theme';
 
 import { Screen } from '../Screen';
 import { SegmentedControl } from '../SegmentedControl';
@@ -72,12 +73,10 @@ describe.each(SCHEMES)('layout components in %s', (scheme) => {
       expect(styleOf(liquid)).toMatchObject({ width: 92 });
       // Its pressed-in look is a texture the springs only move and stretch, never re-blurred as it travels.
       expect(styleOf(liquid).boxShadow).toBeUndefined();
-      const cached = within(liquid).getByTestId('cached-surface');
-      expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
-      expect(styleOf(cached.props.children)).toMatchObject({
+      // (Black's well has no shadow to cache: its rim and lip are borders, drawn live with its fill.)
+      expect(cachedLookOf(within(liquid).getByTestId('cached-surface'))).toMatchObject({
         borderRadius: 16,
-        backgroundColor: theme.material.inset.background,
-        boxShadow: theme.material.inset.shadow,
+        ...surfaceStyle(theme.material.inset),
       });
     } finally {
       jest.useRealTimers();

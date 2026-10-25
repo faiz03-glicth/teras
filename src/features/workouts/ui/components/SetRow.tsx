@@ -4,6 +4,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { WeightUnit } from '@/features/training/domain/preferences';
 import { CachedSurface, Icon, PressableScale, SwipeToDelete, Text } from '@/shared/ui';
+import { depthStyle, faceLift, surfaceStyle } from '@/theme';
 
 import type { SetPatch, WorkoutExercise, WorkoutSet } from '../../data/WorkoutRepository';
 import { parseSetWeight, setWeightText, weightColumn } from '../../domain/setUnits';
@@ -222,8 +223,8 @@ const styles = StyleSheet.create((theme) => ({
   field: { flex: 1, borderRadius: theme.radii.control },
   well: (done: boolean) => ({
     borderRadius: theme.radii.control,
-    backgroundColor: done ? theme.colors.accentSoft : theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    ...surfaceStyle(theme.material.inset),
+    ...(done && { backgroundColor: theme.colors.accentSoft }),
   }),
   input: {
     flex: 1,
@@ -238,6 +239,8 @@ const styles = StyleSheet.create((theme) => ({
   tick: {
     width: TARGET_SIZE,
     height: TARGET_SIZE,
+    // The key's base lies inside its box in Black: the tick is centred on the face above it.
+    paddingBottom: faceLift(theme.material.raisedSm),
     borderRadius: theme.radii.control,
     alignItems: 'center',
     justifyContent: 'center',
@@ -246,10 +249,9 @@ const styles = StyleSheet.create((theme) => ({
   // CachedSurface, so scrolling the table never re-blurs a row's shadow.
   key: (done: boolean) => ({
     borderRadius: theme.radii.control,
-    backgroundColor: done ? theme.material.accent.background : theme.material.raisedSm.background,
-    boxShadow: done ? theme.material.accent.pressedShadow : theme.material.raisedSm.shadow,
+    ...(done
+      ? { backgroundColor: theme.material.accent.background, ...depthStyle(theme.material.accent.pressed) }
+      : surfaceStyle(theme.material.raisedSm)),
   }),
-  tickPressed: (done: boolean) => ({
-    boxShadow: done ? theme.material.accent.pressedShadow : theme.material.pressed.shadow,
-  }),
+  tickPressed: (done: boolean) => depthStyle(done ? theme.material.accent.pressed : theme.material.pressed),
 }));

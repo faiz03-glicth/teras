@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { openActiveWorkout } from '@/shared/actions';
 import { formatDuration } from '@/shared/lib/format/formatDuration';
 import { PressableScale, Text } from '@/shared/ui';
-import { motion } from '@/theme';
+import { depthStyle, motion, surfaceStyle } from '@/theme';
 
 import { countSets } from '../../domain/labels';
 import type { ActiveWorkoutSummary } from '../../hooks/useWorkoutQueries';
@@ -44,7 +44,9 @@ export const ResumeBar = memo(function ResumeBar({ workout }: { workout: ActiveW
       testID="resume-bar"
     >
       {/* The live dot: gold, haloed, as on the in-progress card. */}
-      <View style={styles.dot} />
+      <View style={styles.halo}>
+        <View style={styles.dot} />
+      </View>
       <View style={styles.text}>
         <Text variant="sub" weight="semibold" numberOfLines={1}>
           {workout.name}
@@ -69,16 +71,24 @@ const styles = StyleSheet.create((theme) => ({
     paddingLeft: theme.spacing.lg,
     paddingRight: 10,
     borderRadius: 18,
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
+    ...surfaceStyle(theme.material.raised),
   },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  pressed: depthStyle(theme.material.pressed),
+  // The halo is a disc under the dot, not a spread shadow, and takes no room: Black draws no box-shadow.
+  halo: {
+    width: 18,
+    height: 18,
+    margin: -4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.accentSoft,
+  },
   dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: theme.material.accent.background,
-    boxShadow: `0px 0px 0px 4px ${theme.colors.accentSoft}`,
   },
   text: { flex: 1, gap: 1 },
   number: { fontVariant: ['tabular-nums'] },

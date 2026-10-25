@@ -2,11 +2,15 @@ import { memo } from 'react';
 import { Image } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-const WALL_DARK = require('../../../assets/songket/wall-dark.png') as number;
-const WALL_LIGHT = require('../../../assets/songket/wall-light.png') as number;
+// Opaque: the woven thread already blended onto the scheme's canvas (scripts/songket-ground.js).
+const GROUND_DARK = require('../../../assets/songket/ground-dark.png') as number;
+const GROUND_LIGHT = require('../../../assets/songket/ground-light.png') as number;
 
 /**
- * The faint songket (woven gold thread) wallpaper behind a screen: gold in Black, ink in Parchment.
+ * The songket (woven gold thread) ground behind a screen: gold in Black, ink in Parchment. It IS the screen's
+ * background, not a layer over it: an opaque, canvas-coloured image with the thread already in it, so it is
+ * drawn with no blending (a full-screen blend on every frame is what a mobile GPU is slowest at). The
+ * navigator's scene keeps its plain canvas fill, which shows for the instant before this image decodes.
  * A pre-rendered 3x PNG, not SVG paths: the decoded bitmap is drawn once and costs nothing per frame.
  * Put one at the back of each screen, never one per row. It sits beside the scrolling content rather
  * than in it, and nothing here depends on scroll, so scrolling never renders it again.
@@ -15,7 +19,7 @@ export const SongketWall = memo(function SongketWall() {
   const { theme } = useUnistyles();
   return (
     <Image
-      source={theme.scheme === 'dark' ? WALL_DARK : WALL_LIGHT}
+      source={theme.scheme === 'dark' ? GROUND_DARK : GROUND_LIGHT}
       resizeMode="cover"
       // Decorative, and no fade-in: the thread is part of the ground, not something that arrives.
       fadeDuration={0}

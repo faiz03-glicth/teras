@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { surfaceStyle } from '@/theme';
+
 import { CachedSurface } from './CachedSurface';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -85,8 +87,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   surface: {
     borderRadius: theme.radii.card,
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
+    ...surfaceStyle(theme.material.raised),
   },
   suffix: { fontSize: 15 },
 }));

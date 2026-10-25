@@ -5,7 +5,16 @@ import { StyleSheet } from 'react-native-unistyles';
 
 import { haptics, type HapticBeat } from '@/shared/lib/haptics';
 import { sounds } from '@/shared/lib/sounds';
-import { flipLandingMs, motion, restAtMs, useHoldMotion, useMotion, type HeatLevel } from '@/theme';
+import {
+  edgeRoom,
+  flipLandingMs,
+  motion,
+  restAtMs,
+  surfaceStyle,
+  useHoldMotion,
+  useMotion,
+  type HeatLevel,
+} from '@/theme';
 
 import { HeatCell } from './HeatCell';
 
@@ -120,15 +129,22 @@ export function LogoMark({ size = 76, animateIn = false, holdable = false }: Log
 }
 
 const styles = StyleSheet.create((theme) => ({
-  mark: (size: number, padding: number, gap: number) => ({
-    width: size,
-    height: size,
-    padding,
-    gap,
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    borderRadius: Math.round(size * (22 / 76)),
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
-  }),
+  mark: (size: number, padding: number, gap: number) => {
+    // Black's rim and base lie inside the mark's box: they take their width out of the padding, so the
+    // nine cells keep their places and the box its size.
+    const room = edgeRoom(theme.material.raised);
+    return {
+      width: size,
+      height: size,
+      paddingTop: Math.max(0, padding - room.top),
+      paddingRight: Math.max(0, padding - room.right),
+      paddingBottom: Math.max(0, padding - room.bottom),
+      paddingLeft: Math.max(0, padding - room.left),
+      gap,
+      flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
+      borderRadius: Math.round(size * (22 / 76)),
+      ...surfaceStyle(theme.material.raised),
+    };
+  },
 }));

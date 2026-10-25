@@ -3,7 +3,7 @@ import { View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { motion } from '@/theme';
+import { depthStyle, motion, surfaceStyle } from '@/theme';
 
 import { CachedSurface } from './CachedSurface';
 import { Crossfade } from './Crossfade';
@@ -143,8 +143,7 @@ const styles = StyleSheet.create((theme) => ({
   // drawn once into textures (CachedSurface), so the key glides and the screens slide without re-blurring.
   trackSurface: {
     borderRadius: theme.radii.control,
-    backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.inset.shadow,
+    ...surfaceStyle(theme.material.inset),
   },
   segment: {
     flex: 1,
@@ -153,7 +152,7 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     borderRadius: theme.radii.control - PAD,
   },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  pressed: depthStyle(theme.material.pressed),
   label: { alignItems: 'center', paddingVertical: theme.spacing.xs },
   pill: (width: number) => ({
     position: 'absolute' as const,
@@ -164,7 +163,6 @@ const styles = StyleSheet.create((theme) => ({
   }),
   pillSurface: {
     borderRadius: theme.radii.control - PAD,
-    backgroundColor: theme.material.raisedSm.background,
-    boxShadow: theme.material.raisedSm.shadow,
+    ...surfaceStyle(theme.material.raisedSm),
   },
 }));

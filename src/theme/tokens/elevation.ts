@@ -1,6 +1,9 @@
 import type { ColorScheme, Elevation } from '../types';
 
-/** Box-shadow strings for the New Architecture `boxShadow` style. Dark cards rely on borders instead (null). */
+/**
+ * Box-shadow strings for the New Architecture `boxShadow` style. Black draws no box-shadow at all (its depth is
+ * native borders, see SoftMaterial), so its entries are null.
+ */
 export const elevation: Record<ColorScheme, Elevation> = {
   light: {
     card: '0px 1px 2px rgba(13,23,18,0.05), 0px 6px 20px rgba(13,23,18,0.05)',
@@ -8,6 +11,6 @@ export const elevation: Record<ColorScheme, Elevation> = {
   },
   dark: {
     card: null,
-    raised: '0px 3px 0px #050506',
+    raised: null,
   },
 };

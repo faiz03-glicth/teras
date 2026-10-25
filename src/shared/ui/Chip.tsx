@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { useStateTransition } from '@/theme';
+import { depthStyle, edgeRoom, surfaceStyle, useStateTransition } from '@/theme';
 
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
@@ -104,7 +104,7 @@ const Chip = memo(function Chip({ value, label, selected, onSelect, testID }: Ch
   );
 });
 
-/** How far a raised key's shadow reaches past its edge. */
+/** How far a raised key's shadow reaches past its edge (Parchment; Black's edges lie inside the chip). */
 const KEY_SHADOW_ROOM = 10;
 
 const styles = StyleSheet.create((theme) => ({
@@ -112,14 +112,14 @@ const styles = StyleSheet.create((theme) => ({
   // chosen even where inset shadows do not draw.
   chip: (selected: boolean) => ({
     minHeight: 34,
-    paddingHorizontal: theme.spacing.md,
+    // Black's rim lies inside the chip's box: it takes its width out of the padding, so chips keep their size.
+    paddingHorizontal: theme.spacing.md - edgeRoom(theme.material.raisedSm).left,
     borderRadius: theme.radii.key,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: selected ? theme.material.inset.background : theme.material.raisedSm.background,
-    boxShadow: selected ? theme.material.inset.shadow : theme.material.raisedSm.shadow,
+    ...surfaceStyle(selected ? theme.material.inset : theme.material.raisedSm),
   }),
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  pressed: depthStyle(theme.material.pressed),
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   // Full-bleed: the row scrolls under the screen's side padding, and lines up with it at rest. It keeps
   // room above and below, so the scroll view does not cut the keys' shadows off.

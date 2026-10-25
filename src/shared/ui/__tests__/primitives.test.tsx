@@ -1,7 +1,9 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import type { ReactTestInstance } from 'react-test-renderer';
 
-import { childrenOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
+import { cachedLookOf, childrenOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
+
+import { depthStyle, surfaceStyle } from '@/theme';
 
 import { Avatar } from '../Avatar';
 import { Banner } from '../Banner';
@@ -17,11 +19,9 @@ import { PageDots } from '../PageDots';
 import { Text } from '../Text';
 import { Toggle } from '../Toggle';
 
-/** A control's material: drawn once into a texture behind its content (PressableScale's `surface`). */
+/** A control's material: drawn behind its content (PressableScale's `surface`), in a texture if it has a shadow. */
 function surfaceOf(control: ReactTestInstance) {
-  const cached = within(control).getByTestId('cached-surface');
-  expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
-  return styleOf(cached.props.children);
+  return cachedLookOf(within(control).getByTestId('cached-surface'));
 }
 
 describe.each(SCHEMES)('primitives in %s', (scheme) => {
@@ -72,14 +72,13 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(styleOf(key()).boxShadow).toBeUndefined();
     expect(surfaceOf(key())).toMatchObject({
       borderRadius: theme.radii.control,
-      backgroundColor: theme.material.raisedSm.background,
-      boxShadow: theme.material.raisedSm.shadow,
+      ...surfaceStyle(theme.material.raisedSm),
     });
     // Under a finger the lift gives way to a shallow press, as on every other key.
     fireEvent(key(), 'pressIn');
-    expect(surfaceOf(key()).boxShadow).toBe(theme.material.pressed.shadow);
+    expect(surfaceOf(key())).toMatchObject(depthStyle(theme.material.pressed));
     fireEvent(key(), 'pressOut');
-    expect(surfaceOf(key()).boxShadow).toBe(theme.material.raisedSm.shadow);
+    expect(surfaceOf(key())).toMatchObject(depthStyle(theme.material.raisedSm));
   });
 
   it('a small Button still reaches a 48dp touch target', () => {
@@ -110,13 +109,12 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(styleOf(button)).toMatchObject({ width: 40, height: 40, borderRadius: theme.radii.key });
     expect(surfaceOf(button)).toMatchObject({
       borderRadius: theme.radii.key,
-      backgroundColor: theme.material.raisedSm.background,
-      boxShadow: theme.material.raisedSm.shadow,
+      ...surfaceStyle(theme.material.raisedSm),
     });
     expect(button.props.hitSlop).toBe(4);
     fireEvent(button, 'pressIn');
-    expect(surfaceOf(screen.getByRole('button', { name: 'Back' })).boxShadow).toBe(
-      theme.material.pressed.shadow,
+    expect(surfaceOf(screen.getByRole('button', { name: 'Back' }))).toMatchObject(
+      depthStyle(theme.material.pressed),
     );
   });
 

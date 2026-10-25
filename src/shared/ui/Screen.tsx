@@ -121,8 +121,9 @@ export function Screen({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  // No background of its own: every screen sits in a navigator scene that already paints the canvas, and
-  // each extra full-screen fill is drawn again on every frame (GPU overdraw).
+  // No fill of its own: every screen sits in a navigator scene that already paints the canvas (it shows until
+  // the songket ground decodes), and each extra full-screen fill is drawn again on every frame (GPU overdraw).
+  // The one ground image inside is opaque and the screen's whole background, drawn with no blending.
   root: { flex: 1 },
   grow: { flexGrow: 1 },
   content: (inset: 'default' | 'wide', clearance: number) => ({

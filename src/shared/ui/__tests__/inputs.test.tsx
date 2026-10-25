@@ -1,7 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 
-import { renderInScheme, SCHEMES, styleOf } from '@test/render';
+import { cachedLookOf, renderInScheme, SCHEMES, styleOf } from '@test/render';
+
+import { depthStyle, surfaceStyle } from '@/theme';
 
 import { ChipRow } from '../Chip';
 import { OtpInput } from '../OtpInput';
@@ -26,17 +28,16 @@ describe.each(SCHEMES)('inputs in %s', (scheme) => {
 
   it("TextField draws its well's inner shadow once, inside its edge, so a sliding screen never re-blurs it", () => {
     const { theme } = renderInScheme(<TextField label="Search" icon="search" />, scheme);
-    const cached = screen.getByTestId('cached-surface');
-    expect(cached.props.renderToHardwareTextureAndroid).toBe(true);
-    expect(styleOf(cached.props.children)).toMatchObject({
+    expect(cachedLookOf(screen.getByTestId('cached-surface'))).toMatchObject({
       borderRadius: theme.radii.control - 1,
-      boxShadow: theme.material.inset.shadow,
+      ...depthStyle(theme.material.inset),
     });
-    // That texture is the only shadow the field draws: nothing around it blurs live.
+    // That texture is the only shadow the field draws: nothing around it blurs live. (Black has no shadow
+    // at all: its well is a rim and a lip drawn as borders.)
     const shadowed = screen.UNSAFE_root.findAll(
       (node) => typeof node.type === 'string' && styleOf(node).boxShadow !== undefined,
     );
-    expect(shadowed).toHaveLength(1);
+    expect(shadowed).toHaveLength(theme.material.inset.shadow === undefined ? 0 : 1);
   });
 
   it('OtpInput keeps digits only and completes once on the sixth digit', () => {
@@ -78,14 +79,12 @@ describe.each(SCHEMES)('inputs in %s', (scheme) => {
     );
     expect(styleOf(screen.getByRole('radio', { name: 'All' }))).toMatchObject({
       borderRadius: theme.radii.key,
-      backgroundColor: theme.material.inset.background,
-      boxShadow: theme.material.inset.shadow,
+      ...surfaceStyle(theme.material.inset),
     });
     expect(styleOf(screen.getByText('All')).color).toBe(theme.colors.accentText);
     expect(styleOf(screen.getByRole('radio', { name: 'Chest' }))).toMatchObject({
       borderRadius: theme.radii.key,
-      backgroundColor: theme.material.raisedSm.background,
-      boxShadow: theme.material.raisedSm.shadow,
+      ...surfaceStyle(theme.material.raisedSm),
     });
     expect(styleOf(screen.getByText('Chest')).color).toBe(theme.colors.text);
     fireEvent.press(screen.getByRole('radio', { name: 'Chest' }));

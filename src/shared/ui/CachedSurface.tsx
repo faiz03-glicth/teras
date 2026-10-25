@@ -12,11 +12,13 @@ const BLEED = { card: 24, key: 12, none: 0 } as const;
 export type SurfaceBleed = keyof typeof BLEED;
 
 /**
- * A surface's look (fill and shadows: pass them as `style`) drawn on its own, behind the parent's content.
+ * A surface's look (fill, shadows and edges: pass `surfaceStyle(material.X)` as `style`) drawn on its own,
+ * behind the parent's content.
  * On Android a box shadow is blurred again on every draw: here each shadow is drawn once into a bitmap and
  * stretched to the surface (PrerenderedSurface), so a scroll, a screen slide or a screen coming back costs
- * no blur. A surface that can't be drawn that way (an edge) is a plain view cached once into a texture.
- * The content above stays live. On iOS a plain view in the same frame.
+ * no blur. A shadowed surface that can't be drawn that way (an edge) is a plain view cached once into a
+ * texture. A surface with no shadow (Black's: its depth is borders, drawn with the view's own background)
+ * is a plain view with no layer at all. The content above stays live. On iOS a plain view in the same frame.
  *
  * The parent: no fill or shadow of its own, and this as its first child (it lies exactly on the parent).
  */

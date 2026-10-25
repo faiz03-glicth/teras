@@ -97,34 +97,77 @@ export interface Radii {
 export interface Elevation {
   /** CSS-style box-shadow string (New Architecture), or null for no shadow. */
   card: string | null;
-  raised: string;
+  /** Null in Black: it draws no box-shadow at all (see SoftMaterial). */
+  raised: string | null;
+}
+
+/**
+ * A surface's border "edges" as plain style props. React Native lays a border out inside the view and draws
+ * it as part of the view's own background drawable, so an edge costs nothing extra to draw. Black builds its
+ * whole material from these (a rim, a ledge under it, a lip along a well's top) instead of box-shadows.
+ */
+export interface EdgeStyle {
+  borderWidth?: number;
+  borderColor?: string;
+  borderTopWidth?: number;
+  borderTopColor?: string;
+  borderBottomWidth?: number;
+  borderBottomColor?: string;
+}
+
+/**
+ * One surface of the material: its fill, plus the depth it is drawn with. A surface has a `shadow` (a CSS
+ * box-shadow string: Parchment's soft light), `edges` (native borders: Black's hard rim and ledge), or in
+ * principle both. Components never read either directly: they ask for `surfaceStyle(look)` (see
+ * surfaceStyle.ts), which turns the look into style props.
+ */
+export interface SurfaceLook {
+  background: string;
+  /** A box-shadow string. Absent in Black: on Android every boxShadow, outset or inset, is an extra pass. */
+  shadow?: string;
+  /** Borders that draw the surface's depth where it has no shadow. */
+  edges?: EdgeStyle;
+}
+
+/** What a raised control becomes under a finger: depth only, no fill of its own. */
+export interface PressLook {
+  shadow?: string;
+  edges?: EdgeStyle;
 }
 
 /**
  * The physical material every surface is made of (see materials/soft.ts). `ground` is what the screen is;
  * `raised` and `raisedSm` are lifted out of it, `inset` is pressed into it, and `pressed` is what a raised
- * control becomes under a finger. Shadows are CSS box-shadow strings (New Architecture).
+ * control becomes under a finger.
+ *
+ * Depth is spelled two ways, and a scheme uses one of them. Parchment's is soft light, CSS box-shadow strings
+ * (New Architecture). Black's is native borders (`edges`) and no shadow at all: Android draws each boxShadow,
+ * even a hard one with no blur, as an extra drawable and pass per view, and a screen of cards, keys and wells
+ * made the GPU the bottleneck. A border is part of the view's own background drawable.
  */
 export interface SoftMaterial {
   ground: string;
   /** Cards, buttons and other large controls. */
-  raised: { background: string; shadow: string };
+  raised: SurfaceLook;
   /** Small controls (icon buttons, ticks): a shallower lift, so depth scales with size. */
-  raisedSm: { background: string; shadow: string };
-  /** Inputs, wells and selected states: a darker fill AND an inner shadow, so it reads without the shadow. */
-  inset: { background: string; shadow: string };
+  raisedSm: SurfaceLook;
+  /** Inputs, wells and selected states: a darker fill AND an inner shadow or lip, so it reads without it. */
+  inset: SurfaceLook;
   /** A raised control while held: its lift replaced by a shallow press. */
-  pressed: { shadow: string };
+  pressed: PressLook;
   /**
    * An empty heatmap day: a small dent carved into the card, a darker fill AND fine edges (`edge` pt wide),
    * the shade on its upper left and the light on its lower right. Edges, not inner shadows: Android blurs
    * every inner shadow offscreen, and a month of the training wave holds dozens of empty days.
    */
   carved: { background: string; shade: string; light: string; edge: number };
-  /** The tab bar: the material's top layer over scrolling content, casting a soft shadow upward. */
-  bar: { background: string; shadow: string };
-  /** The gold primary action. `edge` is its outline where gold alone would not separate from the ground. */
-  accent: { background: string; shadow: string; pressedShadow: string; edge: string | null };
+  /** The tab bar: the material's top layer over scrolling content, parted from the page above it. */
+  bar: SurfaceLook;
+  /**
+   * The gold primary action. `pressed` is its look under a finger, and `edge` is its outline where gold
+   * alone would not separate from the ground (a scheme with `edges` of its own draws it there instead).
+   */
+  accent: SurfaceLook & { pressed: PressLook; edge: string | null };
 }
 
 export interface BrandColors {

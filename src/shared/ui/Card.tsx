@@ -2,6 +2,8 @@ import { Children, Fragment, isValidElement, type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { surfaceStyle } from '@/theme';
+
 import { CachedSurface } from './CachedSurface';
 
 export interface CardProps {
@@ -50,8 +52,8 @@ const styles = StyleSheet.create((theme) => ({
   // panel that reports a state (the rest timer) rather than one that holds content.
   surface: (tone: 'default' | 'accentSoft') => ({
     borderRadius: theme.radii.card,
-    backgroundColor: tone === 'accentSoft' ? theme.colors.accentSoft : theme.material.raised.background,
-    boxShadow: tone === 'accentSoft' ? theme.material.inset.shadow : theme.material.raised.shadow,
+    ...surfaceStyle(tone === 'accentSoft' ? theme.material.inset : theme.material.raised),
+    ...(tone === 'accentSoft' && { backgroundColor: theme.colors.accentSoft }),
   }),
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.border },
 }));

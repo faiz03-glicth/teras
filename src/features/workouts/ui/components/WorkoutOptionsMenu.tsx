@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { Button, Icon, PressableScale, Text, type IconName } from '@/shared/ui';
+import { edgeRoom, surfaceStyle } from '@/theme';
 
 export interface WorkoutOptionsMenuProps {
   visible: boolean;
@@ -145,10 +146,13 @@ const styles = StyleSheet.create((theme) => ({
     position: 'absolute',
     right: theme.spacing.md,
     width: 264,
-    padding: 6,
+    // Black's rim and base lie inside the menu's box: they take their width out of the padding.
+    paddingTop: 6 - edgeRoom(theme.material.raised).top,
+    paddingRight: 6 - edgeRoom(theme.material.raised).right,
+    paddingBottom: 6 - edgeRoom(theme.material.raised).bottom,
+    paddingLeft: 6 - edgeRoom(theme.material.raised).left,
     borderRadius: 18,
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
+    ...surfaceStyle(theme.material.raised),
   },
   item: {
     minHeight: 48,

@@ -3,7 +3,7 @@ import { TextInput, View, type TextInputProps } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { useStateTransition } from '@/theme';
+import { depthStyle, useStateTransition } from '@/theme';
 
 import { CachedSurface } from './CachedSurface';
 import { Icon } from './Icon';
@@ -79,7 +79,8 @@ const styles = StyleSheet.create((theme) => ({
   // edge around it, whose colour animates on focus, stays live.
   well: {
     borderRadius: theme.radii.control - 1,
-    boxShadow: theme.material.inset.shadow,
+    // No fill: the field's own is under its edge. Black's well is its rim and the lip along its top.
+    ...depthStyle(theme.material.inset),
   },
   input: {
     flex: 1,

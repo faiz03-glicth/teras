@@ -29,6 +29,23 @@ describe('the songket wall', () => {
     },
   );
 
+  it.each([
+    ['dark', require('../../../../assets/songket/ground-dark.png') as number],
+    ['light', require('../../../../assets/songket/ground-light.png') as number],
+  ] as const)('is the opaque ground image in %s, covering the screen with no fade-in', (scheme, ground) => {
+    renderInScheme(
+      <Screen>
+        <Text>Body</Text>
+      </Screen>,
+      scheme,
+    );
+
+    const wall = screen.getByTestId('songket-wall');
+    expect(wall.props.source).toEqual(ground);
+    expect(wall.props.resizeMode).toBe('cover');
+    expect(wall.props.fadeDuration).toBe(0);
+  });
+
   it('shows a different image in each scheme', () => {
     const body = (
       <Screen>

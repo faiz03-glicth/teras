@@ -1,6 +1,6 @@
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { useStateTransition } from '@/theme';
+import { depthStyle, faceLift, surfaceStyle, useStateTransition } from '@/theme';
 
 import { Icon } from './Icon';
 import type { IconName } from './icons';
@@ -77,6 +77,8 @@ const styles = StyleSheet.create((theme) => ({
     width: plain ? PLAIN_SIZE : KEY_SIZE,
     height: plain ? PLAIN_SIZE : KEY_SIZE,
     borderRadius: plain ? PLAIN_SIZE / 2 : theme.radii.key,
+    // A key's base lies inside its box in Black: the icon is centred on the face above it.
+    paddingBottom: plain ? 0 : faceLift(theme.material.raisedSm),
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   }),
@@ -84,13 +86,12 @@ const styles = StyleSheet.create((theme) => ({
   // icon (PressableScale's `surface`); `plain` has none, an icon printed on the surface.
   surface: {
     borderRadius: theme.radii.key,
-    backgroundColor: theme.material.raisedSm.background,
-    boxShadow: theme.material.raisedSm.shadow,
+    ...surfaceStyle(theme.material.raisedSm),
   },
-  pressed: { boxShadow: theme.material.pressed.shadow },
+  pressed: depthStyle(theme.material.pressed),
   // A plain icon has no key to sink; pressed, a round well opens under it instead.
   plainPressed: {
     backgroundColor: theme.material.inset.background,
-    boxShadow: theme.material.pressed.shadow,
+    ...depthStyle(theme.material.pressed),
   },
 }));

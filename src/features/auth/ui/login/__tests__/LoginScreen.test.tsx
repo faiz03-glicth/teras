@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import { useAuthStore } from '@/features/auth/state/authStore';
 import { goBack, openLegal } from '@/shared/actions';
+import { surfaceStyle } from '@/theme';
 import { renderWithApp } from '@test/providers';
 import { SCHEMES, styleOf } from '@test/render';
 
@@ -51,8 +52,7 @@ describe.each(SCHEMES)('LoginScreen in %s', (scheme) => {
     expect(styleOf(emailKey).height).toBe(google.height);
     // Its raised look is drawn once into a texture behind the label (PressableScale's `surface`).
     expect(styleOf(within(emailKey).getByTestId('cached-surface').props.children)).toMatchObject({
-      backgroundColor: theme.material.raised.background,
-      boxShadow: theme.material.raised.shadow,
+      ...surfaceStyle(theme.material.raised),
     });
   });
 });

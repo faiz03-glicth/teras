@@ -1,6 +1,8 @@
 import { Image, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { edgeRoom } from '@/theme';
+
 const CTA_MOTIF = require('../../../assets/songket/cta.png') as number;
 
 /** The motif is a row of pucuk rebung over a teluk berantai strip, drawn on a 2pt thread grid. */
@@ -46,13 +48,14 @@ export function SongketCta() {
 }
 
 const styles = StyleSheet.create((theme) => ({
+  // Inside the key's edges (its rim and the base it stands on), so the thread lies on the face alone.
   clip: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: theme.radii.control,
+    top: edgeRoom(theme.material.accent).top,
+    left: edgeRoom(theme.material.accent).left,
+    right: edgeRoom(theme.material.accent).right,
+    bottom: edgeRoom(theme.material.accent).bottom,
+    borderRadius: theme.radii.control - edgeRoom(theme.material.accent).left,
     overflow: 'hidden',
     alignItems: 'flex-end',
     justifyContent: 'center',

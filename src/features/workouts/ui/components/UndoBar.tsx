@@ -3,7 +3,7 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { CachedSurface, Text } from '@/shared/ui';
-import { motion } from '@/theme';
+import { motion, surfaceStyle } from '@/theme';
 
 export interface UndoBarProps {
   /** "Set 2 deleted". */
@@ -61,8 +61,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   surface: {
     borderRadius: 16,
-    backgroundColor: theme.material.raised.background,
-    boxShadow: theme.material.raised.shadow,
+    ...surfaceStyle(theme.material.raised),
   },
   label: { flex: 1 },
   // 40 tall and 8 of slop all round: a 56 touch target.

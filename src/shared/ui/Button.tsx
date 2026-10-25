@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, type LayoutChangeEvent } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { useStateTransition, type Theme } from '@/theme';
+import { accentStyle, depthStyle, faceLift, surfaceStyle, useStateTransition, type Theme } from '@/theme';
 
 import { ContentSwap } from './ContentSwap';
 import { Icon } from './Icon';
@@ -39,6 +39,16 @@ export interface ButtonProps {
 const HEIGHT: Record<ButtonSize, number> = { xl: 56, lg: 52, md: 50, sm: 36 };
 /** Extends a small key to a 48dp touch target. */
 const SMALL_HIT_SLOP = (48 - HEIGHT.sm) / 2;
+
+/** The piece of the material a variant's key is raised out of. */
+const keyMaterial = (theme: Theme, variant: ButtonVariant) =>
+  ({
+    primary: theme.material.accent,
+    secondary: theme.material.raised,
+    ghost: theme.material.raisedSm,
+    quiet: theme.material.raisedSm,
+    danger: theme.material.raisedSm,
+  })[variant];
 
 const foreground = (theme: Theme, variant: ButtonVariant): string =>
   ({
@@ -100,7 +110,7 @@ export function Button({
       accessibilityLabel={loading ? shownLabel : (accessibilityLabel ?? label)}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: inactive, busy: loading }}
-      style={[styles.base(size), { opacity: disabled && !loading ? 0.45 : 1 }, fade]}
+      style={[styles.base(size, variant), { opacity: disabled && !loading ? 0.45 : 1 }, fade]}
       surface={{
         style: styles.surface(variant),
         pressed: styles.pressed(variant),
@@ -129,8 +139,10 @@ export function Button({
 }
 
 const styles = StyleSheet.create((theme) => ({
-  base: (size: ButtonSize) => ({
+  base: (size: ButtonSize, variant: ButtonVariant) => ({
     height: HEIGHT[size],
+    // The key's base lies inside its box in Black: the label is centred on the face above it.
+    paddingBottom: faceLift(keyMaterial(theme, variant)),
     paddingHorizontal: size === 'sm' ? theme.spacing.md + 2 : theme.spacing.lg,
     alignSelf: size === 'sm' ? ('flex-start' as const) : ('stretch' as const),
     // A key on a console, not a pill: controlled corners read as a physical object.
@@ -140,29 +152,18 @@ const styles = StyleSheet.create((theme) => ({
   /** The key's material, drawn once into a texture behind its label (PressableScale's `surface`). */
   surface: (variant: ButtonVariant) => ({
     borderRadius: theme.radii.control,
-    backgroundColor: {
-      primary: theme.material.accent.background,
-      secondary: theme.material.raised.background,
-      ghost: theme.material.raisedSm.background,
-      quiet: theme.material.raisedSm.background,
-      danger: theme.colors.dangerSoft,
-    }[variant],
     // Raised out of the material; the lesser keys take the shallower lift, so they never compete with the
-    // action.
-    boxShadow: {
-      primary: theme.material.accent.shadow,
-      secondary: theme.material.raised.shadow,
-      ghost: theme.material.raisedSm.shadow,
-      quiet: theme.material.raisedSm.shadow,
-      danger: theme.material.raisedSm.shadow,
+    // action. The gold keeps its dark edge only where the material says gold alone would not separate.
+    ...{
+      primary: accentStyle(theme.material.accent),
+      secondary: surfaceStyle(theme.material.raised),
+      ghost: surfaceStyle(theme.material.raisedSm),
+      quiet: surfaceStyle(theme.material.raisedSm),
+      danger: { ...surfaceStyle(theme.material.raisedSm), backgroundColor: theme.colors.dangerSoft },
     }[variant],
-    // The gold keeps its dark edge only where the material says gold alone would not separate.
-    borderWidth: variant === 'primary' && theme.material.accent.edge ? 1 : 0,
-    borderColor: theme.material.accent.edge ?? 'transparent',
   }),
   /** Under a finger: the lift gives way to a shallow press (the gold sinks with its own warm shade). */
-  pressed: (variant: ButtonVariant) => ({
-    boxShadow: variant === 'primary' ? theme.material.accent.pressedShadow : theme.material.pressed.shadow,
-  }),
+  pressed: (variant: ButtonVariant) =>
+    depthStyle(variant === 'primary' ? theme.material.accent.pressed : theme.material.pressed),
   content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
 }));

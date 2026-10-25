@@ -5,6 +5,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { formatRest } from '@/features/training/domain/preferences';
 import { restClock, restLeft } from '@/features/workouts/domain/rest';
 import { Button, Icon, Text } from '@/shared/ui';
+import { surfaceStyle } from '@/theme';
 
 import { useClockValue } from '../useClockValue';
 
@@ -72,11 +73,10 @@ const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing.md,
     paddingHorizontal: theme.spacing.gutter,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.material.bar.background,
-    boxShadow: theme.material.bar.shadow,
-    // Reads as a bar even where the shadow does not draw.
+    // Reads as a bar even where the shadow does not draw; Black's bar edge (a top border) replaces the hairline.
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.colors.border,
+    ...surfaceStyle(theme.material.bar),
   },
   time: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
   clock: { fontVariant: ['tabular-nums'] },

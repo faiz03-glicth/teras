@@ -11,7 +11,7 @@ describe('PrerenderedSurface', () => {
           frame={{ position: 'absolute', top: -12 }}
           style={[
             { position: 'absolute', top: 12 },
-            [{ backgroundColor: '#FAEDC2' }, false],
+            [{ backgroundColor: '#FAEDC2', boxShadow: '3px 3px 8px rgba(0,0,0,0.3)' }, false],
             { borderRadius: 20 },
           ]}
         />
@@ -33,7 +33,53 @@ describe('PrerenderedSurface', () => {
             {
               type: 'View',
               props: {
-                style: { position: 'absolute', top: 12, backgroundColor: '#FAEDC2', borderRadius: 20 },
+                style: {
+                  position: 'absolute',
+                  top: 12,
+                  backgroundColor: '#FAEDC2',
+                  boxShadow: '3px 3px 8px rgba(0,0,0,0.3)',
+                  borderRadius: 20,
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('keeps a surface with no shadow (Black: fill and borders) a plain view in no layer at all', () => {
+    const { toJSON } = render(
+      <View testID="parent">
+        <PrerenderedSurface
+          frame={{ position: 'absolute', top: -12 }}
+          style={[
+            { position: 'absolute', top: 12 },
+            { backgroundColor: '#1B1B1E', borderWidth: 1, borderColor: '#2E2E33', borderBottomWidth: 3 },
+            { borderRadius: 20 },
+          ]}
+        />
+      </View>,
+    );
+
+    expect(toJSON()).toMatchObject({
+      children: [
+        {
+          type: 'View',
+          props: { renderToHardwareTextureAndroid: false, collapsable: false, testID: 'cached-surface' },
+          children: [
+            {
+              type: 'View',
+              props: {
+                style: {
+                  position: 'absolute',
+                  top: 12,
+                  backgroundColor: '#1B1B1E',
+                  borderWidth: 1,
+                  borderColor: '#2E2E33',
+                  borderBottomWidth: 3,
+                  borderRadius: 20,
+                },
               },
             },
           ],

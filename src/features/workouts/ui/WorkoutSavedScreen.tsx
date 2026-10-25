@@ -14,7 +14,7 @@ import {
   StatTile,
   Text,
 } from '@/shared/ui';
-import { useMotion } from '@/theme';
+import { accentStyle, useMotion } from '@/theme';
 
 import { useWorkoutSavedViewModel } from './useWorkoutSavedViewModel';
 
@@ -168,11 +168,9 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: MEDAL / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.material.accent.background,
-    boxShadow: theme.material.accent.shadow,
-    // The gold keeps its dark edge only where the material says gold alone would not separate.
-    borderWidth: theme.material.accent.edge ? 1.5 : 0,
-    borderColor: theme.material.accent.edge ?? 'transparent',
+    // The gold keeps its dark edge only where the material says gold alone would not separate; Black draws
+    // the medal's rim and base with its own edges.
+    ...accentStyle(theme.material.accent, 1.5),
   },
   titles: { alignItems: 'center', gap: theme.spacing.xs },
   wave: { gap: theme.spacing.md },

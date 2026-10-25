@@ -27,16 +27,28 @@ const unistylesParse: (value: string) => BoxShadowValue[] = require(
   path.join(unistylesRoot, 'lib/commonjs/core/parseBoxShadow'),
 ).parseBoxShadowString;
 
-/** Every shadow string the material carries, in both schemes. */
-const materialShadows = Object.values(softMaterials).flatMap((material) => [
-  material.raised.shadow,
-  material.raisedSm.shadow,
-  material.inset.shadow,
-  material.pressed.shadow,
-  material.bar.shadow,
-  material.accent.shadow,
-  material.accent.pressedShadow,
-]);
+/**
+ * Every shadow string the material carries (only Parchment has any: Black draws its depth as borders), and
+ * the hard, zero-blur forms Black once used, which still read through the same parser: a zero length with no
+ * unit, an inset ring, an offset with no blur.
+ */
+const materialShadows = [
+  ...Object.values(softMaterials).flatMap((material) => [
+    material.raised.shadow,
+    material.raisedSm.shadow,
+    material.inset.shadow,
+    material.pressed.shadow,
+    material.bar.shadow,
+    material.accent.shadow,
+    material.accent.pressed.shadow,
+  ]),
+  '0 3px 0 #050506',
+  'inset 0 0 0 1px #2E2E33, 0 3px 0 #050506',
+  'inset 0 0 0 1px #34343A, inset 0 2px 0 rgba(0,0,0,0.45)',
+  'inset 0 2px 0 rgba(122,74,18,0.55)',
+].filter((shadow): shadow is string => shadow !== undefined);
+
+const lightRaisedShadow = softMaterials.light.raised.shadow ?? '';
 
 /** React Native's result in this file's terms: its omitted fields filled with what Android draws. */
 function asReactNativeReadsIt(value: string | readonly BoxShadowValue[]) {
@@ -122,13 +134,13 @@ describe('toPrerenderedLook', () => {
       top: 24,
       backgroundColor: '#FAEDC2',
       borderRadius: 20,
-      boxShadow: softMaterials.light.raised.shadow,
+      boxShadow: lightRaisedShadow,
     });
 
     expect(look).toEqual({
       fill: processColor('#FAEDC2'),
       radius: 20,
-      shadows: parseBoxShadow(softMaterials.light.raised.shadow),
+      shadows: parseBoxShadow(lightRaisedShadow),
       style: { position: 'absolute', top: 24 },
     });
   });
@@ -147,7 +159,7 @@ describe('toPrerenderedLook', () => {
   });
 
   it('takes the shadows as objects too, the form Unistyles hands over', () => {
-    const shadow = softMaterials.dark.raised.shadow;
+    const shadow = lightRaisedShadow;
 
     expect(toPrerenderedLook({ borderRadius: 20, boxShadow: unistylesParse(shadow) })?.shadows).toEqual(
       parseBoxShadow(shadow),

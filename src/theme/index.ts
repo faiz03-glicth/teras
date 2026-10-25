@@ -3,6 +3,7 @@
 export type {
   ActivityColorKey,
   ColorScheme,
+  EdgeStyle,
   HeatLevel,
   HeatPaletteId,
   ReduceMotionPreference,
@@ -11,6 +12,15 @@ export type {
   TypographyVariant,
 } from './types';
 export { buildTheme } from './buildTheme';
+export {
+  accentStyle,
+  depthStyle,
+  edgeRoom,
+  faceLift,
+  shadowStyle,
+  surfaceStyle,
+  type SurfaceStyle,
+} from './surfaceStyle';
 export { HEAT_PALETTE_IDS, heatPalettes } from './tokens/heatPalettes';
 export { BRAND_GOLD } from './tokens/brand';
 export { resolveScheme, useResolvedScheme } from './hooks/useResolvedScheme';
