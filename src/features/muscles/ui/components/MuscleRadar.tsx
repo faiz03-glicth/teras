@@ -33,7 +33,8 @@ export interface MuscleRadarProps {
  */
 export const MuscleRadar = memo(function MuscleRadar({ now, before, accessibilityLabel }: MuscleRadarProps) {
   const { theme } = useUnistyles();
-  const { border, text3, accent, accentText } = theme.colors;
+  // The weeks before are a dashed thread in the deep songket gold, under the bright gold of now.
+  const { border, accentEdge, accent, accentText } = theme.colors;
   return (
     <View
       style={styles.box}
@@ -51,7 +52,7 @@ export const MuscleRadar = memo(function MuscleRadar({ now, before, accessibilit
           <Polygon
             points={before}
             fill="none"
-            stroke={text3}
+            stroke={accentEdge}
             strokeWidth={1.5}
             strokeDasharray={BEFORE_DASH}
             strokeLinejoin="round"

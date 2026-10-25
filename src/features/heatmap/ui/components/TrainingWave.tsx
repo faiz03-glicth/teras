@@ -21,7 +21,7 @@ export interface TrainingWaveHeader {
 const ROW_FADE_MS = 220;
 
 export interface TrainingWaveProps {
-  /** Rows of months side by side, newest row first: Home shows one, the Calendar every one. */
+  /** Rows of months side by side, oldest row first and the latest at the bottom: Home shows one or two. */
   rows: readonly (readonly HeatmapMonth[])[];
   dayLabels: readonly string[];
   onDayPress: (day: string) => void;
@@ -105,7 +105,9 @@ export const TrainingWave = memo(function TrainingWave({
         {rows.map((row, index) => (
           <Animated.View
             key={row[0]?.key ?? index}
-            entering={index > 0 && !reduced ? FadeIn.duration(ROW_FADE_MS) : undefined}
+            // Every row but the latest is the one that opens; the latest stays mounted (same key), so only
+            // the earlier months fade in.
+            entering={index < rows.length - 1 && !reduced ? FadeIn.duration(ROW_FADE_MS) : undefined}
           >
             <HeatmapMonths
               months={row}

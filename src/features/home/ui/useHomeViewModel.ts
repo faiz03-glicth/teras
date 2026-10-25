@@ -119,9 +119,10 @@ export function useHomeViewModel() {
   );
   const recentRow = useMemo(() => panel(recent), [panel, recent]);
   const olderRow = useMemo(() => panel(older), [older, panel]);
-  // Stable, so the memoised wave only redraws when what it shows changes. The newer months stay on top.
+  // Stable, so the memoised wave only redraws when what it shows changes. Six months read in time order:
+  // the three earlier months open above the latest three (May–Jul over Aug–Oct), as a calendar does.
   const collapsedRows = useMemo(() => [recentRow], [recentRow]);
-  const expandedRows = useMemo(() => [recentRow, olderRow], [olderRow, recentRow]);
+  const expandedRows = useMemo(() => [olderRow, recentRow], [olderRow, recentRow]);
   const entries = useMemo(
     () => (feed.data ?? []).map((summary) => feedEntry(summary, today, unit)),
     [feed.data, today, unit],

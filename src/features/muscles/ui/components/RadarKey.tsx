@@ -13,7 +13,7 @@ const KEY_HEIGHT = 10;
 /** What the two shapes are, drawn as the shapes themselves: filled for the last 4 weeks, dashed for the 4 before. */
 export const RadarKey = memo(function RadarKey() {
   const { theme } = useUnistyles();
-  const { accent, accentText, text3 } = theme.colors;
+  const { accent, accentText, accentEdge } = theme.colors;
   return (
     <View style={styles.row} testID="muscle-balance-key">
       <View style={styles.item}>
@@ -41,7 +41,7 @@ export const RadarKey = memo(function RadarKey() {
             y1={KEY_HEIGHT / 2}
             x2={KEY_WIDTH}
             y2={KEY_HEIGHT / 2}
-            stroke={text3}
+            stroke={accentEdge}
             strokeWidth={2}
             strokeDasharray="4 3"
           />

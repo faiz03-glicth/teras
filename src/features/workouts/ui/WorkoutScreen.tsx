@@ -66,8 +66,7 @@ export function WorkoutScreen() {
 
       <Card tight>
         <ListRow
-          title="Exercise library"
-          description={vm.libraryLine}
+          title="Exercise Library"
           icon="dumbbell"
           trailing="chevron"
           onPress={vm.onOpenLibrary}

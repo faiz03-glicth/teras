@@ -23,13 +23,14 @@ beforeEach(() => {
 });
 
 describe('the Workout tab', () => {
-  it('opens the exercise library, saying how big it is', async () => {
+  it('opens the exercise library from a plain "Exercise Library" row, with no count under it', async () => {
     const repositories = createFakeRepositories();
     repositories.exercises.list.mockResolvedValue(LIBRARY);
     const { Wrapper } = createWrapper(repositories);
     renderInScheme(<WorkoutScreen />, 'light', { wrapper: Wrapper });
 
-    expect(await screen.findByText('5 exercises · by name, muscle or equipment')).toBeTruthy();
+    expect(await screen.findByText('Exercise Library')).toBeTruthy();
+    expect(screen.queryByText(/by name, muscle or equipment/)).toBeNull();
     fireEvent.press(screen.getByTestId('workout-library'));
 
     expect(actions.openExerciseLibrary).toHaveBeenCalled();

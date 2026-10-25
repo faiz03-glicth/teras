@@ -45,7 +45,17 @@ export default function AppLayout() {
       <Stack.Screen name="log-weight" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       <Stack.Screen name="ffmi" options={{ ...sheet, sheetAllowedDetents: 'fitToContents' }} />
       {/* The picture preview, the pickers and the keys fill a phone: this sheet opens at full height. */}
-      <Stack.Screen name="share/[workoutId]" options={{ ...sheet, sheetAllowedDetents: [1] }} />
+      {/* A full page, not a form sheet: Share scrolls, and pulling back up at the top of a sheet closed it.
+          It slides up like a sheet but only Close or Back leaves it. */}
+      <Stack.Screen
+        name="share/[workoutId]"
+        options={{
+          presentation: 'fullScreenModal',
+          animation: 'slide_from_bottom',
+          gestureEnabled: false,
+          contentStyle: { backgroundColor: theme.material.ground },
+        }}
+      />
     </Stack>
   );
 }
