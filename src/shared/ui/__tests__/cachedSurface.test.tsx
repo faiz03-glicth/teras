@@ -78,7 +78,7 @@ describe.each(SCHEMES)('cached surfaces in %s', (scheme) => {
     const { theme } = renderInScheme(<Button label="Start" onPress={jest.fn()} />, scheme);
 
     const cached = screen.getByTestId('cached-surface');
-    expect(cachedLookOf(cached)).toMatchObject(accentStyle(theme.material.accent));
+    expect(cachedLookOf(cached)).toMatchObject(accentStyle(theme.material.cta.narrow));
     // Room around the key for the gold's 4px offset and 12px blur ('card', not a small key's 12pt).
     expect(styleOf(cached)).toMatchObject({ top: -24, left: -24 });
   });
@@ -140,9 +140,9 @@ describe('cached surfaces in Black', () => {
     fireEvent(key(), 'pressIn');
     expect(look()).toMatchObject({
       borderBottomWidth: 1,
-      borderBottomColor: '#34343A',
-      borderTopWidth: 2,
-      borderTopColor: 'rgba(0,0,0,0.55)',
+      borderBottomColor: '#2A2A30',
+      borderTopWidth: 3,
+      borderTopColor: 'rgba(0,0,0,0.75)',
     });
     expect(look().boxShadow).toBeUndefined();
 
@@ -158,14 +158,16 @@ describe('cached surfaces in Black', () => {
     expect(key).toMatchObject({ height: 50, paddingBottom: 2 });
   });
 
-  it('draws the gold key on a base of its own darker gold', () => {
+  it('draws the gold key with a bright top edge, on a thick ledge of its own darker gold', () => {
     renderInScheme(<Button label="Start" onPress={jest.fn()} />, 'dark');
 
+    // The 50-tall key is the narrow one: a 4 thick ledge.
     expect(styleOf(screen.getByTestId('cached-surface').props.children)).toMatchObject({
       borderWidth: 1,
-      borderColor: '#9A6F20',
-      borderBottomWidth: 3,
-      borderBottomColor: '#9A6F20',
+      borderColor: '#FFD179',
+      borderTopColor: '#FFEAB0',
+      borderBottomWidth: 4,
+      borderBottomColor: '#6E4312',
     });
   });
 });

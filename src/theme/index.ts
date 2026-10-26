@@ -1,8 +1,11 @@
 // Public API of the theme module. The persisted store is intentionally not re-exported:
 // ViewModels import it from theme/state directly, and Views never touch it.
 export type {
+  AccentLook,
   ActivityColorKey,
   ColorScheme,
+  CtaFace,
+  CtaLook,
   EdgeStyle,
   HeatLevel,
   HeatPaletteId,

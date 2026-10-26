@@ -1,10 +1,19 @@
 import { memo } from 'react';
 import { View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle } from 'react-native-reanimated';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import { Card, HeatmapMonths, Icon, Legend, PressableScale, Text, type HeatmapMonth } from '@/shared/ui';
-import { motion, surfaceStyle, useReduceMotion } from '@/theme';
+import {
+  Card,
+  HeatmapMonths,
+  Icon,
+  Legend,
+  PressableScale,
+  Text,
+  usePressState,
+  type HeatmapMonth,
+} from '@/shared/ui';
+import { depthStyle, motion, surfaceStyle, useReduceMotion } from '@/theme';
 
 export interface TrainingWaveHeader {
   /** "Training wave". */
@@ -19,6 +28,27 @@ export interface TrainingWaveHeader {
 
 /** The second row of months fades in as one layer; its place is laid out once, never grown per frame. */
 const ROW_FADE_MS = 220;
+
+/**
+ * The small raised key at the header's end. The header takes the press (it shrinks as one); the key reads it
+ * and shows its own held look: no ledge, a deep shade under its rounded top edge, and it sinks a little,
+ * on the UI thread with the shrink. A native border follows the key's corners, so a held key is never square.
+ */
+function WaveKey({ open }: { open: boolean }) {
+  const { theme } = useUnistyles();
+  const { held, progress } = usePressState();
+  const keySink = theme.material.keySink;
+  const sink = useAnimatedStyle(() => ({
+    transform: [{ translateY: keySink * (progress ? progress.get() : 0) }],
+  }));
+  return (
+    <Animated.View style={[styles.key, held && styles.keyHeld, sink]} testID="training-wave-key">
+      <View style={styles.chevron(open)}>
+        <Icon name="chevron-down" size={18} color={theme.colors.text} />
+      </View>
+    </Animated.View>
+  );
+}
 
 export interface TrainingWaveProps {
   /** Rows of months side by side, oldest row first and the latest at the bottom: Home shows one or two. */
@@ -53,7 +83,6 @@ export const TrainingWave = memo(function TrainingWave({
   columns: sharedColumns = 0,
   legend = true,
 }: TrainingWaveProps) {
-  const { theme } = useUnistyles();
   const reduced = useReduceMotion();
   const columns = Math.max(
     sharedColumns,
@@ -70,6 +99,7 @@ export const TrainingWave = memo(function TrainingWave({
           accessibilityLabel={`${header.title}, ${header.subtitle}`}
           accessibilityHint={header.expanded ? 'Shows three months' : 'Shows six months'}
           accessibilityState={{ expanded: header.expanded ?? false }}
+          shareState
           style={styles.header}
           testID={testID && `${testID}-toggle`}
         >
@@ -80,11 +110,7 @@ export const TrainingWave = memo(function TrainingWave({
             </Text>
           </View>
           {/* A small raised key (Home keeps the walnut material); its chevron turns over when open. */}
-          <View style={styles.key}>
-            <View style={styles.chevron(header.expanded ?? false)}>
-              <Icon name="chevron-down" size={18} color={theme.colors.text} />
-            </View>
-          </View>
+          <WaveKey open={header.expanded ?? false} />
         </PressableScale>
       ) : header ? (
         <View
@@ -136,6 +162,8 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     ...surfaceStyle(theme.material.raisedSm),
   },
+  // Held: the key's pressed look (the material's), on the key's own rounded corners.
+  keyHeld: { borderRadius: theme.radii.key, ...depthStyle(theme.material.pressed) },
   chevron: (open: boolean) => ({ transform: [{ rotate: open ? '180deg' : '0deg' }] }),
   rows: { gap: 18 },
 }));

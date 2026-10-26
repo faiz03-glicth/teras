@@ -30,7 +30,7 @@ export { OtpInput } from './OtpInput';
 export { PageDots } from './PageDots';
 export { Pager } from './Pager';
 export { Pill } from './Pill';
-export { PressableScale } from './PressableScale';
+export { PressableScale, usePressState } from './PressableScale';
 export { PressDelay } from './pressDelay';
 export { Screen, useTabBarRoom } from './Screen';
 export { SongketWall } from './SongketWall';

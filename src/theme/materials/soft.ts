@@ -1,4 +1,4 @@
-import type { ColorScheme, EdgeStyle, SoftMaterial } from '../types';
+import type { AccentLook, ColorScheme, CtaLook, EdgeStyle, SoftMaterial } from '../types';
 import { BRAND_GOLD } from '../tokens/brand';
 import { semanticColors } from '../tokens/colors';
 
@@ -10,8 +10,6 @@ const RIM = '#2E2E33';
 const LEDGE = '#050506';
 const WELL_RIM = '#34343A';
 const WELL_LIP = '#141416';
-/** The shade a held control casts on its own top edge: black at the strength the old inner shadow had. */
-const PRESS_SHADE = 'rgba(0,0,0,0.55)';
 const GOLD_PRESS_SHADE = 'rgba(122,74,18,0.55)';
 
 /** A raised thing: a 1px rim all round, and below it a hard ledge `ledge` thick, its base. */
@@ -22,15 +20,63 @@ const standing = (ledge: number): EdgeStyle => ({
   borderBottomColor: LEDGE,
 });
 
-/** A raised thing held down: no ledge any more, just its rim and a darker shade along the top. */
-const pressedIn = (rim: string, shade: string): EdgeStyle => ({
+/**
+ * A raised thing held down: no ledge any more, just its rim and a darker shade `depth` thick along the top.
+ * Native borders follow the view's rounded corners, so a held key is never square.
+ */
+const pressedIn = (rim: string, shade: string, depth = 2): EdgeStyle => ({
   borderWidth: 1,
   borderColor: rim,
-  borderTopWidth: 2,
+  borderTopWidth: depth,
   borderTopColor: shade,
   borderBottomWidth: 1,
   borderBottomColor: rim,
 });
+
+/** A small key held: the rim a step darker, and a deep, near-black shade 3 thick under its top edge. */
+const KEY_PRESS_RIM = '#2A2A30';
+const KEY_PRESS_SHADE = 'rgba(0,0,0,0.75)';
+const KEY_PRESS_DEPTH = 3;
+/** How far a held small key sinks (pt): its ledge gives way. */
+const KEY_SINK = 2;
+
+/**
+ * The big gold keys, from the "Teras Refined" mockup: a bright top edge (rgba(255,240,190,0.8) over the
+ * gold), the gold itself down the sides, and a thick dark-gold ledge below (6 wide, 4 narrow), standing
+ * as borders. Held, the ledge goes and a deep brown shade lies under the top edge.
+ */
+const CTA_TOP_EDGE = '#FFEAB0';
+const CTA_LEDGE = '#6E4312';
+const CTA_UNDERSIDE = 'rgba(122,74,18,0.45)';
+const CTA_PRESS_SHADE = 'rgba(60,35,5,0.65)';
+const CTA_PRESS_DEPTH = 3;
+
+/** A big gold key's edges: a bright top, a ledge `ledge` thick, and no rim to speak of in between. */
+const ctaStanding = (ledge: number): EdgeStyle => ({
+  borderWidth: 1,
+  borderColor: BRAND_GOLD,
+  borderTopColor: CTA_TOP_EDGE,
+  borderBottomWidth: ledge,
+  borderBottomColor: CTA_LEDGE,
+});
+
+/** The big gold key `ledge` thick, its band above the ledge and the drop under it (`height` tall). */
+const ctaLook = (ledge: number, drop: { height: number; opacity: number }): CtaLook => ({
+  background: BRAND_GOLD,
+  edges: ctaStanding(ledge),
+  pressed: { edges: pressedIn(CTA_LEDGE, CTA_PRESS_SHADE, CTA_PRESS_DEPTH) },
+  edge: semanticColors.dark.accentEdge,
+  face: { underside: { color: CTA_UNDERSIDE, height: 2 }, drop },
+});
+
+const LIGHT_ACCENT: AccentLook = {
+  background: BRAND_GOLD,
+  shadow: '-4px -4px 10px rgba(255,251,235,0.9), 4px 4px 12px rgba(122,74,18,0.40)',
+  pressed: {
+    shadow: 'inset 2px 2px 5px rgba(122,74,18,0.35), inset -2px -2px 5px rgba(255,240,200,0.6)',
+  },
+  edge: semanticColors.light.accentEdge,
+};
 
 /**
  * Teras's material, one per scheme.
@@ -90,14 +136,10 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
       edge: 1.5,
     },
     bar: { background: '#FAEDC2', shadow: '0px -4px 12px rgba(122,86,30,0.16)' },
-    accent: {
-      background: BRAND_GOLD,
-      shadow: '-4px -4px 10px rgba(255,251,235,0.9), 4px 4px 12px rgba(122,74,18,0.40)',
-      pressed: {
-        shadow: 'inset 2px 2px 5px rgba(122,74,18,0.35), inset -2px -2px 5px rgba(255,240,200,0.6)',
-      },
-      edge: semanticColors.light.accentEdge,
-    },
+    accent: LIGHT_ACCENT,
+    // Parchment's big gold keys are the plain gold: only Black dresses them.
+    cta: { wide: LIGHT_ACCENT, narrow: LIGHT_ACCENT },
+    keySink: 0,
   },
   dark: {
     ground: semanticColors.dark.canvas,
@@ -108,7 +150,7 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
       background: '#26262B',
       edges: { borderWidth: 1, borderColor: WELL_RIM, borderTopWidth: 2, borderTopColor: WELL_LIP },
     },
-    pressed: { edges: pressedIn(WELL_RIM, PRESS_SHADE) },
+    pressed: { edges: pressedIn(KEY_PRESS_RIM, KEY_PRESS_SHADE, KEY_PRESS_DEPTH) },
     // An empty day is a flat well a step lighter than the card, outlined in the border grey: no blur, no glow.
     carved: { background: '#26262B', shade: '#34343A', light: '#34343A', edge: 1 },
     bar: { background: '#141416', edges: { borderTopWidth: 1, borderTopColor: RIM } },
@@ -124,5 +166,11 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
       pressed: { edges: pressedIn(semanticColors.dark.accentEdge, GOLD_PRESS_SHADE) },
       edge: semanticColors.dark.accentEdge,
     },
+    // The ledge is the mockup's 6 on the tall keys and 4 on the shorter; the drop beneath shrinks with it.
+    cta: {
+      wide: ctaLook(6, { height: 20, opacity: 1 }),
+      narrow: ctaLook(4, { height: 14, opacity: 0.92 }),
+    },
+    keySink: KEY_SINK,
   },
 };

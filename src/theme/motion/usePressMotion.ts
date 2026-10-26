@@ -11,10 +11,16 @@ export type PressFeedback = 'scale' | 'liquid';
  * press: the shared touch feedback, one motion for every tappable thing.
  * - 'scale' (default): shrinks on press-in, springs back on release;
  * - 'liquid': squashes wide and flat while held, then wobbles back like a droplet (the + button).
+ * A small raised key also `sink`s (pt): it moves down that far as it is held, on the UI thread with the scale.
  * It never blocks anything: the press itself is handled at once, the motion only follows it. Decorative,
  * so it is skipped entirely with Reduce Motion (a release still settles, instantly).
+ * `progress` is the press itself (0 at rest, 1 held), for something inside the pressable that moves with it.
  */
-export function usePressMotion(feedback: PressFeedback = 'scale', scaleTo: number = motion.press.scale) {
+export function usePressMotion(
+  feedback: PressFeedback = 'scale',
+  scaleTo: number = motion.press.scale,
+  sink = 0,
+) {
   const reduced = useReduceMotion();
   const isLiquid = feedback === 'liquid';
   // 0 = at rest, 1 = fully pressed. Springs may overshoot past either end, which is what makes it wobble.
@@ -27,11 +33,13 @@ export function usePressMotion(feedback: PressFeedback = 'scale', scaleTo: numbe
         transform: [{ scaleX: 1 + (liquid.squashX - 1) * p }, { scaleY: 1 + (liquid.squashY - 1) * p }],
       };
     }
-    return { transform: [{ scale: 1 + (scaleTo - 1) * p }] };
+    if (sink === 0) return { transform: [{ scale: 1 + (scaleTo - 1) * p }] };
+    return { transform: [{ translateY: sink * p }, { scale: 1 + (scaleTo - 1) * p }] };
   });
 
   return {
     style,
+    progress: pressed,
     pressIn: () => {
       if (reduced) return;
       pressed.set(isLiquid ? withSpring(1, liquid.hold) : withTiming(1, motion.timing(motion.press.inMs)));

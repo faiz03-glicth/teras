@@ -36,6 +36,10 @@ const looksOf = (scheme: ColorScheme): Record<string, PressLook> => {
     bar: material.bar,
     accent: material.accent,
     'accent (pressed)': material.accent.pressed,
+    'cta (wide)': material.cta.wide,
+    'cta (wide, pressed)': material.cta.wide.pressed,
+    'cta (narrow)': material.cta.narrow,
+    'cta (narrow, pressed)': material.cta.narrow.pressed,
   };
 };
 
@@ -187,11 +191,12 @@ describe('the Black material', () => {
     });
   });
 
-  it('presses a held surface in: no ledge, a darker top edge', () => {
+  it('presses a held surface in: no ledge, a deep shade 3 thick under its top edge', () => {
     expect(material.pressed.edges).toMatchObject({
       borderBottomWidth: 1,
-      borderBottomColor: '#34343A',
-      borderTopWidth: 2,
+      borderBottomColor: '#2A2A30',
+      borderTopWidth: 3,
+      borderTopColor: 'rgba(0,0,0,0.75)',
     });
     expect(material.accent.pressed.edges).toMatchObject({
       borderBottomWidth: 1,
@@ -201,6 +206,11 @@ describe('the Black material', () => {
     for (const look of [material.pressed, material.accent.pressed]) {
       expect(side(look.edges, 'Bottom')).toBeLessThan(side(material.raised.edges, 'Bottom'));
     }
+  });
+
+  it('sinks a held small key a little, where Parchment does not move it', () => {
+    expect(material.keySink).toBe(2);
+    expect(softMaterials.light.keySink).toBe(0);
   });
 
   it('keeps the tab bar flat graphite, parted from the page by a one-pixel top border', () => {
@@ -253,5 +263,62 @@ describe('the gold primary action', () => {
     expect(contrastRatio(BRAND_GOLD, softMaterials.dark.raised.background)).toBeGreaterThan(7);
     // Its edges draw the outline, so the Parchment outline is not added over them.
     expect(accentStyle(softMaterials.dark.accent, 1.5)).toMatchObject({ borderWidth: 1 });
+  });
+});
+
+describe('the big gold keys', () => {
+  const { wide, narrow } = softMaterials.dark.cta;
+
+  it.each([
+    ['wide', wide, 6],
+    ['narrow', narrow, 4],
+  ])('stand a %s key on a thick ledge of darker gold, under a bright top edge', (_name, look, ledge) => {
+    expect(look.background).toBe(BRAND_GOLD);
+    expect(look.edges).toEqual({
+      borderWidth: 1,
+      borderColor: BRAND_GOLD,
+      borderTopColor: '#FFEAB0',
+      borderBottomWidth: ledge,
+      borderBottomColor: '#6E4312',
+    });
+    // The bright top edge is lighter than the gold, the ledge darker.
+    expect(luminance('#FFEAB0')).toBeGreaterThan(luminance(BRAND_GOLD));
+    expect(luminance('#6E4312')).toBeLessThan(luminance(BRAND_GOLD));
+  });
+
+  it.each([
+    ['wide', wide],
+    ['narrow', narrow],
+  ])('sinks a held %s key: no ledge, a deeper brown shade under the top edge', (_name, look) => {
+    expect(look.pressed.edges).toMatchObject({
+      borderWidth: 1,
+      borderColor: '#6E4312',
+      borderTopWidth: 3,
+      borderTopColor: 'rgba(60,35,5,0.65)',
+      borderBottomWidth: 1,
+    });
+    expect(side(look.pressed.edges, 'Bottom')).toBeLessThan(side(look.edges, 'Bottom'));
+  });
+
+  it('dresses the face with a darker underside and a drop that shrinks with the ledge', () => {
+    expect(wide.face).toEqual({
+      underside: { color: 'rgba(122,74,18,0.45)', height: 2 },
+      drop: { height: 20, opacity: 1 },
+    });
+    expect(narrow.face?.drop.height).toBeLessThan(wide.face?.drop.height ?? 0);
+  });
+
+  it('is the plain accent in Parchment, which stays as it is', () => {
+    const { light } = softMaterials;
+    expect(light.cta).toEqual({ wide: light.accent, narrow: light.accent });
+    expect(light.cta.wide.face).toBeUndefined();
+  });
+
+  it('is made of borders and flat colours: no box-shadow, no inset, no gradient in any style it adds', () => {
+    for (const look of [wide, narrow, wide.pressed, narrow.pressed, softMaterials.dark.pressed]) {
+      const style = { ...surfaceStyle({ background: BRAND_GOLD, ...look }), ...depthStyle(look) };
+      expect(JSON.stringify(style)).not.toMatch(/shadow|inset|gradient/i);
+    }
+    expect(JSON.stringify(softMaterials.dark.cta)).not.toMatch(/shadow|inset|gradient|blur/i);
   });
 });

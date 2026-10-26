@@ -193,6 +193,7 @@ export const SetRow = memo(function SetRow({
           accessibilityLabel={`Set ${index + 1} done`}
           {...deletable}
           style={styles.tick}
+          sink={theme.material.keySink}
           // The key is drawn once into a texture and sinks while held (press feedback, no shadow redraw).
           surface={{ style: styles.key(done), pressed: styles.tickPressed(done), bleed: 'key' }}
           testID={`set-${set.id}-tick`}

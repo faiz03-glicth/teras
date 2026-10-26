@@ -167,8 +167,36 @@ export interface SoftMaterial {
    * The gold primary action. `pressed` is its look under a finger, and `edge` is its outline where gold
    * alone would not separate from the ground (a scheme with `edges` of its own draws it there instead).
    */
-  accent: SurfaceLook & { pressed: PressLook; edge: string | null };
+  accent: AccentLook;
+  /**
+   * The big gold calls to action (Start workout, Finish workout): `wide` for the tall ones, `narrow` for
+   * the shorter. Where a scheme dresses them (Black's engraved face) they carry a `face`; Parchment's are
+   * the plain `accent` for both.
+   */
+  cta: { wide: CtaLook; narrow: CtaLook };
+  /**
+   * How far a small raised key sinks while held (pt): the key moves down as its ledge gives way. Zero
+   * where the material presses a key in with soft inner shadows alone (Parchment).
+   */
+  keySink: number;
 }
+
+/** A gold look with the pressed state and outline it needs. */
+export type AccentLook = SurfaceLook & { pressed: PressLook; edge: string | null };
+
+/**
+ * What a big gold key carries besides its edges: pictures drawn once by scripts/songket-ground.js (the
+ * engraved songket over the whole face, and a soft drop shadow beneath), and the band along the bottom of
+ * the face. Every one is shown only while the key stands; a held key has no ledge, band or drop.
+ */
+export interface CtaFace {
+  /** A darker band along the face's bottom, just above the ledge. */
+  underside: { color: string; height: number };
+  /** The soft drop beneath the key: its picture is stretched across the key, `height` tall. */
+  drop: { height: number; opacity: number };
+}
+
+export type CtaLook = AccentLook & { face?: CtaFace };
 
 export interface BrandColors {
   apple: { background: string; foreground: string };

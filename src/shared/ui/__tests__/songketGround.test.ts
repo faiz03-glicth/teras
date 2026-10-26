@@ -6,6 +6,7 @@ import { semanticColors } from '@/theme/tokens/colors';
 
 const DIR = path.join(__dirname, '..', '..', '..', '..', 'assets', 'songket');
 const COLOR_TYPE_RGB = 2;
+const COLOR_TYPE_RGBA = 6;
 
 /** What the PNG header says, and the colour of its first pixel (the corner, where no thread is woven). */
 function readPng(name: string) {
@@ -51,4 +52,36 @@ describe.each([
     expect(bytes).toBeGreaterThan(5_000);
     expect(bytes).toBeLessThan(1170 * 2532 * 3);
   });
+});
+
+/**
+ * The big gold buttons in Black are dressed with two small pictures drawn by the same script: the engraving
+ * (a 30 x 24 pt tile, as a 3x image, repeated across the face) and the soft drop shadow (a strip, stretched).
+ * Both carry an alpha channel because they lie over the gold, and both stay tiny: they are decoded once.
+ */
+describe('the gold button pictures', () => {
+  it('is a 3x tile of 30 x 24 units, translucent, for the engraving', () => {
+    expect(readPng('cta-face@3x.png')).toMatchObject({
+      width: 90,
+      height: 72,
+      bitDepth: 8,
+      colorType: COLOR_TYPE_RGBA,
+    });
+  });
+
+  it('is a strip as wide as a full-width key plus its blur, for the drop shadow', () => {
+    expect(readPng('cta-shadow.png')).toMatchObject({
+      width: 358 + 2 * 14,
+      height: 20,
+      bitDepth: 8,
+      colorType: COLOR_TYPE_RGBA,
+    });
+  });
+
+  it.each(['cta-face@3x.png', 'cta-shadow.png'])(
+    'keeps %s small, since it is decoded for every screen',
+    (name) => {
+      expect(readPng(name).bytes).toBeLessThan(4_000);
+    },
+  );
 });

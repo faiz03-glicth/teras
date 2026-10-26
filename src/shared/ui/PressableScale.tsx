@@ -1,7 +1,7 @@
-import { useState, type ComponentProps, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import type { GestureResponderEvent, PressableProps, StyleProp, ViewStyle } from 'react-native';
 import { Pressable } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { type SharedValue } from 'react-native-reanimated';
 
 import { motion, usePressMotion, type PressFeedback } from '@/theme';
 
@@ -9,6 +9,30 @@ import { CachedSurface, type SurfaceBleed } from './CachedSurface';
 import { usePressDelay } from './pressDelay';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+/** What a pressable shares with what is drawn inside it: whether a finger is down, and the press itself. */
+export interface PressState {
+  held: boolean;
+  /** 0 at rest, 1 held (springs may overshoot): read it in an animated style, never in render. */
+  progress: SharedValue<number> | null;
+}
+
+const AT_REST: PressState = { held: false, progress: null };
+const PressStateContext = createContext<PressState>(AT_REST);
+
+/** Gives what is inside a pressable its press state; only a pressable that shares it pays for this. */
+function PressStateScope({ held, progress, children }: PressState & { children: ReactNode }) {
+  const state = useMemo(() => ({ held, progress }), [held, progress]);
+  return <PressStateContext value={state}>{children}</PressStateContext>;
+}
+
+/**
+ * The state of the PressableScale this sits in (one that was given `shareState`): a small key inside a
+ * pressable row reads it to show its own held look. Outside one, always at rest.
+ */
+export function usePressState(): PressState {
+  return useContext(PressStateContext);
+}
 
 /** A control's material: its fill and shadow, and the look that replaces them under a finger. */
 export interface PressSurface {
@@ -36,6 +60,16 @@ export interface PressableScaleProps extends Omit<PressableProps, 'style' | 'chi
    * Its `pressed` look is drawn once on each press. The control's own style then has no fill or shadow.
    */
   surface?: PressSurface;
+  /**
+   * How far the control moves down while held (pt), on the UI thread with the shrink: a small raised key
+   * sinking as its ledge gives way. Default 0.
+   */
+  sink?: number;
+  /**
+   * Shares the press state with what is inside (`usePressState`): only the pieces that read it draw again
+   * when a finger goes down or comes up. Off, a plain pressable tracks nothing.
+   */
+  shareState?: boolean;
   children?: ReactNode;
 }
 
@@ -49,16 +83,26 @@ export function PressableScale({
   style,
   pressedStyle,
   surface,
+  sink = 0,
+  shareState = false,
   onPressIn,
   onPressOut,
   children,
   ...rest
 }: PressableScaleProps) {
-  const press = usePressMotion(feedback, scaleTo);
+  const press = usePressMotion(feedback, scaleTo, sink);
   const pressDelay = usePressDelay();
   // Only tracked when there is a pressed look to show, so plain pressables never re-render on touch.
   const [held, setHeld] = useState(false);
-  const showsHeld = pressedStyle !== undefined || surface?.pressed !== undefined;
+  const showsHeld = pressedStyle !== undefined || surface?.pressed !== undefined || shareState;
+  const content = (
+    <>
+      {surface && (
+        <CachedSurface style={[surface.style, held && surface.pressed]} bleed={surface.bleed ?? 'key'} />
+      )}
+      {children}
+    </>
+  );
 
   return (
     <AnimatedPressable
@@ -76,10 +120,13 @@ export function PressableScale({
         onPressOut?.(event);
       }}
     >
-      {surface && (
-        <CachedSurface style={[surface.style, held && surface.pressed]} bleed={surface.bleed ?? 'key'} />
+      {shareState ? (
+        <PressStateScope held={held} progress={press.progress}>
+          {content}
+        </PressStateScope>
+      ) : (
+        content
       )}
-      {children}
     </AnimatedPressable>
   );
 }

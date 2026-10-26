@@ -36,6 +36,7 @@ export function FilterButton({
       accessibilityState={expanded === undefined ? undefined : { expanded }}
       testID={testID}
       style={styles.button}
+      sink={theme.material.keySink}
       surface={{ style: [styles.surface, active ? styles.active : styles.idle], pressed: styles.pressed }}
     >
       {active && <Icon name="check" size={14} color={color} />}

@@ -58,6 +58,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
       style={[styles.base(plain), { opacity: disabled ? 0.45 : 1 }, fade]}
+      sink={plain ? 0 : theme.material.keySink}
       // A key is a cached raised surface that sinks when held; a plain icon opens a round well instead.
       surface={plain ? undefined : { style: styles.surface, pressed: styles.pressed }}
       pressedStyle={plain ? styles.plainPressed : undefined}
