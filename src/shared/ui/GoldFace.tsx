@@ -7,7 +7,7 @@ import { usePressState } from './PressableScale';
 
 // Both pictures are drawn once by scripts/songket-ground.js: the engraved songket as a 30 x 24 tile (a 3x
 // image) that repeats over the face, and the soft drop shadow as a strip the key stretches across its width.
-const FACE_TILE = require('../../../assets/songket/cta-face@3x.png') as number;
+const FACE_TILE = require('../../../assets/songket/cta-face.png') as number;
 const DROP_SHADOW = require('../../../assets/songket/cta-shadow.png') as number;
 
 /** The strip is as wide as a full-width key plus this much blur on each side. */

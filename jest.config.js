@@ -14,6 +14,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@test/(.*)$': '<rootDir>/test/$1',
     '^lucide-react-native/icons/.*$': '<rootDir>/test/mocks/lucideIcon.tsx',
+    // Metro picks a scale variant (name@3x.png) from a require of name.png; Jest resolves paths literally.
+    '^(.*)/songket/cta-face\\.png$': '$1/songket/cta-face@3x.png',
   },
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/core/db/migrations/**', '!src/types/**'],
   // text-summary feeds the CI coverage badge; cobertura feeds GitLab's merge request diff coverage.
