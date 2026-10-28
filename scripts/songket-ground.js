@@ -187,8 +187,8 @@ const TILE_SCALE = 3;
  * The groove is a darker gold pressed into the face, and the light catches the groove's lower-right lip
  * (the same cells, one unit down and right, underneath): gold on gold, never louder than the label.
  */
-const GROOVE = { color: [0x7a, 0x4a, 0x12], alpha: 0.13, shift: 0 };
-const LIP = { color: [0xff, 0xf3, 0xc9], alpha: 0.22, shift: 1 };
+const GROOVE = { color: [0x4a, 0x4a, 0x4a], alpha: 0.13, shift: 0 };
+const LIP = { color: [0xb8, 0xb8, 0xb8], alpha: 0.22, shift: 1 };
 
 /** The unit cells the engraving's rectangles cover. */
 function engravingCells(d) {

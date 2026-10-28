@@ -9,7 +9,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from orb import BRONZE, GOLD, PARCHMENT, WALNUT, draw_orb  # noqa: E402
+from orb import PARCHMENT, WALNUT, draw_orb  # noqa: E402
+
+# The icon's mark is the songket's muted grey: the face on dark grounds, the shadow on parchment.
+MARK = '#8C8C8C'
+MARK_ON_LIGHT = '#4A4A4A'
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, 'assets')
@@ -21,15 +25,15 @@ SPLASH = 0.86
 
 JOBS = [
     # (file, size, colour, background, orb fraction, keep alpha)
-    ('icon.png', 1024, GOLD, WALNUT, FULL, False),
-    ('icon-light.png', 1024, BRONZE, PARCHMENT, FULL, False),
-    ('icon-dark.png', 1024, GOLD, WALNUT, FULL, False),
+    ('icon.png', 1024, MARK, WALNUT, FULL, False),
+    ('icon-light.png', 1024, MARK_ON_LIGHT, PARCHMENT, FULL, False),
+    ('icon-dark.png', 1024, MARK, WALNUT, FULL, False),
     ('icon-tinted.png', 1024, '#D8D8D8', '#000000', FULL, False),
-    ('android-icon-foreground.png', 1024, GOLD, None, SAFE, True),
+    ('android-icon-foreground.png', 1024, MARK, None, SAFE, True),
     ('android-icon-monochrome.png', 1024, '#FFFFFF', None, SAFE, True),
-    ('splash-icon.png', 1024, BRONZE, None, SPLASH, True),
-    ('splash-icon-dark.png', 1024, GOLD, None, SPLASH, True),
-    ('favicon.png', 64, GOLD, WALNUT, FULL, False),
+    ('splash-icon.png', 1024, MARK_ON_LIGHT, None, SPLASH, True),
+    ('splash-icon-dark.png', 1024, MARK, None, SPLASH, True),
+    ('favicon.png', 64, MARK, WALNUT, FULL, False),
 ]
 
 for name, size, colour, background, fraction, alpha in JOBS:
