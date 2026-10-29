@@ -40,13 +40,13 @@ export const CARD_LOOKS: Record<ShareLook, CardLook> = {
     },
   },
   black: {
-    fill: '#161618',
-    ink: '#F4F4F5',
-    ink2: '#BDBDC2',
-    rule: '#34343A',
+    fill: '#161616',
+    ink: '#F4F4F4',
+    ink2: '#BEBEBE',
+    rule: '#353535',
     textShadow: null,
     badge: { fill: GOLD, check: ON_GOLD, border: null },
-    body: { silhouette: '#202024', muscle: '#2E2E33', secondary: '#9A6F20', primary: GOLD },
+    body: { silhouette: '#202020', muscle: '#2F2F2F', secondary: '#9A6F20', primary: GOLD },
   },
   parchment: {
     fill: '#F5E4B1',

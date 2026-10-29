@@ -6,10 +6,10 @@ import { semanticColors } from '../tokens/colors';
  * Black's greys, named for the part of a surface they draw. Every one is a native border colour: the rim
  * round a card, the dark base it stands on, a well's outline and the lip along its top.
  */
-const RIM = '#2E2E33';
-const LEDGE = '#050506';
-const WELL_RIM = '#34343A';
-const WELL_LIP = '#141416';
+const RIM = '#2F2F2F';
+const LEDGE = '#050505';
+const WELL_RIM = '#353535';
+const WELL_LIP = '#141414';
 const GOLD_PRESS_SHADE = 'rgba(122,74,18,0.55)';
 
 /** A raised thing: a 1px rim all round, and below it a hard ledge `ledge` thick, its base. */
@@ -34,7 +34,7 @@ const pressedIn = (rim: string, shade: string, depth = 2): EdgeStyle => ({
 });
 
 /** A small key held: the rim a step darker, and a deep, near-black shade 3 thick under its top edge. */
-const KEY_PRESS_RIM = '#2A2A30';
+const KEY_PRESS_RIM = '#2B2B2B';
 const KEY_PRESS_SHADE = 'rgba(0,0,0,0.75)';
 const KEY_PRESS_DEPTH = 3;
 /** How far a held small key sinks (pt): its ledge gives way. */
@@ -143,17 +143,17 @@ export const softMaterials: Record<ColorScheme, SoftMaterial> = {
   },
   dark: {
     ground: semanticColors.dark.canvas,
-    raised: { background: '#1B1B1E', edges: standing(3) },
-    raisedSm: { background: '#1B1B1E', edges: standing(2) },
+    raised: { background: '#1B1B1B', edges: standing(3) },
+    raisedSm: { background: '#1B1B1B', edges: standing(2) },
     // A well: its outline, and a hard lip along the top where the card's edge overhangs it.
     inset: {
-      background: '#26262B',
+      background: '#272727',
       edges: { borderWidth: 1, borderColor: WELL_RIM, borderTopWidth: 2, borderTopColor: WELL_LIP },
     },
     pressed: { edges: pressedIn(KEY_PRESS_RIM, KEY_PRESS_SHADE, KEY_PRESS_DEPTH) },
     // An empty day is a flat well a step lighter than the card, outlined in the border grey: no blur, no glow.
-    carved: { background: '#26262B', shade: '#34343A', light: '#34343A', edge: 1 },
-    bar: { background: '#141416', edges: { borderTopWidth: 1, borderTopColor: RIM } },
+    carved: { background: '#272727', shade: WELL_RIM, light: WELL_RIM, edge: 1 },
+    bar: { background: '#141414', edges: { borderTopWidth: 1, borderTopColor: RIM } },
     accent: {
       background: BRAND_GOLD,
       // The same darker gold all round, thickest below: the key stands on its base like a game button.

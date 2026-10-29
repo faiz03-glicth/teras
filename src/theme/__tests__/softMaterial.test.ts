@@ -157,7 +157,7 @@ describe('the Black material', () => {
 
   it('sets an empty heatmap day apart as a lighter, outlined well, with no blur', () => {
     expect(luminance(material.carved.background)).toBeGreaterThan(luminance(material.raised.background));
-    expect(material.carved).toMatchObject({ shade: '#34343A', light: '#34343A', edge: 1 });
+    expect(material.carved).toMatchObject({ shade: '#353535', light: '#353535', edge: 1 });
   });
 
   it.each([
@@ -167,7 +167,7 @@ describe('the Black material', () => {
   ])('stands a %s surface on a hard ledge of native border below it', (name, look, ledge) => {
     expect(side(look.edges, 'Bottom')).toBe(ledge);
     expect(look.edges?.borderBottomColor).toBe(
-      name === 'accent' ? semanticColors.dark.accentEdge : '#050506',
+      name === 'accent' ? semanticColors.dark.accentEdge : '#050505',
     );
     // Level with the sides and top the ledge is thicker than the 1px rim.
     expect(side(look.edges, 'Top')).toBe(1);
@@ -175,26 +175,27 @@ describe('the Black material', () => {
   });
 
   it('rims the raised surfaces with a 1px border line', () => {
-    expect(material.raised.edges).toMatchObject({ borderWidth: 1, borderColor: '#2E2E33' });
-    expect(material.raisedSm.edges).toMatchObject({ borderWidth: 1, borderColor: '#2E2E33' });
+    expect(material.raised.edges).toMatchObject({ borderWidth: 1, borderColor: '#2F2F2F' });
+    expect(material.raisedSm.edges).toMatchObject({ borderWidth: 1, borderColor: '#2F2F2F' });
   });
 
   it('makes a well a flat step LIGHTER than the card, with a hard lip along its top', () => {
     expect(material.raised.background).toBe(semanticColors.dark.surface);
-    expect(material.inset.background).toBe(semanticColors.dark.subtle);
+    // The mockup's well (#272727) is a step above the flat `subtle` grey (#222222), so it reads as cut in.
+    expect(material.inset.background).toBe('#272727');
     expect(luminance(material.inset.background)).toBeGreaterThan(luminance(material.raised.background));
     expect(material.inset.edges).toEqual({
       borderWidth: 1,
-      borderColor: '#34343A',
+      borderColor: '#353535',
       borderTopWidth: 2,
-      borderTopColor: '#141416',
+      borderTopColor: '#141414',
     });
   });
 
   it('presses a held surface in: no ledge, a deep shade 3 thick under its top edge', () => {
     expect(material.pressed.edges).toMatchObject({
       borderBottomWidth: 1,
-      borderBottomColor: '#2A2A30',
+      borderBottomColor: '#2B2B2B',
       borderTopWidth: 3,
       borderTopColor: 'rgba(0,0,0,0.75)',
     });
@@ -215,18 +216,18 @@ describe('the Black material', () => {
 
   it('keeps the tab bar flat graphite, parted from the page by a one-pixel top border', () => {
     expect(material.bar).toEqual({
-      background: '#141416',
-      edges: { borderTopWidth: 1, borderTopColor: '#2E2E33' },
+      background: '#141414',
+      edges: { borderTopWidth: 1, borderTopColor: '#2F2F2F' },
     });
   });
 
   it('is styled as a fill and edges, with no boxShadow key at all', () => {
     expect(surfaceStyle(material.raised)).toEqual({
-      backgroundColor: '#1B1B1E',
+      backgroundColor: '#1B1B1B',
       borderWidth: 1,
-      borderColor: '#2E2E33',
+      borderColor: '#2F2F2F',
       borderBottomWidth: 3,
-      borderBottomColor: '#050506',
+      borderBottomColor: '#050505',
     });
     expect(shadowStyle(material.raised)).toEqual({});
   });

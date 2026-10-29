@@ -21,7 +21,7 @@ const zlib = require('zlib');
 const DIR = path.join(path.dirname(__dirname), 'assets', 'songket');
 
 const GROUNDS = [
-  { wall: 'wall-dark.png', ground: 'ground-dark.png', canvas: [0x0b, 0x0b, 0x0c] },
+  { wall: 'wall-dark.png', ground: 'ground-dark.png', canvas: [0x0b, 0x0b, 0x0b] },
   { wall: 'wall-light.png', ground: 'ground-light.png', canvas: [0xf6, 0xe7, 0xb6] },
 ];
 

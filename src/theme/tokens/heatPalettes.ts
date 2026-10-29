@@ -13,10 +13,10 @@ export const heatPalettes: Record<HeatPaletteId, Record<ColorScheme, HeatSteps>>
     light: ['#EDEBF2', '#DCD0F5', '#B89AEC', '#8B5AD8', '#5B2FA6'],
     dark: ['#221F29', '#34254F', '#553A8C', '#8A5EDB', '#C9A8FF'],
   },
-  // Teras's own ramp: parchment to bronze in light, graphite to gold in dark.
+  // Teras's own ramp: parchment to bronze in light; in dark, five golds from a brown-black to the brand gold.
   amber: {
     light: ['#EBDBA6', '#FBE3A0', '#F2C14E', '#C98A1E', '#7A4A12'],
-    dark: ['#26262B', '#5E4519', '#9A6F20', '#D19A3A', '#FFD179'],
+    dark: ['#2A2119', '#4A3719', '#8A6420', '#D19A3A', '#FFD179'],
   },
 };
 

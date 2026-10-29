@@ -46,39 +46,39 @@ describe('buildTheme', () => {
 
     // Parchment and Black.
     expect(light.colors.canvas).toBe('#F6E7B6');
-    expect(dark.colors.canvas).toBe('#0B0B0C');
+    expect(dark.colors.canvas).toBe('#0B0B0B');
     expect(dark.colors).toMatchObject({
-      surface: '#1B1B1E',
-      surfaceRaised: '#1B1B1E',
-      subtle: '#26262B',
-      border: '#34343A',
-      border2: '#6E6E74',
-      text: '#F4F4F5',
-      text2: '#BDBDC2',
-      text3: '#A0A0A6',
+      surface: '#1B1B1B',
+      surfaceRaised: '#1B1B1B',
+      subtle: '#222222',
+      border: '#353535',
+      border2: '#6E6E6E',
+      text: '#F4F4F4',
+      text2: '#BEBEBE',
+      text3: '#A1A1A1',
       accentEdge: '#9A6F20',
-      accentSoft: '#2E2717',
-      danger: '#FF5A5F',
-      dangerSoft: '#3A1A1C',
-      onDanger: '#1A0B0C',
-      bodyCanvas: '#1B1B1E',
-      bodySilhouette: '#2C2C31',
-      bodyMuscle: '#7A7A80',
-      muscleNone: '#3A3A40',
-      muscleOnce: '#7A7A80',
-      muscleTwice: '#B8B8BE',
+      accentSoft: '#272727',
+      danger: '#E5484D',
+      dangerSoft: '#200E10',
+      onDanger: '#FFFFFF',
+      bodyCanvas: '#1B1B1B',
+      bodySilhouette: '#2C2C2C',
+      bodyMuscle: '#7B7B7B',
+      muscleNone: '#3B3B3B',
+      muscleOnce: '#7B7B7B',
+      muscleTwice: '#B9B9B9',
     });
     // The brand gold and its ink, identical in both schemes.
     expect(light.colors.accent).toBe('#FFD179');
     expect(dark.colors.accent).toBe('#FFD179');
     expect(dark.colors.onAccent).toBe('#2B1D0B');
     expect(light.heat).toEqual(['#EBDBA6', '#FBE3A0', '#F2C14E', '#C98A1E', '#7A4A12']);
-    expect(dark.heat).toEqual(['#26262B', '#5E4519', '#9A6F20', '#D19A3A', '#FFD179']);
+    expect(dark.heat).toEqual(['#2A2119', '#4A3719', '#8A6420', '#D19A3A', '#FFD179']);
   });
 
-  it('gives every scheme a success green and a tier for each muscle count', () => {
+  it('gives every scheme a success mark and a tier for each muscle count', () => {
     expect(buildTheme('light', 'amber').colors.success).toBe('#4F7A1E');
-    expect(buildTheme('dark', 'amber').colors.success).toBe('#7FD08A');
+    expect(buildTheme('dark', 'amber').colors.success).toBe('#B0B0B0');
     for (const scheme of SCHEMES) {
       const { colors } = buildTheme(scheme, 'amber');
       expect(new Set([colors.muscleNone, colors.muscleOnce, colors.muscleTwice]).size).toBe(3);

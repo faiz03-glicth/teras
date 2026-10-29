@@ -32,12 +32,21 @@ describe.each(['light', 'dark'] as const)('%s colours', (scheme) => {
     ['text and icons on the brand gold', c.onAccent, c.accent],
     ['gold text on the page', c.accentText, c.canvas],
     ['gold text on the active surface (selected tab)', c.accentText, c.accentSoft],
-    ['errors on cards', c.danger, c.surface],
     ['errors on the error banner', c.danger, c.dangerSoft],
-    ['an armed Delete key', c.onDanger, c.danger],
     ['saved and synced marks on cards', c.success, c.surface],
   ])('%s meets AA (≥ 4.5:1)', (_name, foreground, background) => {
     expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Black's red is the owner's pick (#E5484D, white on it), from the mockup: 3.9:1 under its white label and
+  // 4.4:1 as text on a card. AA asks 4.5:1 for small text, so in Black these two hold only the 3:1 floor.
+  // Parchment still meets AA. Lowering this further, or making the light red follow, is a decision, not a fix.
+  const dangerFloor = scheme === 'dark' ? 3 : 4.5;
+  it.each([
+    ['errors on cards', c.danger, c.surface],
+    ['an armed Delete key', c.onDanger, c.danger],
+  ])(`%s reaches ${dangerFloor}:1`, (_name, foreground, background) => {
+    expect(contrast(foreground, background)).toBeGreaterThanOrEqual(dangerFloor);
   });
 
   it.each([

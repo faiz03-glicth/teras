@@ -123,11 +123,11 @@ describe('cached surfaces in Black', () => {
     const look = styleOf(cached.props.children);
     expect(look.boxShadow).toBeUndefined();
     expect(look).toMatchObject({
-      backgroundColor: '#1B1B1E',
+      backgroundColor: '#1B1B1B',
       borderWidth: 1,
-      borderColor: '#2E2E33',
+      borderColor: '#2F2F2F',
       borderBottomWidth: 3,
-      borderBottomColor: '#050506',
+      borderBottomColor: '#050505',
     });
   });
 
@@ -135,19 +135,19 @@ describe('cached surfaces in Black', () => {
     renderInScheme(<Button label="Add set" variant="secondary" onPress={jest.fn()} />, 'dark');
     const key = () => screen.getByRole('button', { name: 'Add set' });
     const look = () => styleOf(screen.getByTestId('cached-surface').props.children);
-    expect(look()).toMatchObject({ borderBottomWidth: 3, borderBottomColor: '#050506' });
+    expect(look()).toMatchObject({ borderBottomWidth: 3, borderBottomColor: '#050505' });
 
     fireEvent(key(), 'pressIn');
     expect(look()).toMatchObject({
       borderBottomWidth: 1,
-      borderBottomColor: '#2A2A30',
+      borderBottomColor: '#2B2B2B',
       borderTopWidth: 3,
       borderTopColor: 'rgba(0,0,0,0.75)',
     });
     expect(look().boxShadow).toBeUndefined();
 
     fireEvent(key(), 'pressOut');
-    expect(look()).toMatchObject({ borderBottomWidth: 3, borderBottomColor: '#050506' });
+    expect(look()).toMatchObject({ borderBottomWidth: 3, borderBottomColor: '#050505' });
   });
 
   it("centres a key's label on its face, above the ledge inside its box", () => {

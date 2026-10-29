@@ -181,7 +181,7 @@ describe('the background picker', () => {
     pick('Black');
 
     expect(screen.getByRole('radio', { name: 'Black' })).toBeChecked();
-    expect(styleOf(await ready()).backgroundColor).toBe('#161618');
+    expect(styleOf(await ready()).backgroundColor).toBe('#161616');
     expect(screen.queryByTestId('share-checkerboard', hidden)).toBeNull();
     expect(screen.getByText('BACKGROUND')).toBeTruthy();
   });
