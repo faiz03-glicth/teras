@@ -127,7 +127,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(button.props.hitSlop).toBe(7);
   });
 
-  it('a danger IconButton keeps its key and draws the icon in the danger colour', () => {
+  it('a danger IconButton keeps its key and draws the icon in the danger text colour', () => {
     const { theme } = renderInScheme(
       <IconButton icon="trash" tone="danger" onPress={jest.fn()} accessibilityLabel="Remove Squat" />,
       scheme,
@@ -135,7 +135,7 @@ describe.each(SCHEMES)('primitives in %s', (scheme) => {
     expect(surfaceOf(screen.getByRole('button', { name: 'Remove Squat' })).backgroundColor).toBe(
       theme.material.raisedSm.background,
     );
-    expect(screen.UNSAFE_getByType(Icon).props.color).toBe(theme.colors.danger);
+    expect(screen.UNSAFE_getByType(Icon).props.color).toBe(theme.colors.dangerText);
   });
 
   it('NavBar shows a header title and a raised back key', () => {

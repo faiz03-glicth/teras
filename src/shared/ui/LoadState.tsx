@@ -34,7 +34,7 @@ export function ErrorState({ title, onRetry, testID }: ErrorStateProps) {
   return (
     <View style={styles.root} testID={testID}>
       <View style={styles.message} accessible accessibilityRole="alert" accessibilityLabel={title}>
-        <Icon name="alert" size={22} color={theme.colors.danger} />
+        <Icon name="alert" size={22} color={theme.colors.dangerText} />
         <Text variant="headline" align="center">
           {title}
         </Text>

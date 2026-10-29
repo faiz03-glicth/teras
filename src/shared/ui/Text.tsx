@@ -23,7 +23,7 @@ const toneColor = (theme: Theme, tone: TextTone): string =>
     secondary: theme.colors.text2,
     tertiary: theme.colors.text3,
     accent: theme.colors.accentText,
-    danger: theme.colors.danger,
+    danger: theme.colors.dangerText,
     onAccent: theme.colors.onAccent,
   })[tone];
 

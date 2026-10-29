@@ -33,7 +33,7 @@ function Item({
   testID: string;
 }) {
   const { theme } = useUnistyles();
-  const color = danger ? theme.colors.danger : theme.colors.text;
+  const color = danger ? theme.colors.dangerText : theme.colors.text;
   return (
     <PressableScale
       onPress={onPress}

@@ -32,6 +32,8 @@ export interface SemanticColors {
   success: string;
   danger: string;
   dangerSoft: string;
+  /** Error and destructive text and icons on the page and cards (in Black plain text: its red is a fill only). */
+  dangerText: string;
   /** Text and icons on a `danger` fill (an armed Delete). */
   onDanger: string;
   scrim: string;

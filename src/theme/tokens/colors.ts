@@ -29,6 +29,7 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     success: '#4F7A1E',
     danger: '#984527',
     dangerSoft: '#F6DCCB',
+    dangerText: '#984527',
     onDanger: '#FFF4EC',
     scrim: 'rgba(30,18,6,0.42)',
     thumb: '#FFFFFF',
@@ -60,9 +61,11 @@ export const semanticColors: Record<ColorScheme, SemanticColors> = {
     onAccent: ON_BRAND,
     // Saved and synced are grey: Black rations its gold to the action and the current item.
     success: '#B0B0B0',
-    // Discard, Delete and Undo are a solid red with white on it (the owner's pick, below AA for small text).
-    danger: '#E5484D',
+    // Discard, Delete and Undo are a solid red with white on it. The red is a fill only: words and icons that
+    // warn on a card or the page are the plain text colour (red text on graphite fell short of AA).
+    danger: '#D63A40',
     dangerSoft: '#200E10',
+    dangerText: '#F4F4F4',
     onDanger: '#FFFFFF',
     scrim: 'rgba(0,0,0,0.55)',
     thumb: '#FFFFFF',

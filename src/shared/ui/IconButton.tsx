@@ -45,7 +45,7 @@ export function IconButton({
   const { theme } = useUnistyles();
   // Disabled eases in and out like every other control (e.g. Back while a sign-in connects).
   const fade = useStateTransition('opacity');
-  const ink = tone === 'danger' ? theme.colors.danger : theme.colors.text;
+  const ink = tone === 'danger' ? theme.colors.dangerText : theme.colors.text;
   return (
     <PressableScale
       testID={testID}

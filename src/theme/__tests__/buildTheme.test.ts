@@ -58,7 +58,7 @@ describe('buildTheme', () => {
       text3: '#A1A1A1',
       accentEdge: '#9A6F20',
       accentSoft: '#272727',
-      danger: '#E5484D',
+      danger: '#D63A40',
       dangerSoft: '#200E10',
       onDanger: '#FFFFFF',
       bodyCanvas: '#1B1B1B',

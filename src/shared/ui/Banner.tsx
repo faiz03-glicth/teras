@@ -28,7 +28,7 @@ export function Banner({ message, testID }: BannerProps) {
       accessibilityLiveRegion="polite"
       accessibilityLabel={message}
     >
-      <Icon name="alert" size={18} color={theme.colors.danger} />
+      <Icon name="alert" size={18} color={theme.colors.dangerText} />
       <Text variant="footnote" tone="danger" style={styles.text}>
         {message}
       </Text>

@@ -38,7 +38,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   detail: {
     fontSize: 15,
     lineHeight: 22,
-    color: theme.colors.danger,
+    color: theme.colors.dangerText,
     backgroundColor: theme.colors.dangerSoft,
     padding: theme.spacing.md,
     borderRadius: theme.radii.control,

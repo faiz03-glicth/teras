@@ -42,7 +42,7 @@ const resolveIconColor = (theme: Theme, color: ListRowIconColor): string =>
   color === 'accent'
     ? theme.colors.accentText
     : color === 'danger'
-      ? theme.colors.danger
+      ? theme.colors.dangerText
       : theme.activity[color];
 
 export function ListRow({

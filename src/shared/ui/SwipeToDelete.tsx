@@ -262,7 +262,7 @@ function DeleteStrip({ offset, width, open, armed, onPress, accessibilityLabel, 
     transform: [{ translateX: width.get() - offset.get() }],
   }));
   const keyStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() - width.get() }] }));
-  const ink = armed ? theme.colors.onDanger : theme.colors.danger;
+  const ink = armed ? theme.colors.onDanger : theme.colors.dangerText;
   return (
     <Animated.View
       style={[styles.strip, stripStyle]}
