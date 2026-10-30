@@ -1,5 +1,4 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
-import * as Clipboard from 'expo-clipboard';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
@@ -13,8 +12,6 @@ import { pushDay } from '@test/fakes/shareWorkout';
 import { createWrapper } from '@test/providers';
 import { renderInScheme, styleOf } from '@test/render';
 
-import { copyText } from '../../domain/copyText';
-import { buildShareModel } from '../../domain/shareModel';
 import { CARD_LOOKS } from '../cardLooks';
 import { ShareSheet } from '../ShareSheet';
 import { SHARE_MESSAGES } from '../useShareViewModel';
@@ -64,16 +61,6 @@ function share(
   return { ...view, repositories };
 }
 
-/** The same model the sheet builds, to compare its text with. */
-const expectedModel = () =>
-  buildShareModel({
-    workout: pushDay(),
-    unit: 'kg',
-    today: '2026-10-02' as never,
-    records: new Set(['bench-press-barbell']),
-    muscleRows,
-  });
-
 const ready = () => screen.findByTestId('share-card', hidden);
 const pick = (name: string) => fireEvent.press(screen.getByRole('radio', { name }));
 const press = (name: string) => fireEvent.press(screen.getByRole('button', { name }));
@@ -105,6 +92,7 @@ describe('the share sheet', () => {
     for (const text of ['62', 'min', '3,095', 'kg', '10', 'sets', 'TERAS']) {
       expect(screen.getAllByText(text, hidden).length).toBeGreaterThan(0);
     }
+    expect(screen.getAllByTestId('share-card-icon', hidden).length).toBeGreaterThan(0);
     expect(screen.getByText('BACKGROUND · SAVES AS A TRANSPARENT PNG')).toBeTruthy();
   });
 
@@ -218,41 +206,6 @@ describe('the background picker', () => {
   });
 });
 
-describe('Copy text', () => {
-  it('puts the plain-text summary on the clipboard and says so', async () => {
-    share();
-    await ready();
-
-    press('Copy text');
-
-    await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(copyText(expectedModel())));
-    expect(await screen.findByText('Copied to clipboard')).toBeTruthy();
-    expect(screen.getByTestId('share-result')).toHaveTextContent(SHARE_MESSAGES.copied);
-  });
-
-  it('shows that same text beforehand', async () => {
-    share();
-    await ready();
-
-    expect(screen.getByTestId('share-text-preview')).toHaveTextContent(
-      /Bench Press \(Barbell\): 3 sets, best 62.5 kg × 6 \(new record\)/,
-    );
-    expect(screen.getByTestId('share-text-preview')).toHaveTextContent(/Logged with Teras$/);
-  });
-
-  it('says so when the text could not be copied', async () => {
-    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    jest.mocked(Clipboard.setStringAsync).mockRejectedValueOnce(new Error('denied'));
-    share();
-    await ready();
-
-    press('Copy text');
-
-    expect(await screen.findByText(SHARE_MESSAGES.copyFailed)).toBeTruthy();
-    error.mockRestore();
-  });
-});
-
 describe('Save image', () => {
   it('makes a PNG, asks for add-only access to Photos, saves it, and says it is transparent', async () => {
     share();
@@ -307,8 +260,6 @@ describe('Save image', () => {
     await ready();
 
     pick('Lifts');
-    press('Copy text');
-    await screen.findByText('Copied to clipboard');
 
     expect(MediaLibrary.requestPermissionsAsync).not.toHaveBeenCalled();
   });

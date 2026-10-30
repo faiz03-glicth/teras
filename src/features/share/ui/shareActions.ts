@@ -1,4 +1,3 @@
-import * as Clipboard from 'expo-clipboard';
 import { Asset, requestPermissionsAsync } from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import type { RefObject } from 'react';
@@ -13,10 +12,6 @@ import { captureRef } from 'react-native-view-shot';
 
 /** Android 11 (API 30) saves pictures without asking: the app writes only its own file. */
 const ANDROID_SAVES_WITHOUT_ASKING = 30;
-
-export async function copyToClipboard(text: string): Promise<void> {
-  await Clipboard.setStringAsync(text);
-}
 
 /**
  * The card as a PNG file on disk (a temporary one), at the card's own size times the phone's pixel

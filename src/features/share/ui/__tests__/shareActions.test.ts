@@ -1,10 +1,9 @@
-import * as Clipboard from 'expo-clipboard';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
-import { capturePicture, copyToClipboard, savePicture, sharePicture } from '../shareActions';
+import { capturePicture, savePicture, sharePicture } from '../shareActions';
 
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('expo-sharing', () => ({
@@ -27,14 +26,6 @@ function android(api: number) {
   jest.replaceProperty(Platform, 'OS', 'android');
   jest.spyOn(Platform, 'Version', 'get').mockReturnValue(api);
 }
-
-describe('copyToClipboard', () => {
-  it('puts the text on the clipboard', async () => {
-    await copyToClipboard('Push Day');
-
-    expect(Clipboard.setStringAsync).toHaveBeenCalledWith('Push Day');
-  });
-});
 
 describe('capturePicture', () => {
   it('captures the card as a PNG in a temporary file, at the full quality', async () => {

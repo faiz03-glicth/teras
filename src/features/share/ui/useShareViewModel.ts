@@ -12,24 +12,21 @@ import { goBack } from '@/shared/actions';
 import { useToday } from '@/shared/lib/date/useToday';
 import { haptics } from '@/shared/lib/haptics';
 
-import { copyText } from '../domain/copyText';
 import { buildShareModel } from '../domain/shareModel';
 import { SHARE_LAYOUTS, SHARE_LOOKS, type ShareLayout, type ShareLook } from '../domain/types';
-import { capturePicture, copyToClipboard, savePicture, sharePicture } from './shareActions';
+import { capturePicture, savePicture, sharePicture } from './shareActions';
 
 /** What each key says when it is done, or why it could not be. */
 export const SHARE_MESSAGES = {
-  copied: 'Copied to clipboard',
   savedClear: 'Saved to Photos · transparent PNG',
   saved: 'Saved to Photos',
   denied: "Teras can't save to Photos without permission. Turn it on in your phone's Settings.",
-  copyFailed: "Couldn't copy the text. Try again.",
   saveFailed: "Couldn't save the picture. Try again.",
   shareFailed: "Couldn't open the share sheet. Try again.",
   shareUnavailable: "Sharing isn't available on this phone.",
 } as const;
 
-export type ShareKey = 'copy' | 'save' | 'share';
+export type ShareKey = 'save' | 'share';
 
 /** The line under the keys: what the last tap did. `problem` when it did not work. */
 export interface ShareResult {
@@ -117,19 +114,6 @@ export function useShareViewModel(id: string | null, card: RefObject<View | null
     [report],
   );
 
-  const onCopy = useCallback(() => {
-    if (!model) return;
-    void run(
-      'copy',
-      async () => {
-        await copyToClipboard(copyText(model));
-        haptics.success();
-        report(SHARE_MESSAGES.copied);
-      },
-      SHARE_MESSAGES.copyFailed,
-    );
-  }, [model, report, run]);
-
   const onSave = useCallback(() => {
     if (!model) return;
     void run(
@@ -178,12 +162,10 @@ export function useShareViewModel(id: string | null, card: RefObject<View | null
     layouts: SHARE_LAYOUTS,
     looks: SHARE_LOOKS,
     backgroundLabel: look === 'clear' ? 'Background · saves as a transparent PNG' : 'Background',
-    copyPreview: model ? copyText(model) : '',
     busy,
     result,
     onLayout,
     onLook,
-    onCopy,
     onSave,
     onShare,
     onRetry,
