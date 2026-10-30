@@ -79,18 +79,6 @@ export function ShareSheet({ id }: { id: string | null }) {
           <View style={styles.keys}>
             <View style={styles.key}>
               <Button
-                label="Copy text"
-                icon="copy"
-                variant="secondary"
-                onPress={vm.onCopy}
-                loading={vm.busy === 'copy'}
-                loadingLabel="Copying…"
-                disabled={vm.busy !== null && vm.busy !== 'copy'}
-                testID="share-copy"
-              />
-            </View>
-            <View style={styles.key}>
-              <Button
                 label="Save image"
                 icon="download"
                 variant="secondary"
@@ -125,15 +113,6 @@ export function ShareSheet({ id }: { id: string | null }) {
             disabled={vm.busy !== null && vm.busy !== 'share'}
             testID="share-share"
           />
-
-          <View style={styles.group}>
-            <SectionLabel>Copy text preview</SectionLabel>
-            <Card>
-              <Text variant="sub" tone="secondary" testID="share-text-preview">
-                {vm.copyPreview}
-              </Text>
-            </Card>
-          </View>
         </>
       )}
     </SheetLayout>

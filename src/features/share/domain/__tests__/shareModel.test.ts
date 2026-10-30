@@ -2,7 +2,6 @@ import type { MuscleSetRow } from '@/features/workouts/data/WorkoutRepository';
 import type { ISODate } from '@/shared/lib/date/isoDate';
 import { exerciseRow, pushDay, setRow } from '@test/fakes/shareWorkout';
 
-import { copyText } from '../copyText';
 import { musclesWorked, workedGroups, workedGroupsText } from '../muscles';
 import { buildShareModel, pictureLabel, summaryStats } from '../shareModel';
 
@@ -141,46 +140,6 @@ describe('buildShareModel', () => {
 
   it('names the year of a workout from another year', () => {
     expect(model({ today: '2027-01-04' as ISODate }).dateLabel).toBe('Fri, 2 Oct 2026');
-  });
-});
-
-describe('copyText', () => {
-  it('is the exact plain-text summary', () => {
-    expect(copyText(model())).toBe(
-      [
-        'Push Day · Fri, 2 Oct',
-        '62 min · 3,095 kg · 10 sets',
-        '',
-        'Bench Press (Barbell): 3 sets, best 62.5 kg × 6 (new record)',
-        'Pull-up: 2 sets, best 12 reps',
-        'Plank: 2 sets, best 1 min 15 s',
-        'Lateral Raise: 3 sets, best 10 kg × 12',
-        '',
-        'Logged with Teras',
-      ].join('\n'),
-    );
-  });
-
-  it('uses the unit the person chose', () => {
-    expect(copyText(model({ unit: 'lb', records: new Set() }))).toContain(
-      ['62 min · 6,823 lb · 10 sets', '', 'Bench Press (Barbell): 3 sets, best 137.8 lb × 6'].join('\n'),
-    );
-  });
-
-  it('says "1 set", not "1 sets"', () => {
-    const workout = pushDay({
-      exercises: [exerciseRow('a', 'Deadlift', 'weighted', [setRow('s', { weightKg: 140, reps: 5 })])],
-    });
-
-    expect(copyText(model({ workout, records: new Set() }))).toContain('Deadlift: 1 set, best 140 kg × 5');
-  });
-
-  it('has no gap of blank lines when no exercise has a completed set', () => {
-    const workout = pushDay({ exercises: [] });
-
-    expect(copyText(model({ workout }))).toBe(
-      ['Push Day · Fri, 2 Oct', '62 min · 0 kg · 0 sets', '', 'Logged with Teras'].join('\n'),
-    );
   });
 });
 
